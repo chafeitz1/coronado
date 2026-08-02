@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/generate-pm-work-orders",
+      "schedule": "0 12 * * *"
+    }
+  ]
+}

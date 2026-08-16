@@ -21,7 +21,11 @@ export function PushSubscribeButton() {
 
   useEffect(() => {
     if (!isPushSupported()) return;
-    navigator.serviceWorker.ready
+    // Register unconditionally on mount — `serviceWorker.ready` never
+    // resolves if nothing has registered a worker yet, which left this
+    // component stuck showing nothing on a fresh browser.
+    navigator.serviceWorker
+      .register("/sw.js")
       .then((registration) => registration.pushManager.getSubscription())
       .then((sub) => setStatus(sub ? "subscribed" : "unsubscribed"))
       .catch(() => setStatus("unsubscribed"));
@@ -47,7 +51,7 @@ export function PushSubscribeButton() {
   }
 
   async function unsubscribe() {
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await navigator.serviceWorker.register("/sw.js");
     const subscription = await registration.pushManager.getSubscription();
     if (subscription) {
       await removePushSubscription(subscription.endpoint);

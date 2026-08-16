@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
+/* Design tokens adapted from DESIGN.md (Notion-inspired analysis) —
+   warm paper canvas, near-black ink, one structural blue accent, hairline
+   borders + barely-there layered shadows. Status colors (open/in-progress/
+   done/overdue) are a purpose-built addition DESIGN.md doesn't cover, kept
+   visually restrained to match the "quiet chrome" principle. */
 :root {
-  --background: #ffffff;
-  --foreground: #18181b;
-}
+  --canvas: #ffffff;
+  --canvas-soft: #f6f5f4;
+  --surface: #ffffff;
+  --surface-hover: #f6f5f4;
+  --ink: #18181b;
+  --ink-secondary: #44403c;
+  --ink-muted: #78716c;
+  --ink-faint: #a8a29e;
+  --hairline: #e7e5e4;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --primary: #0075de;
+  --primary-active: #005bab;
+  --primary-soft: #e8f2fe;
+  --on-primary: #ffffff;
+
+  --status-open-fg: #0075de;
+  --status-open-bg: #e8f2fe;
+  --status-progress-fg: #b45309;
+  --status-progress-bg: #fef3e2;
+  --status-done-fg: #15803d;
+  --status-done-bg: #eafbf0;
+  --status-overdue-fg: #dc2626;
+  --status-overdue-bg: #fdeaea;
+
+  --shadow-1: 0 0.5px 1px rgba(0, 0, 0, 0.02), 0 1px 3px rgba(0, 0, 0, 0.03), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.03), 0 8px 16px rgba(0, 0, 0, 0.05), 0 16px 32px rgba(0, 0, 0, 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #09090b;
-    --foreground: #fafafa;
+    --canvas: #191919;
+    --canvas-soft: #1c1c1c;
+    --surface: #232323;
+    --surface-hover: #2a2a2a;
+    --ink: #f5f5f4;
+    --ink-secondary: #d6d3d1;
+    --ink-muted: #a8a29e;
+    --ink-faint: #78716c;
+    --hairline: #333131;
+
+    --primary: #3b9eff;
+    --primary-active: #63b3ff;
+    --primary-soft: #123258;
+    --on-primary: #ffffff;
+
+    --status-open-fg: #6cb4ff;
+    --status-open-bg: #12294a;
+    --status-progress-fg: #f5b567;
+    --status-progress-bg: #3a2a10;
+    --status-done-fg: #6bda94;
+    --status-done-bg: #113321;
+    --status-overdue-fg: #f28b8b;
+    --status-overdue-bg: #3d1616;
+
+    --shadow-1: 0 0.5px 1px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.25), 0 8px 16px rgba(0, 0, 0, 0.35), 0 16px 32px rgba(0, 0, 0, 0.4);
   }
 }
 
+@theme inline {
+  --font-sans: var(--font-inter);
+
+  --color-canvas: var(--canvas);
+  --color-canvas-soft: var(--canvas-soft);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-hairline: var(--hairline);
+
+  --color-primary: var(--primary);
+  --color-primary-active: var(--primary-active);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+
+  --color-status-open-fg: var(--status-open-fg);
+  --color-status-open-bg: var(--status-open-bg);
+  --color-status-progress-fg: var(--status-progress-fg);
+  --color-status-progress-bg: var(--status-progress-bg);
+  --color-status-done-fg: var(--status-done-fg);
+  --color-status-done-bg: var(--status-done-bg);
+  --color-status-overdue-fg: var(--status-overdue-fg);
+  --color-status-overdue-bg: var(--status-overdue-bg);
+
+  --shadow-soft: var(--shadow-1);
+  --shadow-elevated: var(--shadow-2);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  background: var(--canvas-soft);
+  color: var(--ink);
+  font-family: var(--font-sans), Inter, ui-sans-serif, system-ui, sans-serif;
 }

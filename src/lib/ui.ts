@@ -1,36 +1,37 @@
-// Shared className tokens so every page/form looks consistent without
-// re-typing the same Tailwind soup everywhere. Minimal/neutral palette
-// (zinc scale) with a single indigo accent for primary actions and focus.
+// Shared className tokens, adapted from DESIGN.md (Notion-inspired):
+// warm canvas, hairline borders, barely-there layered shadows, one
+// structural blue accent, pill-shaped primary/secondary actions, tighter
+// utility buttons. Colors resolve through CSS vars in globals.css so
+// light/dark both fall out of the same classes.
 
-export const card =
-  "rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
+export const card = "rounded-xl border border-hairline bg-surface shadow-[var(--shadow-soft)]";
 
-export const listCard =
-  "divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white shadow-sm dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900";
+export const listCard = "divide-y divide-hairline rounded-xl border border-hairline bg-surface shadow-[var(--shadow-soft)]";
 
-export const listRow =
-  "flex items-center justify-between gap-4 px-4 py-3.5 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/60";
+export const listRow = "flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5 transition-colors hover:bg-surface-hover";
 
-export const label = "text-sm font-medium text-zinc-700 dark:text-zinc-300";
+export const label = "text-sm font-medium text-ink-secondary";
 
 export const input =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500";
+  "w-full rounded-lg border border-hairline bg-surface px-3 py-2 text-sm text-ink shadow-[var(--shadow-soft)] outline-none transition-colors placeholder:text-ink-faint focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 export const buttonPrimary =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-700 disabled:pointer-events-none disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200";
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-medium text-on-primary shadow-[var(--shadow-soft)] transition-colors hover:bg-primary-active disabled:pointer-events-none disabled:opacity-50";
 
 export const buttonSecondary =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800";
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-hairline bg-surface px-4 py-2 text-sm font-medium text-ink shadow-[var(--shadow-soft)] transition-colors hover:bg-surface-hover disabled:pointer-events-none disabled:opacity-50";
+
+export const buttonUtility =
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-hairline bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-hover disabled:pointer-events-none disabled:opacity-50";
 
 export const buttonGhost =
-  "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50";
+  "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink";
 
-export const pageHeading = "text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50";
+export const pageHeading = "text-xl font-bold tracking-tight text-ink";
 
-export const sectionHeading =
-  "text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500";
+export const sectionHeading = "text-xs font-semibold uppercase tracking-wide text-ink-faint";
 
-export const mutedText = "text-sm text-zinc-500 dark:text-zinc-400";
+export const mutedText = "text-sm text-ink-muted";
 
 export const emptyState =
-  "flex flex-col items-center gap-1 rounded-xl border border-dashed border-zinc-300 px-4 py-10 text-center dark:border-zinc-700";
+  "flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-hairline bg-canvas-soft px-4 py-12 text-center";

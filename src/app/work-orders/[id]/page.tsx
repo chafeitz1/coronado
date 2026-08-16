@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
+import { Bell, MessageSquare, Wrench, Building2 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { updateWorkOrderStatus, addWorkOrderNote } from "@/app/actions/work-orders";
 import { StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { buttonPrimary, buttonSecondary, card, input, mutedText, pageHeading } from "@/lib/ui";
+import { buttonPrimary, buttonUtility, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 
 const STATUS_LABELS: Record<string, string> = {
   open: "Abierta",
@@ -59,20 +60,20 @@ export default async function WorkOrderDetailPage({
         </p>
       </div>
 
-      {workOrder.description && (
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">{workOrder.description}</p>
-      )}
+      {workOrder.description && <p className="text-sm text-ink-secondary">{workOrder.description}</p>}
 
       {(asset || vendor) && (
-        <div className={`flex flex-wrap gap-x-6 gap-y-1 p-4 text-sm ${card}`}>
+        <div className={`flex flex-wrap gap-x-8 gap-y-3 p-4 text-sm ${card}`}>
           {asset && (
-            <span>
-              <span className={mutedText}>Activo:</span> {asset.name}
+            <span className="flex items-center gap-2">
+              <Wrench className="size-4 text-ink-faint" strokeWidth={2} />
+              {asset.name}
             </span>
           )}
           {vendor && (
-            <span>
-              <span className={mutedText}>Proveedor:</span> {vendor.name}
+            <span className="flex items-center gap-2">
+              <Building2 className="size-4 text-ink-faint" strokeWidth={2} />
+              {vendor.name}
               {vendor.phone ? ` (${vendor.phone})` : ""}
             </span>
           )}
@@ -85,7 +86,7 @@ export default async function WorkOrderDetailPage({
             .filter((status) => status !== workOrder.status)
             .map((status) => (
               <form key={status} action={updateWorkOrderStatus.bind(null, workOrder.id, status)}>
-                <button type="submit" className={buttonSecondary}>
+                <button type="submit" className={buttonUtility}>
                   Marcar {STATUS_LABELS[status].toLowerCase()}
                 </button>
               </form>
@@ -94,24 +95,31 @@ export default async function WorkOrderDetailPage({
       )}
 
       <section className="space-y-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-          Notas
-        </h2>
+        <h2 className={sectionHeading}>Notas</h2>
 
         <ul className="space-y-3">
           {notes?.map((note) => {
             const author = single(note.author);
             return (
-              <li key={note.id} className={`p-3 text-sm ${card}`}>
-                <p className="text-zinc-800 dark:text-zinc-200">{note.body}</p>
-                <p className={`mt-1.5 text-xs ${mutedText}`}>
-                  {author?.full_name ?? "—"} · {new Date(note.created_at).toLocaleString("es")}
-                  {note.notify_owner && " · 🔔 notificó al dueño"}
-                </p>
+              <li key={note.id} className={`flex gap-3 p-3.5 text-sm ${card}`}>
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+                  <MessageSquare className="size-4" strokeWidth={2} />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-ink">{note.body}</p>
+                  <p className={`mt-1.5 flex items-center gap-1 text-xs ${mutedText}`}>
+                    {author?.full_name ?? "—"} · {new Date(note.created_at).toLocaleString("es")}
+                    {note.notify_owner && (
+                      <span className="ml-1 inline-flex items-center gap-1 text-status-progress-fg">
+                        <Bell className="size-3" /> notificó al dueño
+                      </span>
+                    )}
+                  </p>
+                </div>
               </li>
             );
           })}
-          {(!notes || notes.length === 0) && <EmptyState icon="📝" message="Sin notas todavía." />}
+          {(!notes || notes.length === 0) && <EmptyState icon={MessageSquare} message="Sin notas todavía." />}
         </ul>
 
         <form action={addWorkOrderNote} className={`space-y-3 p-4 ${card}`}>
@@ -124,9 +132,9 @@ export default async function WorkOrderDetailPage({
             className={input}
           />
           {profile.role !== "owner" && (
-            <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-              <input type="checkbox" name="notify_owner" className="size-4 rounded border-zinc-300 dark:border-zinc-700" />
-              🔔 Notificar al dueño por email
+            <label className="flex items-center gap-2 text-sm text-ink-muted">
+              <input type="checkbox" name="notify_owner" className="size-4 rounded border-hairline accent-primary" />
+              <Bell className="size-3.5" /> Notificar al dueño por email
             </label>
           )}
           <button type="submit" className={buttonPrimary}>

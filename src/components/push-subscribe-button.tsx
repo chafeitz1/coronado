@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Bell, BellOff } from "lucide-react";
 import { savePushSubscription, removePushSubscription } from "@/app/actions/push";
 import { buttonGhost } from "@/lib/ui";
 
@@ -62,8 +63,20 @@ export function PushSubscribeButton() {
   }
 
   return (
-    <button type="button" onClick={status === "subscribed" ? unsubscribe : subscribe} className={buttonGhost}>
-      {status === "subscribed" ? "🔔 Activas" : "🔕 Activar notificaciones"}
+    <button
+      type="button"
+      onClick={status === "subscribed" ? unsubscribe : subscribe}
+      className={`${buttonGhost} w-full justify-start`}
+    >
+      {status === "subscribed" ? (
+        <>
+          <Bell className="size-4" /> Notificaciones activas
+        </>
+      ) : (
+        <>
+          <BellOff className="size-4" /> Activar notificaciones
+        </>
+      )}
     </button>
   );
 }

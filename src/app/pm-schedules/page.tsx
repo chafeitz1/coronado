@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { Plus, RefreshCw } from "lucide-react";
 import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { togglePmSchedule } from "@/app/actions/pm-schedules";
 import { EmptyState } from "@/components/ui/empty-state";
-import { buttonPrimary, buttonSecondary, listCard, mutedText, pageHeading } from "@/lib/ui";
+import { buttonPrimary, buttonUtility, listCard, mutedText, pageHeading } from "@/lib/ui";
 
 const UNIT_LABELS: Record<string, string> = {
   days: "días",
@@ -23,13 +24,13 @@ export default async function PmSchedulesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className={pageHeading}>Mantenimiento preventivo</h1>
           <p className={mutedText}>Genera tareas automáticamente por calendario.</p>
         </div>
         <Link href="/pm-schedules/new" className={buttonPrimary}>
-          + Nueva regla
+          <Plus className="size-4" /> Nueva regla
         </Link>
       </div>
 
@@ -40,11 +41,14 @@ export default async function PmSchedulesPage() {
             const assignee = Array.isArray(s.assignee) ? s.assignee[0] : s.assignee;
             return (
               <li key={s.id} className="flex items-center justify-between gap-4 px-4 py-3.5">
-                <div className="min-w-0">
-                  <p className="flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-50">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+                  <RefreshCw className="size-4" strokeWidth={2} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 font-medium text-ink">
                     {s.title}
                     {!s.active && (
-                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-normal text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                      <span className="rounded-full bg-canvas-soft px-2 py-0.5 text-xs font-normal text-ink-muted">
                         inactiva
                       </span>
                     )}
@@ -56,7 +60,7 @@ export default async function PmSchedulesPage() {
                   </p>
                 </div>
                 <form action={togglePmSchedule.bind(null, s.id, !s.active)} className="shrink-0">
-                  <button type="submit" className={buttonSecondary}>
+                  <button type="submit" className={buttonUtility}>
                     {s.active ? "Desactivar" : "Activar"}
                   </button>
                 </form>
@@ -65,7 +69,7 @@ export default async function PmSchedulesPage() {
           })}
         </ul>
       ) : (
-        <EmptyState icon="🔁" message="No hay reglas de mantenimiento preventivo." />
+        <EmptyState icon={RefreshCw} message="No hay reglas de mantenimiento preventivo." />
       )}
     </div>
   );

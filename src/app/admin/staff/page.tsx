@@ -1,3 +1,4 @@
+import { Users, Bell } from "lucide-react";
 import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { inviteMember } from "@/app/actions/admin";
@@ -42,20 +43,20 @@ export default async function StaffAdminPage() {
       </div>
 
       <section className={`space-y-3 p-5 ${card}`}>
-        <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Tus notificaciones</h2>
-        <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <h2 className="font-semibold text-ink">Tus notificaciones</h2>
+        <label className="flex items-center gap-2 text-sm text-ink-muted">
           <PrefToggle
             userId={owner.id}
             eventType="note_flagged"
             channel="email"
             defaultEnabled={ownerNoteEmailEnabled}
           />
-          🔔 Avísame por email cuando alguien marque una nota como importante
+          <Bell className="size-3.5" /> Avísame por email cuando alguien marque una nota como importante
         </label>
       </section>
 
       <section className={`space-y-4 p-5 ${card}`}>
-        <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Invitar a alguien</h2>
+        <h2 className="font-semibold text-ink">Invitar a alguien</h2>
         <form action={inviteMember} className="flex flex-wrap items-end gap-3">
           <Field label="Nombre">
             <input name="full_name" required className={input} />
@@ -83,11 +84,11 @@ export default async function StaffAdminPage() {
             {members.map((member) => (
               <div key={member.id} className={`p-4 ${card}`}>
                 <div className="flex items-center gap-3">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-sm font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
                     {member.full_name.slice(0, 1).toUpperCase()}
                   </span>
                   <div>
-                    <p className="font-medium text-zinc-900 dark:text-zinc-50">{member.full_name}</p>
+                    <p className="font-medium text-ink">{member.full_name}</p>
                     <p className={mutedText}>{member.role === "staff" ? "Personal" : "Familia"}</p>
                   </div>
                 </div>
@@ -96,16 +97,16 @@ export default async function StaffAdminPage() {
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs text-zinc-400 dark:text-zinc-500">
+                        <tr className="text-left text-xs text-ink-faint">
                           <th className="pb-2 font-normal">Evento</th>
                           <th className="pb-2 font-normal">Push</th>
                           <th className="pb-2 font-normal">Email</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                      <tbody className="divide-y divide-hairline">
                         {EVENTS.map((event) => (
                           <tr key={event.key}>
-                            <td className="py-2 text-zinc-700 dark:text-zinc-300">{event.label}</td>
+                            <td className="py-2 text-ink-secondary">{event.label}</td>
                             <td className="py-2">
                               <PrefToggle
                                 userId={member.id}
@@ -138,7 +139,7 @@ export default async function StaffAdminPage() {
             ))}
           </div>
         ) : (
-          <EmptyState icon="👋" message="Todavía no has invitado a nadie." />
+          <EmptyState icon={Users} message="Todavía no has invitado a nadie." />
         )}
       </section>
     </div>

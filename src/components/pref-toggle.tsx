@@ -22,7 +22,7 @@ export function PrefToggle({
       type="checkbox"
       defaultChecked={defaultEnabled}
       disabled={isPending}
-      className="size-4 rounded border-zinc-300 text-zinc-900 accent-zinc-900 disabled:opacity-50 dark:border-zinc-600 dark:accent-white"
+      className="size-4 rounded border-hairline accent-primary disabled:opacity-50"
       onChange={(e) => {
         const checked = e.target.checked;
         startTransition(() => {

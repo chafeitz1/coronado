@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { savePushSubscription, removePushSubscription } from "@/app/actions/push";
+import { buttonGhost } from "@/lib/ui";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -61,12 +62,8 @@ export function PushSubscribeButton() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={status === "subscribed" ? unsubscribe : subscribe}
-      className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
-    >
-      {status === "subscribed" ? "🔔 Notificaciones activas" : "🔕 Activar notificaciones"}
+    <button type="button" onClick={status === "subscribed" ? unsubscribe : subscribe} className={buttonGhost}>
+      {status === "subscribed" ? "🔔 Activas" : "🔕 Activar notificaciones"}
     </button>
   );
 }

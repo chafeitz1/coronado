@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { EmptyState } from "@/components/ui/empty-state";
+import { buttonPrimary, listCard, mutedText, pageHeading } from "@/lib/ui";
 
 export default async function AssetsPage() {
   const profile = await requireUser();
@@ -13,33 +15,29 @@ export default async function AssetsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Activos</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className={pageHeading}>Activos</h1>
         {profile.role === "owner" && (
-          <Link
-            href="/assets/new"
-            className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white dark:bg-white dark:text-black"
-          >
+          <Link href="/assets/new" className={buttonPrimary}>
             + Nuevo activo
           </Link>
         )}
       </div>
 
-      <ul className="divide-y divide-black/10 rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/10">
-        {assets?.map((asset) => (
-          <li key={asset.id} className="px-4 py-3">
-            <p className="font-medium">{asset.name}</p>
-            <p className="text-xs text-black/60 dark:text-white/60">
-              {[asset.category, asset.location].filter(Boolean).join(" · ") || "—"}
-            </p>
-          </li>
-        ))}
-        {(!assets || assets.length === 0) && (
-          <li className="px-4 py-3 text-sm text-black/50 dark:text-white/50">
-            No hay activos registrados.
-          </li>
-        )}
-      </ul>
+      {assets && assets.length > 0 ? (
+        <ul className={listCard}>
+          {assets.map((asset) => (
+            <li key={asset.id} className="px-4 py-3.5">
+              <p className="font-medium text-zinc-900 dark:text-zinc-50">{asset.name}</p>
+              <p className={mutedText}>
+                {[asset.category, asset.location].filter(Boolean).join(" · ") || "Sin categoría"}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState icon="🧰" message="No hay activos registrados." />
+      )}
     </div>
   );
 }

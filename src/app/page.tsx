@@ -1,18 +1,9 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-
-const STATUS_LABELS: Record<string, string> = {
-  open: "Abierta",
-  in_progress: "En proceso",
-  done: "Hecha",
-};
-
-const PRIORITY_LABELS: Record<string, string> = {
-  low: "Baja",
-  medium: "Media",
-  high: "Alta",
-};
+import { StatusBadge, PriorityBadge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { buttonPrimary, listCard, listRow, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 
 export default async function DashboardPage() {
   const profile = await requireUser();
@@ -28,19 +19,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold">Tareas</h1>
-          <p className="text-sm text-black/60 dark:text-white/60">
-            {profile.role === "staff"
-              ? "Tus tareas asignadas."
-              : "Todas las tareas de la casa."}
+          <h1 className={pageHeading}>Tareas</h1>
+          <p className={mutedText}>
+            {profile.role === "staff" ? "Tus tareas asignadas." : "Todas las tareas de la casa."}
           </p>
         </div>
-        <Link
-          href="/work-orders/new"
-          className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white dark:bg-white dark:text-black"
-        >
+        <Link href="/work-orders/new" className={buttonPrimary}>
           + Nueva tarea
         </Link>
       </div>
@@ -49,9 +35,7 @@ export default async function DashboardPage() {
       {doneOrders.length > 0 && <WorkOrderList title="Completadas" orders={doneOrders} />}
 
       {(workOrders?.length ?? 0) === 0 && (
-        <p className="text-sm text-black/60 dark:text-white/60">
-          No hay tareas todavía.
-        </p>
+        <EmptyState icon="🏝️" message="No hay tareas todavía. Crea la primera arriba." />
       )}
     </div>
   );
@@ -72,23 +56,25 @@ function WorkOrderList({ title, orders }: { title: string; orders: OrderRow[] })
 
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-medium text-black/60 dark:text-white/60">{title}</h2>
-      <ul className="divide-y divide-black/10 rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/10">
+      <h2 className={sectionHeading}>
+        {title} <span className="text-zinc-300 dark:text-zinc-600">· {orders.length}</span>
+      </h2>
+      <ul className={listCard}>
         {orders.map((wo) => {
           const assignee = Array.isArray(wo.profiles) ? wo.profiles[0] : wo.profiles;
           return (
             <li key={wo.id}>
-              <Link
-                href={`/work-orders/${wo.id}`}
-                className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-              >
-                <div>
-                  <p className="font-medium">{wo.title}</p>
-                  <p className="text-xs text-black/60 dark:text-white/60">
-                    {STATUS_LABELS[wo.status]} · Prioridad {PRIORITY_LABELS[wo.priority]}
-                    {assignee ? ` · ${assignee.full_name}` : ""}
+              <Link href={`/work-orders/${wo.id}`} className={listRow}>
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">{wo.title}</p>
+                  <p className={`${mutedText} truncate`}>
+                    {assignee ? assignee.full_name : "Sin asignar"}
                     {wo.due_date ? ` · vence ${wo.due_date}` : ""}
                   </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <PriorityBadge priority={wo.priority} />
+                  <StatusBadge status={wo.status} />
                 </div>
               </Link>
             </li>

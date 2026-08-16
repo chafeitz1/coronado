@@ -2,6 +2,9 @@ import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { inviteMember } from "@/app/actions/admin";
 import { PrefToggle } from "@/components/pref-toggle";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Field } from "@/components/ui/field";
+import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import type { NotificationEventType } from "@/lib/types/database";
 
 const EVENTS: { key: NotificationEventType; label: string }[] = [
@@ -33,120 +36,111 @@ export default async function StaffAdminPage() {
 
   return (
     <div className="space-y-10">
-      <section className="space-y-3">
-        <h1 className="text-xl font-semibold">Tus notificaciones</h1>
-        <label className="flex items-center gap-2 text-sm">
+      <div>
+        <h1 className={pageHeading}>Personal</h1>
+        <p className={mutedText}>Invita gente y controla sus notificaciones.</p>
+      </div>
+
+      <section className={`space-y-3 p-5 ${card}`}>
+        <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Tus notificaciones</h2>
+        <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
           <PrefToggle
             userId={owner.id}
             eventType="note_flagged"
             channel="email"
             defaultEnabled={ownerNoteEmailEnabled}
           />
-          Avísame por email cuando alguien marque una nota como importante
+          🔔 Avísame por email cuando alguien marque una nota como importante
         </label>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Invitar a alguien</h2>
+      <section className={`space-y-4 p-5 ${card}`}>
+        <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Invitar a alguien</h2>
         <form action={inviteMember} className="flex flex-wrap items-end gap-3">
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Nombre</label>
-            <input
-              name="full_name"
-              required
-              className="rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Email</label>
-            <input
-              type="email"
-              name="email"
-              required
-              className="rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Rol</label>
-            <select
-              name="role"
-              defaultValue="staff"
-              className="rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
-            >
+          <Field label="Nombre">
+            <input name="full_name" required className={input} />
+          </Field>
+          <Field label="Email">
+            <input type="email" name="email" required className={input} />
+          </Field>
+          <Field label="Rol">
+            <select name="role" defaultValue="staff" className={input}>
               <option value="staff">Personal</option>
               <option value="family">Familia</option>
             </select>
-          </div>
-          <button
-            type="submit"
-            className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-black"
-          >
+          </Field>
+          <button type="submit" className={buttonPrimary}>
             Enviar invitación
           </button>
         </form>
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Personal y familia</h2>
-        {members?.map((member) => (
-          <div key={member.id} className="rounded-lg border border-black/10 p-4 dark:border-white/10">
-            <p className="font-medium">
-              {member.full_name}{" "}
-              <span className="text-xs font-normal text-black/50 dark:text-white/50">
-                ({member.role === "staff" ? "Personal" : "Familia"})
-              </span>
-            </p>
-            {member.role === "staff" ? (
-              <table className="mt-3 w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-black/50 dark:text-white/50">
-                    <th className="pb-1 font-normal">Evento</th>
-                    <th className="pb-1 font-normal">Push</th>
-                    <th className="pb-1 font-normal">Email</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {EVENTS.map((event) => (
-                    <tr key={event.key}>
-                      <td className="py-1">{event.label}</td>
-                      <td className="py-1">
-                        <PrefToggle
-                          userId={member.id}
-                          eventType={event.key}
-                          channel="push"
-                          defaultEnabled={
-                            prefLookup.get(`${member.id}:${event.key}:push`) ?? true
-                          }
-                        />
-                      </td>
-                      <td className="py-1">
-                        <PrefToggle
-                          userId={member.id}
-                          eventType={event.key}
-                          channel="email"
-                          defaultEnabled={
-                            prefLookup.get(`${member.id}:${event.key}:email`) ?? true
-                          }
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="mt-1 text-xs text-black/50 dark:text-white/50">
-                Puede ver y crear tareas puntuales.
-              </p>
-            )}
+        <h2 className={sectionHeading}>Personal y familia</h2>
+
+        {members && members.length > 0 ? (
+          <div className="space-y-3">
+            {members.map((member) => (
+              <div key={member.id} className={`p-4 ${card}`}>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-sm font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                    {member.full_name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div>
+                    <p className="font-medium text-zinc-900 dark:text-zinc-50">{member.full_name}</p>
+                    <p className={mutedText}>{member.role === "staff" ? "Personal" : "Familia"}</p>
+                  </div>
+                </div>
+
+                {member.role === "staff" ? (
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-zinc-400 dark:text-zinc-500">
+                          <th className="pb-2 font-normal">Evento</th>
+                          <th className="pb-2 font-normal">Push</th>
+                          <th className="pb-2 font-normal">Email</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        {EVENTS.map((event) => (
+                          <tr key={event.key}>
+                            <td className="py-2 text-zinc-700 dark:text-zinc-300">{event.label}</td>
+                            <td className="py-2">
+                              <PrefToggle
+                                userId={member.id}
+                                eventType={event.key}
+                                channel="push"
+                                defaultEnabled={
+                                  prefLookup.get(`${member.id}:${event.key}:push`) ?? true
+                                }
+                              />
+                            </td>
+                            <td className="py-2">
+                              <PrefToggle
+                                userId={member.id}
+                                eventType={event.key}
+                                channel="email"
+                                defaultEnabled={
+                                  prefLookup.get(`${member.id}:${event.key}:email`) ?? true
+                                }
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className={`mt-2 ${mutedText}`}>Puede ver y crear tareas puntuales.</p>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
-        {(!members || members.length === 0) && (
-          <p className="text-sm text-black/50 dark:text-white/50">
-            Todavía no has invitado a nadie.
-          </p>
+        ) : (
+          <EmptyState icon="👋" message="Todavía no has invitado a nadie." />
         )}
       </section>
     </div>
   );
 }
-

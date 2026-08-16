@@ -1,6 +1,8 @@
 import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createPmSchedule } from "@/app/actions/pm-schedules";
+import { Field } from "@/components/ui/field";
+import { buttonPrimary, card, input, pageHeading } from "@/lib/ui";
 
 export default async function NewPmSchedulePage() {
   await requireOwner();
@@ -13,32 +15,19 @@ export default async function NewPmSchedulePage() {
 
   return (
     <div className="max-w-lg space-y-6">
-      <h1 className="text-xl font-semibold">Nueva regla de mantenimiento</h1>
+      <h1 className={pageHeading}>Nueva regla de mantenimiento</h1>
 
-      <form action={createPmSchedule} className="space-y-4">
+      <form action={createPmSchedule} className={`space-y-4 p-5 ${card}`}>
         <Field label="Título de la tarea">
-          <input
-            name="title"
-            required
-            placeholder="Cambiar filtros de A/C"
-            className="w-full rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
-          />
+          <input name="title" required placeholder="Cambiar filtros de A/C" className={input} />
         </Field>
 
         <Field label="Descripción">
-          <textarea
-            name="description"
-            rows={2}
-            className="w-full rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
-          />
+          <textarea name="description" rows={2} className={input} />
         </Field>
 
         <Field label="Activo">
-          <select
-            name="asset_id"
-            required
-            className="w-full rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
-          >
+          <select name="asset_id" required className={input}>
             {assets?.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.name}
@@ -49,21 +38,10 @@ export default async function NewPmSchedulePage() {
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Repetir cada">
-            <input
-              type="number"
-              name="interval_value"
-              min={1}
-              defaultValue={3}
-              required
-              className="w-full rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
-            />
+            <input type="number" name="interval_value" min={1} defaultValue={3} required className={input} />
           </Field>
           <Field label="Unidad">
-            <select
-              name="interval_unit"
-              defaultValue="months"
-              className="w-full rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
-            >
+            <select name="interval_unit" defaultValue="months" className={input}>
               <option value="days">Días</option>
               <option value="weeks">Semanas</option>
               <option value="months">Meses</option>
@@ -73,20 +51,11 @@ export default async function NewPmSchedulePage() {
         </div>
 
         <Field label="Próxima fecha">
-          <input
-            type="date"
-            name="next_due_date"
-            required
-            className="w-full rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
-          />
+          <input type="date" name="next_due_date" required className={input} />
         </Field>
 
         <Field label="Asignar por defecto a">
-          <select
-            name="default_assignee"
-            defaultValue=""
-            className="w-full rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
-          >
+          <select name="default_assignee" defaultValue="" className={input}>
             <option value="">— Sin asignar —</option>
             {staff?.map((s) => (
               <option key={s.id} value={s.id}>
@@ -96,22 +65,10 @@ export default async function NewPmSchedulePage() {
           </select>
         </Field>
 
-        <button
-          type="submit"
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-black"
-        >
+        <button type="submit" className={buttonPrimary}>
           Guardar
         </button>
       </form>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <label className="text-sm font-medium">{label}</label>
-      {children}
     </div>
   );
 }

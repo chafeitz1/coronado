@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { updateWorkOrderStatus, addWorkOrderNote } from "@/app/actions/work-orders";
+import { StatusBadge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { buttonPrimary, buttonSecondary, card, input, mutedText, pageHeading } from "@/lib/ui";
 
 const STATUS_LABELS: Record<string, string> = {
   open: "Abierta",
@@ -44,23 +47,32 @@ export default async function WorkOrderDetailPage({
 
   return (
     <div className="max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold">{workOrder.title}</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          {STATUS_LABELS[workOrder.status]} · creada por {creator?.full_name ?? "—"}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className={pageHeading}>{workOrder.title}</h1>
+          <StatusBadge status={workOrder.status} />
+        </div>
+        <p className={mutedText}>
+          creada por {creator?.full_name ?? "—"}
           {assignee ? ` · asignada a ${assignee.full_name}` : ""}
           {workOrder.due_date ? ` · vence ${workOrder.due_date}` : ""}
         </p>
       </div>
 
-      {workOrder.description && <p className="text-sm">{workOrder.description}</p>}
+      {workOrder.description && (
+        <p className="text-sm text-zinc-700 dark:text-zinc-300">{workOrder.description}</p>
+      )}
 
       {(asset || vendor) && (
-        <div className="flex gap-6 text-sm text-black/70 dark:text-white/70">
-          {asset && <span>Activo: {asset.name}</span>}
+        <div className={`flex flex-wrap gap-x-6 gap-y-1 p-4 text-sm ${card}`}>
+          {asset && (
+            <span>
+              <span className={mutedText}>Activo:</span> {asset.name}
+            </span>
+          )}
           {vendor && (
             <span>
-              Proveedor: {vendor.name}
+              <span className={mutedText}>Proveedor:</span> {vendor.name}
               {vendor.phone ? ` (${vendor.phone})` : ""}
             </span>
           )}
@@ -68,15 +80,12 @@ export default async function WorkOrderDetailPage({
       )}
 
       {canChangeStatus && (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {(["open", "in_progress", "done"] as const)
             .filter((status) => status !== workOrder.status)
             .map((status) => (
               <form key={status} action={updateWorkOrderStatus.bind(null, workOrder.id, status)}>
-                <button
-                  type="submit"
-                  className="rounded-md border border-black/15 px-3 py-1.5 text-sm hover:bg-black/[0.03] dark:border-white/15 dark:hover:bg-white/[0.04]"
-                >
+                <button type="submit" className={buttonSecondary}>
                   Marcar {STATUS_LABELS[status].toLowerCase()}
                 </button>
               </form>
@@ -85,46 +94,42 @@ export default async function WorkOrderDetailPage({
       )}
 
       <section className="space-y-4">
-        <h2 className="text-sm font-medium text-black/60 dark:text-white/60">Notas</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          Notas
+        </h2>
 
         <ul className="space-y-3">
           {notes?.map((note) => {
             const author = single(note.author);
             return (
-              <li key={note.id} className="rounded-md border border-black/10 p-3 text-sm dark:border-white/10">
-                <p>{note.body}</p>
-                <p className="mt-1 text-xs text-black/50 dark:text-white/50">
-                  {author?.full_name ?? "—"} ·{" "}
-                  {new Date(note.created_at).toLocaleString("es")}
+              <li key={note.id} className={`p-3 text-sm ${card}`}>
+                <p className="text-zinc-800 dark:text-zinc-200">{note.body}</p>
+                <p className={`mt-1.5 text-xs ${mutedText}`}>
+                  {author?.full_name ?? "—"} · {new Date(note.created_at).toLocaleString("es")}
                   {note.notify_owner && " · 🔔 notificó al dueño"}
                 </p>
               </li>
             );
           })}
-          {(!notes || notes.length === 0) && (
-            <p className="text-sm text-black/50 dark:text-white/50">Sin notas todavía.</p>
-          )}
+          {(!notes || notes.length === 0) && <EmptyState icon="📝" message="Sin notas todavía." />}
         </ul>
 
-        <form action={addWorkOrderNote} className="space-y-2">
+        <form action={addWorkOrderNote} className={`space-y-3 p-4 ${card}`}>
           <input type="hidden" name="work_order_id" value={workOrder.id} />
           <textarea
             name="body"
             required
             rows={2}
             placeholder="Escribe una nota..."
-            className="w-full rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-black/20"
+            className={input}
           />
           {profile.role !== "owner" && (
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="notify_owner" />
+            <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <input type="checkbox" name="notify_owner" className="size-4 rounded border-zinc-300 dark:border-zinc-700" />
               🔔 Notificar al dueño por email
             </label>
           )}
-          <button
-            type="submit"
-            className="rounded-md bg-black px-3 py-1.5 text-sm font-medium text-white dark:bg-white dark:text-black"
-          >
+          <button type="submit" className={buttonPrimary}>
             Agregar nota
           </button>
         </form>

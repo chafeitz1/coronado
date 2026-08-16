@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentProfile } from "@/lib/auth";
 import { logout } from "@/app/actions/auth";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
+import { buttonGhost } from "@/lib/ui";
 
 export async function Nav() {
   const profile = await getCurrentProfile();
@@ -20,27 +21,42 @@ export async function Nav() {
   ];
 
   return (
-    <header className="border-b border-black/10 dark:border-white/10">
-      <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-3">
-        <nav className="flex items-center gap-4 text-sm">
-          <span className="font-semibold">Casa Coronado</span>
+    <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+      <div className="mx-auto max-w-4xl px-4">
+        <div className="flex items-center justify-between gap-3 py-3">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-900 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">
+              C
+            </span>
+            <span className="font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              Casa Coronado
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-1">
+            <PushSubscribeButton />
+            <span className="hidden text-sm text-zinc-500 sm:inline dark:text-zinc-400">
+              {profile.full_name} · {roleLabel(profile.role)}
+            </span>
+            <form action={logout}>
+              <button type="submit" className={buttonGhost}>
+                Salir
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <nav className="-mx-1 flex gap-1 overflow-x-auto pb-2 text-sm">
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className="text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white">
+            <Link
+              key={link.href}
+              href={link.href}
+              className="whitespace-nowrap rounded-md px-2.5 py-1.5 font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+            >
               {link.label}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3 text-sm">
-          <PushSubscribeButton />
-          <span className="text-black/60 dark:text-white/60">
-            {profile.full_name} · {roleLabel(profile.role)}
-          </span>
-          <form action={logout}>
-            <button type="submit" className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white">
-              Salir
-            </button>
-          </form>
-        </div>
       </div>
     </header>
   );

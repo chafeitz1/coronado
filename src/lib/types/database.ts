@@ -14,6 +14,22 @@ export type NotificationEventType =
   | "overdue"
   | "note_flagged";
 export type NotificationChannel = "push" | "email";
+export type VendorTrade =
+  | "plumbing"
+  | "electrical"
+  | "hvac"
+  | "gardening"
+  | "pool"
+  | "cleaning"
+  | "carpentry"
+  | "painting"
+  | "locksmith"
+  | "pest_control"
+  | "roofing"
+  | "appliances"
+  | "security"
+  | "internet"
+  | "general";
 
 export interface Database {
   public: {
@@ -42,7 +58,7 @@ export interface Database {
         Row: {
           id: string;
           name: string;
-          trade: string | null;
+          trade: VendorTrade | null;
           phone: string | null;
           email: string | null;
           notes: string | null;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, Plus } from "lucide-react";
+import { ClipboardList, Plus, Repeat } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ type OrderRow = {
   priority: string;
   due_date: string | null;
   assigned_to: string | null;
+  recurrence_interval_value: number | null;
   profiles: { full_name: string } | { full_name: string }[] | null;
 };
 
@@ -46,7 +47,9 @@ export default async function WorkOrdersPage({
 
   const { data: workOrders } = await supabase
     .from("work_orders")
-    .select("id, title, status, priority, due_date, assigned_to, profiles!work_orders_assigned_to_fkey(full_name)")
+    .select(
+      "id, title, status, priority, due_date, assigned_to, recurrence_interval_value, profiles!work_orders_assigned_to_fkey(full_name)"
+    )
     .order("created_at", { ascending: false });
 
   const today = new Date().toISOString().slice(0, 10);
@@ -137,7 +140,12 @@ function WorkOrderList({
                   <ClipboardList className="size-4" strokeWidth={2} />
                 </span>
                 <div className="min-w-40 flex-1">
-                  <p className="truncate font-medium text-ink">{wo.title}</p>
+                  <p className="flex items-center gap-1.5 truncate font-medium text-ink">
+                    {wo.title}
+                    {wo.recurrence_interval_value && (
+                      <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
+                    )}
+                  </p>
                   <p className={`${mutedText} truncate`}>
                     {assignee ? assignee.full_name : "Sin asignar"}
                     {wo.due_date ? ` · vence ${wo.due_date}` : ""}

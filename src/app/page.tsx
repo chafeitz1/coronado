@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, AlertTriangle, Clock, CheckCircle2, PartyPopper, Plus } from "lucide-react";
+import { ClipboardList, AlertTriangle, Clock, CheckCircle2, PartyPopper, Plus, Repeat } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ type OrderRow = {
   priority: string;
   due_date: string | null;
   completed_at: string | null;
+  recurrence_interval_value: number | null;
   profiles: { full_name: string } | { full_name: string }[] | null;
 };
 
@@ -23,7 +24,7 @@ export default async function HomePage() {
   const { data: workOrders } = await supabase
     .from("work_orders")
     .select(
-      "id, title, status, priority, due_date, completed_at, profiles!work_orders_assigned_to_fkey(full_name)"
+      "id, title, status, priority, due_date, completed_at, recurrence_interval_value, profiles!work_orders_assigned_to_fkey(full_name)"
     )
     .order("created_at", { ascending: false });
 
@@ -90,7 +91,12 @@ export default async function HomePage() {
                 <li key={wo.id}>
                   <Link href={`/work-orders/${wo.id}`} className={listRow}>
                     <div className="min-w-40 flex-1">
-                      <p className="truncate font-medium text-ink">{wo.title}</p>
+                      <p className="flex items-center gap-1.5 truncate font-medium text-ink">
+                        {wo.title}
+                        {wo.recurrence_interval_value && (
+                          <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
+                        )}
+                      </p>
                       <p className={`${mutedText} truncate`}>{assignee ? assignee.full_name : "Sin asignar"}</p>
                     </div>
                     <StatusBadge status={wo.status} />
@@ -155,7 +161,12 @@ function UrgentSection({
             <li key={wo.id}>
               <Link href={`/work-orders/${wo.id}`} className={listRow}>
                 <div className="min-w-40 flex-1">
-                  <p className="truncate font-medium text-ink">{wo.title}</p>
+                  <p className="flex items-center gap-1.5 truncate font-medium text-ink">
+                    {wo.title}
+                    {wo.recurrence_interval_value && (
+                      <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
+                    )}
+                  </p>
                   <p className={`${mutedText} truncate`}>
                     {assignee ? assignee.full_name : "Sin asignar"}
                     {wo.due_date ? ` · vence ${wo.due_date}` : ""}

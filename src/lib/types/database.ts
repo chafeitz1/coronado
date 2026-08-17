@@ -83,23 +83,6 @@ export interface Database {
         Insert: Omit<Database["public"]["Tables"]["assets"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["assets"]["Insert"]>;
       };
-      pm_schedules: {
-        Row: {
-          id: string;
-          asset_id: string;
-          title: string;
-          description: string | null;
-          interval_unit: IntervalUnit;
-          interval_value: number;
-          next_due_date: string;
-          default_assignee: string | null;
-          active: boolean;
-          created_by: string;
-          created_at: string;
-        };
-        Insert: Omit<Database["public"]["Tables"]["pm_schedules"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["pm_schedules"]["Insert"]>;
-      };
       work_orders: {
         Row: {
           id: string;
@@ -114,7 +97,8 @@ export interface Database {
           due_date: string | null;
           completed_at: string | null;
           source: WorkOrderSource;
-          pm_schedule_id: string | null;
+          recurrence_interval_value: number | null;
+          recurrence_interval_unit: IntervalUnit | null;
           created_at: string;
           updated_at: string;
         };

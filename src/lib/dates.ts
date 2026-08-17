@@ -11,3 +11,12 @@ export function isoDateTimeOffset(days: number) {
   d.setDate(d.getDate() + days);
   return d.toISOString();
 }
+
+export function advanceDate(dateStr: string, unit: "days" | "weeks" | "months" | "years", value: number): string {
+  const date = new Date(`${dateStr}T00:00:00Z`);
+  if (unit === "days") date.setUTCDate(date.getUTCDate() + value);
+  if (unit === "weeks") date.setUTCDate(date.getUTCDate() + value * 7);
+  if (unit === "months") date.setUTCMonth(date.getUTCMonth() + value);
+  if (unit === "years") date.setUTCFullYear(date.getUTCFullYear() + value);
+  return date.toISOString().slice(0, 10);
+}

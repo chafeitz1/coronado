@@ -22,7 +22,6 @@ export async function Sidebar() {
     profile.role === "owner"
       ? [
           { href: "/vendors", label: "Proveedores", icon: "vendors" },
-          { href: "/pm-schedules", label: "Preventivo", icon: "pm" },
           { href: "/admin/staff", label: "Personal", icon: "staff" },
         ]
       : [];

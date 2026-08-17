@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { notifyUser } from "@/lib/notifications/send";
-import type { WorkOrderPriority } from "@/lib/types/database";
+import { advanceDate, isoDateOffset } from "@/lib/dates";
+import type { IntervalUnit, WorkOrderPriority } from "@/lib/types/database";
 
 async function getOwnerId(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase.from("profiles").select("id").eq("role", "owner").limit(1).single();
@@ -24,9 +25,17 @@ export async function createWorkOrder(formData: FormData) {
   const assetId = String(formData.get("asset_id") ?? "") || null;
   const dueDate = String(formData.get("due_date") ?? "") || null;
   // Family can only create one-time orders unassigned to staff; owner can
-  // assign directly on creation.
+  // assign directly on creation. Recurrence is owner-only too — the form
+  // never shows the fields to family, and this re-checks server-side
+  // regardless of what a crafted request sends (RLS backs this up too).
   const assignedTo =
     profile.role === "owner" ? String(formData.get("assigned_to") ?? "") || null : null;
+  const recurrenceValue =
+    profile.role === "owner" ? Number(formData.get("recurrence_interval_value") ?? "") || null : null;
+  const recurrenceUnit =
+    profile.role === "owner" && recurrenceValue
+      ? (String(formData.get("recurrence_interval_unit") ?? "") as IntervalUnit) || null
+      : null;
 
   const { data: workOrder, error } = await supabase
     .from("work_orders")
@@ -39,6 +48,8 @@ export async function createWorkOrder(formData: FormData) {
       assigned_to: assignedTo,
       created_by: profile.id,
       source: "manual",
+      recurrence_interval_value: recurrenceUnit ? recurrenceValue : null,
+      recurrence_interval_unit: recurrenceUnit,
     })
     .select("id")
     .single();
@@ -70,7 +81,9 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
       completed_at: status === "done" ? new Date().toISOString() : null,
     })
     .eq("id", workOrderId)
-    .select("id, title, created_by, assigned_to")
+    .select(
+      "id, title, description, created_by, assigned_to, asset_id, vendor_id, priority, due_date, recurrence_interval_value, recurrence_interval_unit"
+    )
     .single();
 
   if (error || !workOrder) {
@@ -83,6 +96,39 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
       body: `${profile.full_name} cambió "${workOrder.title}" a ${status}`,
       url: `/work-orders/${workOrder.id}`,
     });
+  }
+
+  // Recurring task just got completed — spawn its next occurrence right
+  // here instead of relying on a cron job to notice.
+  if (status === "done" && workOrder.recurrence_interval_value && workOrder.recurrence_interval_unit) {
+    const nextDueDate = workOrder.due_date
+      ? advanceDate(workOrder.due_date, workOrder.recurrence_interval_unit as IntervalUnit, workOrder.recurrence_interval_value)
+      : isoDateOffset(0);
+
+    const { data: nextWorkOrder } = await supabase
+      .from("work_orders")
+      .insert({
+        title: workOrder.title,
+        description: workOrder.description,
+        priority: workOrder.priority,
+        asset_id: workOrder.asset_id,
+        vendor_id: workOrder.vendor_id,
+        assigned_to: workOrder.assigned_to,
+        created_by: workOrder.created_by,
+        due_date: nextDueDate,
+        source: "pm",
+        recurrence_interval_value: workOrder.recurrence_interval_value,
+        recurrence_interval_unit: workOrder.recurrence_interval_unit,
+      })
+      .select("id")
+      .single();
+
+    if (nextWorkOrder && workOrder.assigned_to) {
+      await notifyUser(workOrder.assigned_to, "task_assigned", {
+        body: `Tarea recurrente: ${workOrder.title}`,
+        url: `/work-orders/${nextWorkOrder.id}`,
+      });
+    }
   }
 
   revalidatePath(`/work-orders/${workOrderId}`);

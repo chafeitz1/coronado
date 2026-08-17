@@ -8,7 +8,6 @@ import {
   ClipboardList,
   Wrench,
   Building2,
-  RefreshCw,
   UserCog,
   Menu,
   Search,
@@ -25,7 +24,6 @@ const ICONS = {
   tasks: ClipboardList,
   assets: Wrench,
   vendors: Building2,
-  pm: RefreshCw,
   staff: UserCog,
 };
 

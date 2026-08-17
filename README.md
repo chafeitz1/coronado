@@ -1,6 +1,6 @@
 # Casa Coronado
 
-Herramienta de mantenimiento para la casa de playa: work orders, activos, mantenimiento preventivo, proveedores y notificaciones — reemplazo casero de MaintainX.
+Herramienta de mantenimiento para la casa de playa: tareas (puntuales o recurrentes), activos, proveedores y notificaciones — reemplazo casero de MaintainX.
 
 **Stack**: Next.js 16 (App Router) + Supabase (Postgres, Auth, RLS) + Web Push + Resend. Pensado para desplegarse gratis en Vercel + Supabase.
 
@@ -8,15 +8,15 @@ Herramienta de mantenimiento para la casa de playa: work orders, activos, manten
 
 | Rol | Puede |
 |---|---|
-| **owner** | Todo: activos, mantenimiento preventivo, work orders, proveedores, invitar personal/familia, configurar notificaciones |
-| **family** | Ver todas las tareas, crear tareas puntuales (one-time) |
+| **owner** | Todo: activos, tareas (puntuales o recurrentes), proveedores, invitar personal/familia, configurar notificaciones |
+| **family** | Ver todas las tareas, crear tareas puntuales (nunca recurrentes) |
 | **staff** | Ver y atender las tareas que se le asignan (cambiar estado, agregar notas) |
 | *(proveedores)* | No tienen cuenta — solo quedan en el directorio de `/vendors` como referencia |
 
 ## 1. Crear el proyecto de Supabase
 
 1. Crea un proyecto en [supabase.com](https://supabase.com) (tier gratuito alcanza).
-2. En el SQL Editor, corre el contenido de `supabase/migrations/0001_init.sql`. Esto crea todas las tablas, políticas de RLS y triggers.
+2. En el SQL Editor, corre **todos** los archivos de `supabase/migrations/` en orden (`0001_...`, `0002_...`, etc.). Esto crea todas las tablas, políticas de RLS y triggers.
 3. En **Authentication → Providers**, deja habilitado Email/Password.
 4. El **primer usuario que se registre** se vuelve automáticamente `owner` (ver trigger `handle_new_user` en la migración). Créalo desde **Authentication → Users → Add user** con tu email, o regístrate desde `/login` si habilitas signup público temporalmente.
 5. Copia `Project URL`, `anon public key` y `service_role key` desde **Settings → API**.
@@ -29,7 +29,6 @@ Copia `.env.example` a `.env.local` y llena:
 - `NEXT_PUBLIC_APP_URL` — URL pública de la app (para links en emails).
 - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — genera con `npx web-push generate-vapid-keys`. Necesarias para que funcionen las notificaciones push.
 - `RESEND_API_KEY` / `NOTIFICATIONS_FROM_EMAIL` — crea una cuenta gratis en [resend.com](https://resend.com) y verifica un dominio (o usa su dominio de pruebas mientras tanto).
-- `CRON_SECRET` — cualquier string aleatorio; protege el endpoint que genera las tareas de mantenimiento preventivo.
 
 ## 3. Correr en desarrollo
 
@@ -56,17 +55,15 @@ Funcionan sin costo vía Web Push del navegador (service worker en `public/sw.js
 
 **Importante en iPhone**: Safari solo entrega push si la PWA fue instalada ("Compartir → Agregar a inicio"), no si solo abren el link en el navegador. En Android funciona directo desde Chrome sin instalar nada.
 
-## 6. Mantenimiento preventivo (cron)
+## 6. Tareas recurrentes
 
-`/api/cron/generate-pm-work-orders` revisa las reglas activas en `/pm-schedules`, crea las work orders que ya vencieron y avanza la próxima fecha. Está protegido con el header `Authorization: Bearer $CRON_SECRET`.
-
-Si despliegas en Vercel, `vercel.json` ya define un cron diario (12:00 UTC) que llama ese endpoint — Vercel agrega el header `Authorization` automáticamente usando tu variable de entorno `CRON_SECRET`. En otra plataforma, configura un cron externo (ej. GitHub Actions, cron-job.org) apuntando a esa URL con el mismo header.
+No hay un módulo aparte de "mantenimiento preventivo": al crear una tarea, el owner puede marcarla como recurrente (ej. "cada 3 meses"). Cuando esa tarea se marca como hecha, la app crea automáticamente la siguiente ocurrencia con la fecha límite avanzada — no depende de ningún cron.
 
 ## 7. Desplegar
 
 1. Sube el repo a GitHub y conéctalo en [vercel.com/new](https://vercel.com/new).
 2. Agrega todas las variables de `.env.example` en Vercel (Project Settings → Environment Variables).
-3. Deploy. El cron de `vercel.json` se activa solo.
+3. Deploy.
 
 ## Pendiente / próximas fases
 

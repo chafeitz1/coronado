@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Bell, MessageSquare, Wrench, Building2 } from "lucide-react";
+import { Bell, MessageSquare, Wrench, Building2, Repeat } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { updateWorkOrderStatus, addWorkOrderNote } from "@/app/actions/work-orders";
@@ -12,6 +12,13 @@ const STATUS_LABELS: Record<string, string> = {
   open: "Abierta",
   in_progress: "En proceso",
   done: "Hecha",
+};
+
+const UNIT_LABELS: Record<string, string> = {
+  days: "días",
+  weeks: "semanas",
+  months: "meses",
+  years: "años",
 };
 
 export default async function WorkOrderDetailPage({
@@ -59,6 +66,13 @@ export default async function WorkOrderDetailPage({
           {assignee ? ` · asignada a ${assignee.full_name}` : ""}
           {workOrder.due_date ? ` · vence ${workOrder.due_date}` : ""}
         </p>
+        {workOrder.recurrence_interval_value && (
+          <p className="flex items-center gap-1.5 text-sm text-ink-muted">
+            <Repeat className="size-3.5" />
+            Se repite cada {workOrder.recurrence_interval_value}{" "}
+            {UNIT_LABELS[workOrder.recurrence_interval_unit] ?? workOrder.recurrence_interval_unit}
+          </p>
+        )}
       </div>
 
       {workOrder.description && <p className="text-sm text-ink-secondary">{workOrder.description}</p>}

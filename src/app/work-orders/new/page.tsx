@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createWorkOrder } from "@/app/actions/work-orders";
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { buttonPrimary, card, input, pageHeading } from "@/lib/ui";
+import { RecurrenceFields } from "@/components/recurrence-fields";
+import { buttonPrimary, card, input, mutedText, pageHeading } from "@/lib/ui";
 
 export default async function NewWorkOrderPage() {
   const profile = await requireUser();
@@ -55,16 +56,23 @@ export default async function NewWorkOrderPage() {
         </Field>
 
         {profile.role === "owner" && (
-          <Field label="Asignar a">
-            <select name="assigned_to" defaultValue="" className={input}>
-              <option value="">— Sin asignar —</option>
-              {staff?.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.full_name}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <>
+            <Field label="Asignar a">
+              <select name="assigned_to" defaultValue="" className={input}>
+                <option value="">— Sin asignar —</option>
+                {staff?.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.full_name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <RecurrenceFields />
+            <p className={mutedText}>
+              Si no pones fecha límite, la próxima repetición se calcula desde hoy.
+            </p>
+          </>
         )}
 
         <SubmitButton className={buttonPrimary} pendingLabel="Creando...">

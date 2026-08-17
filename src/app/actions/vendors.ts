@@ -9,6 +9,7 @@ import type { VendorTrade } from "@/lib/types/database";
 function readVendorFields(formData: FormData) {
   return {
     name: String(formData.get("name") ?? "").trim(),
+    contact_name: String(formData.get("contact_name") ?? "").trim() || null,
     trades: formData.getAll("trades").map(String) as VendorTrade[],
     phone: String(formData.get("phone") ?? "").trim() || null,
     email: String(formData.get("email") ?? "").trim() || null,

@@ -13,6 +13,7 @@ import type { VendorTrade } from "@/lib/types/database";
 type VendorRow = {
   id: string;
   name: string;
+  contact_name: string | null;
   trades: VendorTrade[];
   phone: string | null;
   email: string | null;
@@ -34,7 +35,7 @@ export function VendorList({ vendors }: { vendors: VendorRow[] }) {
     const q = search.trim().toLowerCase();
     return vendors.filter((v) => {
       if (activeTrade && !v.trades.includes(activeTrade)) return false;
-      if (q && !v.name.toLowerCase().includes(q)) return false;
+      if (q && !v.name.toLowerCase().includes(q) && !v.contact_name?.toLowerCase().includes(q)) return false;
       return true;
     });
   }, [vendors, search, activeTrade]);
@@ -47,7 +48,7 @@ export function VendorList({ vendors }: { vendors: VendorRow[] }) {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar proveedor por nombre..."
+          placeholder="Buscar por nombre o contacto..."
           className={`${input} pl-9`}
         />
       </div>
@@ -75,7 +76,8 @@ export function VendorList({ vendors }: { vendors: VendorRow[] }) {
               </span>
               <Link href={`/vendors/${vendor.id}`} className="min-w-40 flex-1 hover:underline">
                 <p className="truncate font-medium text-ink">{vendor.name}</p>
-                <p className={mutedText}>
+                <p className={`${mutedText} truncate`}>
+                  {vendor.contact_name ? `${vendor.contact_name} · ` : ""}
                   {vendor.trades.length > 0
                     ? vendor.trades.map((t) => TRADE_LABELS[t]).join(", ")
                     : "Sin especialidad"}

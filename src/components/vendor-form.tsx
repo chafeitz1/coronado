@@ -13,6 +13,7 @@ export function VendorForm({
   submitLabel: string;
   defaultValues?: {
     name: string;
+    contact_name: string | null;
     trades: VendorTrade[];
     phone: string | null;
     email: string | null;
@@ -21,9 +22,19 @@ export function VendorForm({
 }) {
   return (
     <form action={action} className={`space-y-4 p-5 ${card}`}>
-      <Field label="Nombre">
-        <input name="name" required defaultValue={defaultValues?.name} className={input} />
-      </Field>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Nombre (empresa o persona)">
+          <input name="name" required defaultValue={defaultValues?.name} className={input} />
+        </Field>
+        <Field label="Persona de contacto (opcional)">
+          <input
+            name="contact_name"
+            placeholder="A quién preguntar"
+            defaultValue={defaultValues?.contact_name ?? ""}
+            className={input}
+          />
+        </Field>
+      </div>
 
       <div className="space-y-1.5">
         <label className={labelClass}>Especialidades (puedes elegir varias)</label>

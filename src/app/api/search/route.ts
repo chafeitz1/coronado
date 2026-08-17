@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const [{ data: workOrders }, { data: assets }, { data: vendors }] = await Promise.all([
     supabase.from("work_orders").select("id, title, status").ilike("title", like).limit(5),
     supabase.from("assets").select("id, name").ilike("name", like).limit(5),
-    supabase.from("vendors").select("id, name").ilike("name", like).limit(5),
+    supabase.from("vendors").select("id, name").or(`name.ilike.${like},contact_name.ilike.${like}`).limit(5),
   ]);
 
   return NextResponse.json({

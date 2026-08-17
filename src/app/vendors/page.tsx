@@ -17,7 +17,7 @@ export default async function VendorsPage({
 
   const { data: vendors } = await supabase
     .from("vendors")
-    .select("id, name, trades, phone, email")
+    .select("id, name, contact_name, trades, phone, email")
     .order("name");
 
   return (

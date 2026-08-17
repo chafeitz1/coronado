@@ -42,6 +42,7 @@ export default async function VendorDetailPage({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1.5">
           <h1 className={pageHeading}>{vendor.name}</h1>
+          {vendor.contact_name && <p className={mutedText}>Contacto: {vendor.contact_name}</p>}
           {vendor.trades?.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {(vendor.trades as VendorTrade[]).map((trade) => (

@@ -36,7 +36,7 @@ export function VendorForm({
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Teléfono">
+        <Field label="Teléfono (opcional)">
           <input
             name="phone"
             placeholder="+507 6000-0000"
@@ -44,8 +44,14 @@ export function VendorForm({
             className={input}
           />
         </Field>
-        <Field label="Email">
-          <input type="email" name="email" defaultValue={defaultValues?.email ?? ""} className={input} />
+        <Field label="Email (opcional)">
+          <input
+            type="email"
+            name="email"
+            placeholder="Déjalo vacío si no tiene"
+            defaultValue={defaultValues?.email ?? ""}
+            className={input}
+          />
         </Field>
       </div>
 

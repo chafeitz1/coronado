@@ -1,6 +1,7 @@
 import { Lock, RefreshCw, CheckCircle2 } from "lucide-react";
-import type { WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
+import type { Locale, WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
 import { daysUntil } from "@/lib/dates";
+import { getDictionary, format } from "@/lib/i18n/dictionaries";
 
 const baseClass = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide";
 
@@ -8,12 +9,6 @@ const STATUS_STYLES: Record<WorkOrderStatus, string> = {
   open: "bg-status-open-bg text-status-open-fg",
   in_progress: "bg-status-progress-bg text-status-progress-fg",
   done: "bg-status-done-bg text-status-done-fg",
-};
-
-const STATUS_LABELS: Record<WorkOrderStatus, string> = {
-  open: "Abierta",
-  in_progress: "En proceso",
-  done: "Hecha",
 };
 
 const STATUS_ICONS: Record<WorkOrderStatus, typeof Lock> = {
@@ -28,45 +23,45 @@ const PRIORITY_STYLES: Record<WorkOrderPriority, string> = {
   high: "bg-status-overdue-bg text-status-overdue-fg",
 };
 
-const PRIORITY_LABELS: Record<WorkOrderPriority, string> = {
-  low: "Baja",
-  medium: "Media",
-  high: "Alta",
-};
-
-export function StatusBadge({ status }: { status: WorkOrderStatus | string }) {
+export function StatusBadge({ status, locale }: { status: WorkOrderStatus | string; locale: Locale }) {
   const s = status as WorkOrderStatus;
+  const dict = getDictionary(locale);
   const Icon = STATUS_ICONS[s] ?? Lock;
   return (
     <span className={`${baseClass} ${STATUS_STYLES[s] ?? STATUS_STYLES.open}`}>
       <Icon className="size-3" strokeWidth={2.5} />
-      {STATUS_LABELS[s] ?? status}
+      {dict.statuses[s] ?? status}
     </span>
   );
 }
 
-export function PriorityBadge({ priority }: { priority: WorkOrderPriority | string }) {
+export function PriorityBadge({ priority, locale }: { priority: WorkOrderPriority | string; locale: Locale }) {
   const p = priority as WorkOrderPriority;
+  const dict = getDictionary(locale);
   return (
     <span className={`${baseClass} ${PRIORITY_STYLES[p] ?? PRIORITY_STYLES.medium}`}>
-      {PRIORITY_LABELS[p] ?? priority}
+      {dict.priorities[p] ?? priority}
     </span>
   );
 }
 
-export function OverdueBadge() {
-  return <span className={`${baseClass} bg-status-overdue-bg text-status-overdue-fg`}>Vencida</span>;
+export function OverdueBadge({ locale }: { locale: Locale }) {
+  const dict = getDictionary(locale);
+  return <span className={`${baseClass} bg-status-overdue-bg text-status-overdue-fg`}>{dict.badges.overdue}</span>;
 }
 
 const WARRANTY_WARNING_DAYS = 60;
 
-export function WarrantyBadge({ warrantyExpires }: { warrantyExpires: string }) {
+export function WarrantyBadge({ warrantyExpires, locale }: { warrantyExpires: string; locale: Locale }) {
+  const dict = getDictionary(locale);
   const days = daysUntil(warrantyExpires);
-  if (days < 0) return <span className={`${baseClass} bg-status-overdue-bg text-status-overdue-fg`}>Garantía vencida</span>;
+  if (days < 0) {
+    return <span className={`${baseClass} bg-status-overdue-bg text-status-overdue-fg`}>{dict.badges.warrantyExpired}</span>;
+  }
   if (days <= WARRANTY_WARNING_DAYS) {
     return (
       <span className={`${baseClass} bg-status-progress-bg text-status-progress-fg`}>
-        Garantía vence en {days} días
+        {format(dict.badges.warrantyExpiresIn, { days })}
       </span>
     );
   }

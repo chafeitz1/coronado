@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SuccessBanner } from "@/components/ui/success-banner";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { AssetAttachments } from "@/app/assets/[id]/attachments-section";
+import { getDictionary, format } from "@/lib/i18n/dictionaries";
 import {
   buttonUtility,
   card,
@@ -18,13 +19,6 @@ import {
   pageHeading,
   sectionHeading,
 } from "@/lib/ui";
-
-const UNIT_LABELS: Record<string, string> = {
-  days: "días",
-  weeks: "semanas",
-  months: "meses",
-  years: "años",
-};
 
 export default async function AssetDetailPage({
   params,
@@ -36,6 +30,7 @@ export default async function AssetDetailPage({
   const { id } = await params;
   const { updated } = await searchParams;
   const profile = await requireUser();
+  const dict = getDictionary(profile.locale);
   const supabase = await createClient();
 
   const { data: asset } = await supabase
@@ -75,36 +70,43 @@ export default async function AssetDetailPage({
     .filter((wo) => wo.status === "done")
     .sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""));
 
+  const unitLabels: Record<string, string> = {
+    days: dict.assetDetail.unitDays,
+    weeks: dict.assetDetail.unitWeeks,
+    months: dict.assetDetail.unitMonths,
+    years: dict.assetDetail.unitYears,
+  };
+
   const details = [
-    { label: "Categoría", value: asset.category },
-    { label: "Ubicación", value: asset.location },
-    { label: "Marca", value: asset.brand },
-    { label: "Modelo", value: asset.model },
-    { label: "Número de serie", value: asset.serial_number },
-    { label: "Fecha de compra", value: asset.purchase_date },
-    { label: "Garantía vence", value: asset.warranty_expires },
+    { label: dict.assetDetail.categoryLabel, value: asset.category },
+    { label: dict.assetDetail.locationLabel, value: asset.location },
+    { label: dict.assetDetail.brandLabel, value: asset.brand },
+    { label: dict.assetDetail.modelLabel, value: asset.model },
+    { label: dict.assetDetail.serialLabel, value: asset.serial_number },
+    { label: dict.assetDetail.purchaseDateLabel, value: asset.purchase_date },
+    { label: dict.assetDetail.warrantyLabel, value: asset.warranty_expires },
   ].filter((d) => d.value);
 
   return (
     <div className="max-w-2xl space-y-8">
-      {updated && <SuccessBanner message="Cambios guardados." />}
+      {updated && <SuccessBanner message={dict.assetDetail.updatedBanner} />}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1.5">
           <h1 className={pageHeading}>{asset.name}</h1>
-          {asset.warranty_expires && <WarrantyBadge warrantyExpires={asset.warranty_expires} />}
+          {asset.warranty_expires && <WarrantyBadge warrantyExpires={asset.warranty_expires} locale={profile.locale} />}
         </div>
         {profile.role === "owner" && (
           <div className="flex gap-2">
             <Link href={`/assets/${asset.id}/edit`} className={buttonUtility}>
-              <Pencil className="size-3.5" /> Editar
+              <Pencil className="size-3.5" /> {dict.assetDetail.edit}
             </Link>
             <form action={deleteAsset.bind(null, asset.id)}>
               <ConfirmSubmitButton
-                confirmMessage={`¿Borrar ${asset.name} del inventario?`}
+                confirmMessage={format(dict.assetDetail.deleteConfirm, { name: asset.name })}
                 className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-hairline bg-surface px-3 py-1.5 text-sm font-medium text-status-overdue-fg transition-colors hover:bg-status-overdue-bg"
               >
-                <Trash2 className="size-3.5" /> Borrar
+                <Trash2 className="size-3.5" /> {dict.assetDetail.delete}
               </ConfirmSubmitButton>
             </form>
           </div>
@@ -130,7 +132,7 @@ export default async function AssetDetailPage({
             <Building2 className="size-4" strokeWidth={2} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className={mutedText}>Proveedor preferido</p>
+            <p className={mutedText}>{dict.assetDetail.preferredVendorLabel}</p>
             <p className="font-medium text-ink">{preferredVendor.name}</p>
           </div>
         </Link>
@@ -138,20 +140,20 @@ export default async function AssetDetailPage({
 
       {asset.notes && (
         <div className="space-y-2">
-          <h2 className={sectionHeading}>Notas</h2>
+          <h2 className={sectionHeading}>{dict.assetDetail.notesTitle}</h2>
           <p className={`p-4 text-sm text-ink-secondary ${card}`}>{asset.notes}</p>
         </div>
       )}
 
       <section className="space-y-2">
-        <h2 className={sectionHeading}>Fotos</h2>
-        <AssetAttachments assetId={asset.id} attachments={attachments} />
+        <h2 className={sectionHeading}>{dict.assetDetail.photosTitle}</h2>
+        <AssetAttachments assetId={asset.id} attachments={attachments} dict={dict} />
       </section>
 
       <section className="space-y-2">
         <h2 className={sectionHeading}>
           <span className="inline-flex items-center gap-1.5">
-            <CalendarClock className="size-3.5" /> Próximos mantenimientos
+            <CalendarClock className="size-3.5" /> {dict.assetDetail.upcomingTitle}
           </span>
         </h2>
         {upcoming.length > 0 ? (
@@ -170,27 +172,28 @@ export default async function AssetDetailPage({
                       )}
                     </p>
                     <p className={mutedText}>
-                      {wo.due_date ? `vence ${wo.due_date}` : "sin fecha"}
+                      {wo.due_date ? format(dict.assetDetail.dueDate, { date: wo.due_date }) : dict.assetDetail.noDueDate}
                       {wo.recurrence_interval_value &&
-                        ` · cada ${wo.recurrence_interval_value} ${
-                          UNIT_LABELS[wo.recurrence_interval_unit ?? ""] ?? wo.recurrence_interval_unit
-                        }`}
+                        ` · ${format(dict.assetDetail.recurrence, {
+                          value: wo.recurrence_interval_value,
+                          unit: unitLabels[wo.recurrence_interval_unit ?? ""] ?? wo.recurrence_interval_unit ?? "",
+                        })}`}
                     </p>
                   </div>
-                  <StatusBadge status={wo.status} />
+                  <StatusBadge status={wo.status} locale={profile.locale} />
                 </Link>
               </li>
             ))}
           </ul>
         ) : (
-          <EmptyState icon={CalendarClock} message="No hay mantenimientos programados." />
+          <EmptyState icon={CalendarClock} message={dict.assetDetail.emptyUpcoming} />
         )}
       </section>
 
       <section className="space-y-2">
         <h2 className={sectionHeading}>
           <span className="inline-flex items-center gap-1.5">
-            <History className="size-3.5" /> Historial
+            <History className="size-3.5" /> {dict.assetDetail.historyTitle}
           </span>
         </h2>
         {history.length > 0 ? (
@@ -204,16 +207,16 @@ export default async function AssetDetailPage({
                   <div className="min-w-40 flex-1">
                     <p className="truncate font-medium text-ink">{wo.title}</p>
                     <p className={mutedText}>
-                      {wo.completed_at ? new Date(wo.completed_at).toLocaleDateString("es") : "—"}
+                      {wo.completed_at ? new Date(wo.completed_at).toLocaleDateString(profile.locale) : "—"}
                     </p>
                   </div>
-                  <StatusBadge status={wo.status} />
+                  <StatusBadge status={wo.status} locale={profile.locale} />
                 </Link>
               </li>
             ))}
           </ul>
         ) : (
-          <EmptyState icon={History} message="Todavía no se le ha hecho ningún mantenimiento." />
+          <EmptyState icon={History} message={dict.assetDetail.emptyHistory} />
         )}
       </section>
     </div>

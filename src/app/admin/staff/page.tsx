@@ -7,18 +7,20 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { NotificationEventType } from "@/lib/types/database";
-
-const EVENTS: { key: NotificationEventType; label: string }[] = [
-  { key: "task_assigned", label: "Tarea asignada" },
-  { key: "status_changed", label: "Cambio de estado" },
-  { key: "due_soon", label: "Por vencer" },
-  { key: "overdue", label: "Vencida" },
-];
 
 export default async function StaffAdminPage() {
   const owner = await requireOwner();
+  const dict = getDictionary(owner.locale);
   const supabase = await createClient();
+
+  const events: { key: NotificationEventType; label: string }[] = [
+    { key: "task_assigned", label: dict.admin.eventTaskAssigned },
+    { key: "status_changed", label: dict.admin.eventStatusChanged },
+    { key: "due_soon", label: dict.admin.eventDueSoon },
+    { key: "overdue", label: dict.admin.eventOverdue },
+  ];
 
   const [{ data: members }, { data: prefs }, { data: ownerPrefs }] = await Promise.all([
     supabase.from("profiles").select("id, full_name, role").neq("role", "owner").order("full_name"),
@@ -39,12 +41,12 @@ export default async function StaffAdminPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className={pageHeading}>Personal</h1>
-        <p className={mutedText}>Invita gente y controla sus notificaciones.</p>
+        <h1 className={pageHeading}>{dict.admin.title}</h1>
+        <p className={mutedText}>{dict.admin.subtitle}</p>
       </div>
 
       <section className={`space-y-3 p-5 ${card}`}>
-        <h2 className="font-semibold text-ink">Tus notificaciones</h2>
+        <h2 className="font-semibold text-ink">{dict.admin.yourNotifications}</h2>
         <label className="flex items-center gap-2 text-sm text-ink-muted">
           <PrefToggle
             userId={owner.id}
@@ -52,33 +54,33 @@ export default async function StaffAdminPage() {
             channel="email"
             defaultEnabled={ownerNoteEmailEnabled}
           />
-          <Bell className="size-3.5" /> Avísame por email cuando alguien marque una nota como importante
+          <Bell className="size-3.5" /> {dict.admin.notifyMe}
         </label>
       </section>
 
       <section className={`space-y-4 p-5 ${card}`}>
-        <h2 className="font-semibold text-ink">Invitar a alguien</h2>
+        <h2 className="font-semibold text-ink">{dict.admin.inviteSomeone}</h2>
         <form action={inviteMember} className="flex flex-wrap items-end gap-3">
-          <Field label="Nombre">
+          <Field label={dict.admin.nameLabel}>
             <input name="full_name" required className={input} />
           </Field>
-          <Field label="Email">
+          <Field label={dict.admin.emailLabel}>
             <input type="email" name="email" required className={input} />
           </Field>
-          <Field label="Rol">
+          <Field label={dict.admin.roleLabel}>
             <select name="role" defaultValue="staff" className={input}>
-              <option value="staff">Personal</option>
-              <option value="family">Familia</option>
+              <option value="staff">{dict.admin.staffOption}</option>
+              <option value="family">{dict.admin.familyOption}</option>
             </select>
           </Field>
-          <SubmitButton className={buttonPrimary} pendingLabel="Enviando...">
-            Enviar invitación
+          <SubmitButton className={buttonPrimary} pendingLabel={dict.admin.sendInvitePending}>
+            {dict.admin.sendInvite}
           </SubmitButton>
         </form>
       </section>
 
       <section className="space-y-4">
-        <h2 className={sectionHeading}>Personal y familia</h2>
+        <h2 className={sectionHeading}>{dict.admin.staffAndFamily}</h2>
 
         {members && members.length > 0 ? (
           <div className="space-y-3">
@@ -90,7 +92,9 @@ export default async function StaffAdminPage() {
                   </span>
                   <div>
                     <p className="font-medium text-ink">{member.full_name}</p>
-                    <p className={mutedText}>{member.role === "staff" ? "Personal" : "Familia"}</p>
+                    <p className={mutedText}>
+                      {member.role === "staff" ? dict.admin.staffOption : dict.admin.familyOption}
+                    </p>
                   </div>
                 </div>
 
@@ -99,13 +103,13 @@ export default async function StaffAdminPage() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-left text-xs text-ink-faint">
-                          <th className="pb-2 font-normal">Evento</th>
-                          <th className="pb-2 font-normal">Push</th>
-                          <th className="pb-2 font-normal">Email</th>
+                          <th className="pb-2 font-normal">{dict.admin.eventHeader}</th>
+                          <th className="pb-2 font-normal">{dict.admin.pushHeader}</th>
+                          <th className="pb-2 font-normal">{dict.admin.emailHeader}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-hairline">
-                        {EVENTS.map((event) => (
+                        {events.map((event) => (
                           <tr key={event.key}>
                             <td className="py-2 text-ink-secondary">{event.label}</td>
                             <td className="py-2">
@@ -134,13 +138,13 @@ export default async function StaffAdminPage() {
                     </table>
                   </div>
                 ) : (
-                  <p className={`mt-2 ${mutedText}`}>Puede ver y crear tareas puntuales.</p>
+                  <p className={`mt-2 ${mutedText}`}>{dict.admin.canCreateTasks}</p>
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <EmptyState icon={Users} message="Todavía no has invitado a nadie." />
+          <EmptyState icon={Users} message={dict.admin.empty} />
         )}
       </section>
     </div>

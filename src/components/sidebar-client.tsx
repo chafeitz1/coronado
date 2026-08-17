@@ -19,6 +19,8 @@ import { logout } from "@/app/actions/auth";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { CommandPalette, OPEN_COMMAND_PALETTE_EVENT } from "@/components/command-palette";
 import { Avatar } from "@/components/ui/avatar";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import type { Locale } from "@/lib/types/database";
 
 const ICONS = {
   home: Home,
@@ -43,19 +45,22 @@ export function SidebarClient({
   profile,
   workLinks,
   manageLinks,
+  locale,
 }: {
   profile: { fullName: string; role: string; avatarUrl: string | null };
   workLinks: SidebarLink[];
   manageLinks: SidebarLink[];
+  locale: Locale;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const dict = getDictionary(locale);
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
     <>
-      <CommandPalette />
+      <CommandPalette locale={locale} />
 
       {/* Mobile top bar */}
       <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hairline bg-canvas px-4 py-3 md:hidden">
@@ -63,13 +68,13 @@ export function SidebarClient({
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">
             C
           </span>
-          <span className="font-semibold tracking-tight text-ink">Casa Coronado</span>
+          <span className="font-semibold tracking-tight text-ink">{dict.sidebar.appName}</span>
         </Link>
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={openSearch}
-            aria-label="Buscar"
+            aria-label={dict.sidebar.search}
             className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
           >
             <Search className="size-5" />
@@ -77,7 +82,7 @@ export function SidebarClient({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            aria-label="Abrir menú"
+            aria-label={dict.sidebar.openMenu}
             className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
           >
             <Menu className="size-5" />
@@ -89,7 +94,7 @@ export function SidebarClient({
       {open && (
         <button
           type="button"
-          aria-label="Cerrar menú"
+          aria-label={dict.sidebar.closeMenu}
           onClick={() => setOpen(false)}
           className="fixed inset-0 z-30 bg-black/30 md:hidden"
         />
@@ -105,12 +110,12 @@ export function SidebarClient({
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">
               C
             </span>
-            <span className="font-semibold tracking-tight text-ink">Casa Coronado</span>
+            <span className="font-semibold tracking-tight text-ink">{dict.sidebar.appName}</span>
           </Link>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            aria-label="Cerrar menú"
+            aria-label={dict.sidebar.closeMenu}
             className="rounded-md p-1 text-ink-muted hover:bg-surface-hover md:hidden"
           >
             <X className="size-5" />
@@ -124,16 +129,21 @@ export function SidebarClient({
             className="flex w-full items-center gap-2 rounded-lg border border-hairline bg-canvas-soft px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-hover"
           >
             <Search className="size-4" />
-            <span className="flex-1 text-left">Buscar...</span>
+            <span className="flex-1 text-left">{dict.sidebar.searchPlaceholder}</span>
             <kbd className="rounded border border-hairline bg-surface px-1.5 py-0.5 text-xs text-ink-faint">⌘K</kbd>
           </button>
         </div>
 
         <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
-          <SidebarSection title="Trabajo" links={workLinks} isActive={isActive} onNavigate={() => setOpen(false)} />
+          <SidebarSection
+            title={dict.sidebar.workSection}
+            links={workLinks}
+            isActive={isActive}
+            onNavigate={() => setOpen(false)}
+          />
           {manageLinks.length > 0 && (
             <SidebarSection
-              title="Administrar"
+              title={dict.sidebar.manageSection}
               links={manageLinks}
               isActive={isActive}
               onNavigate={() => setOpen(false)}
@@ -143,20 +153,20 @@ export function SidebarClient({
 
         <div className="border-t border-hairline p-3">
           <div className="flex items-center justify-between px-1 pb-2">
-            <PushSubscribeButton />
+            <PushSubscribeButton locale={locale} />
           </div>
           <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-hover">
             <Link href="/profile" onClick={() => setOpen(false)} className="flex min-w-0 flex-1 items-center gap-2.5">
               <Avatar fullName={profile.fullName} avatarUrl={profile.avatarUrl} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-ink">{profile.fullName}</p>
-                <p className="truncate text-xs text-ink-muted">{roleLabel(profile.role)}</p>
+                <p className="truncate text-xs text-ink-muted">{dict.roles[profile.role as keyof typeof dict.roles]}</p>
               </div>
             </Link>
             <form action={logout}>
               <button
                 type="submit"
-                aria-label="Salir"
+                aria-label={dict.sidebar.logout}
                 className="rounded-md p-1.5 text-ink-faint hover:bg-canvas-soft hover:text-ink"
               >
                 <LogOut className="size-4" />
@@ -217,10 +227,4 @@ function SidebarSection({
       </ul>
     </div>
   );
-}
-
-function roleLabel(role: string) {
-  if (role === "owner") return "Dueño";
-  if (role === "family") return "Familia";
-  return "Personal";
 }

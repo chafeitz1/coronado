@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Bell, BellOff } from "lucide-react";
 import { savePushSubscription, removePushSubscription } from "@/app/actions/push";
 import { buttonGhost } from "@/lib/ui";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import type { Locale } from "@/lib/types/database";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -16,7 +18,8 @@ function isPushSupported() {
   return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window;
 }
 
-export function PushSubscribeButton() {
+export function PushSubscribeButton({ locale }: { locale: Locale }) {
+  const dict = getDictionary(locale);
   const [status, setStatus] = useState<"unknown" | "subscribed" | "unsubscribed" | "unsupported">(
     () => (isPushSupported() ? "unknown" : "unsupported")
   );
@@ -38,7 +41,7 @@ export function PushSubscribeButton() {
   async function subscribe() {
     const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!vapidKey) {
-      alert("Notificaciones push no están configuradas todavía.");
+      alert(dict.pushButton.notConfigured);
       return;
     }
 
@@ -70,11 +73,11 @@ export function PushSubscribeButton() {
     >
       {status === "subscribed" ? (
         <>
-          <Bell className="size-4" /> Notificaciones activas
+          <Bell className="size-4" /> {dict.pushButton.active}
         </>
       ) : (
         <>
-          <BellOff className="size-4" /> Activar notificaciones
+          <BellOff className="size-4" /> {dict.pushButton.inactive}
         </>
       )}
     </button>

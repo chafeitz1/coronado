@@ -6,8 +6,17 @@ import { uploadAvatar } from "@/app/actions/profile";
 import { Avatar } from "@/components/ui/avatar";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonSecondary } from "@/lib/ui";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-export function AvatarForm({ fullName, avatarUrl }: { fullName: string; avatarUrl: string | null }) {
+export function AvatarForm({
+  fullName,
+  avatarUrl,
+  dict,
+}: {
+  fullName: string;
+  avatarUrl: string | null;
+  dict: Dictionary;
+}) {
   const [state, action] = useActionState(uploadAvatar, undefined);
   const [preview, setPreview] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -31,10 +40,10 @@ export function AvatarForm({ fullName, avatarUrl }: { fullName: string; avatarUr
           }}
         />
         <button type="button" onClick={() => inputRef.current?.click()} className={buttonSecondary}>
-          <Camera className="size-4" /> Elegir foto
+          <Camera className="size-4" /> {dict.avatarForm.choosePhoto}
         </button>
-        <SubmitButton className={buttonSecondary} pendingLabel="Subiendo...">
-          Subir foto
+        <SubmitButton className={buttonSecondary} pendingLabel={dict.avatarForm.uploadPending}>
+          {dict.avatarForm.uploadPhoto}
         </SubmitButton>
         {state?.error && <p className="text-sm text-status-overdue-fg">{state.error}</p>}
       </div>

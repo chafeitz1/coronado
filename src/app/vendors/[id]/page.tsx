@@ -10,7 +10,8 @@ import { SuccessBanner } from "@/components/ui/success-banner";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { telHref, whatsAppHref } from "@/lib/phone";
-import { TRADE_LABELS } from "@/lib/vendor-trades";
+import { getTradeLabels } from "@/lib/vendor-trades";
+import { getDictionary, format } from "@/lib/i18n/dictionaries";
 import type { VendorTrade } from "@/lib/types/database";
 import { buttonSecondary, buttonUtility, card, listCard, listRow, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 
@@ -24,6 +25,8 @@ export default async function VendorDetailPage({
   const { id } = await params;
   const { updated } = await searchParams;
   const profile = await requireUser();
+  const dict = getDictionary(profile.locale);
+  const tradeLabels = getTradeLabels(profile.locale);
   const supabase = await createClient();
 
   const { data: vendor } = await supabase.from("vendors").select("*").eq("id", id).single();
@@ -37,12 +40,14 @@ export default async function VendorDetailPage({
 
   return (
     <div className="max-w-2xl space-y-8">
-      {updated && <SuccessBanner message="Cambios guardados." />}
+      {updated && <SuccessBanner message={dict.vendorDetail.updatedBanner} />}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1.5">
           <h1 className={pageHeading}>{vendor.name}</h1>
-          {vendor.contact_name && <p className={mutedText}>Contacto: {vendor.contact_name}</p>}
+          {vendor.contact_name && (
+            <p className={mutedText}>{format(dict.vendorDetail.contact, { name: vendor.contact_name })}</p>
+          )}
           {vendor.trades?.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {(vendor.trades as VendorTrade[]).map((trade) => (
@@ -50,7 +55,7 @@ export default async function VendorDetailPage({
                   key={trade}
                   className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary"
                 >
-                  {TRADE_LABELS[trade]}
+                  {tradeLabels[trade]}
                 </span>
               ))}
             </div>
@@ -59,14 +64,14 @@ export default async function VendorDetailPage({
         {profile.role === "owner" && (
           <div className="flex gap-2">
             <Link href={`/vendors/${vendor.id}/edit`} className={buttonUtility}>
-              <Pencil className="size-3.5" /> Editar
+              <Pencil className="size-3.5" /> {dict.vendorDetail.edit}
             </Link>
             <form action={deleteVendor.bind(null, vendor.id)}>
               <ConfirmSubmitButton
-                confirmMessage={`¿Borrar a ${vendor.name} del directorio?`}
+                confirmMessage={format(dict.vendorDetail.deleteConfirm, { name: vendor.name })}
                 className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-hairline bg-surface px-3 py-1.5 text-sm font-medium text-status-overdue-fg transition-colors hover:bg-status-overdue-bg"
               >
-                <Trash2 className="size-3.5" /> Borrar
+                <Trash2 className="size-3.5" /> {dict.vendorDetail.delete}
               </ConfirmSubmitButton>
             </form>
           </div>
@@ -77,7 +82,7 @@ export default async function VendorDetailPage({
         <div className="flex flex-wrap gap-2">
           {vendor.phone && (
             <a href={telHref(vendor.phone)} className={buttonSecondary}>
-              <Phone className="size-4" /> Llamar
+              <Phone className="size-4" /> {dict.vendorDetail.call}
             </a>
           )}
           {vendor.phone && (
@@ -87,12 +92,12 @@ export default async function VendorDetailPage({
               rel="noopener noreferrer"
               className={buttonSecondary}
             >
-              <WhatsAppIcon className="size-4 text-[#25D366]" /> WhatsApp
+              <WhatsAppIcon className="size-4 text-[#25D366]" /> {dict.vendorDetail.whatsapp}
             </a>
           )}
           {vendor.email && (
             <a href={`mailto:${vendor.email}`} className={buttonSecondary}>
-              <Mail className="size-4" /> Email
+              <Mail className="size-4" /> {dict.vendorDetail.email}
             </a>
           )}
         </div>
@@ -101,25 +106,25 @@ export default async function VendorDetailPage({
       <div className={`flex flex-wrap gap-x-8 gap-y-2 p-4 text-sm ${card}`}>
         {vendor.phone && (
           <span>
-            <span className={mutedText}>Teléfono:</span> {vendor.phone}
+            <span className={mutedText}>{dict.vendorDetail.phoneLabel}:</span> {vendor.phone}
           </span>
         )}
         {vendor.email && (
           <span>
-            <span className={mutedText}>Email:</span> {vendor.email}
+            <span className={mutedText}>{dict.vendorDetail.emailLabel}:</span> {vendor.email}
           </span>
         )}
       </div>
 
       {vendor.notes && (
         <div className="space-y-2">
-          <h2 className={sectionHeading}>Notas</h2>
+          <h2 className={sectionHeading}>{dict.vendorDetail.notesTitle}</h2>
           <p className={`p-4 text-sm text-ink-secondary ${card}`}>{vendor.notes}</p>
         </div>
       )}
 
       <section className="space-y-2">
-        <h2 className={sectionHeading}>Historial de tareas</h2>
+        <h2 className={sectionHeading}>{dict.vendorDetail.historyTitle}</h2>
         {workOrders && workOrders.length > 0 ? (
           <ul className={listCard}>
             {workOrders.map((wo) => (
@@ -130,15 +135,15 @@ export default async function VendorDetailPage({
                   </span>
                   <div className="min-w-40 flex-1">
                     <p className="truncate font-medium text-ink">{wo.title}</p>
-                    <p className={mutedText}>{new Date(wo.created_at).toLocaleDateString("es")}</p>
+                    <p className={mutedText}>{new Date(wo.created_at).toLocaleDateString(profile.locale)}</p>
                   </div>
-                  <StatusBadge status={wo.status} />
+                  <StatusBadge status={wo.status} locale={profile.locale} />
                 </Link>
               </li>
             ))}
           </ul>
         ) : (
-          <EmptyState icon={ClipboardList} message="Todavía no se le ha asignado ninguna tarea." />
+          <EmptyState icon={ClipboardList} message={dict.vendorDetail.emptyHistory} />
         )}
       </section>
     </div>

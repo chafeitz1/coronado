@@ -67,7 +67,13 @@ Cada usuario (dueño, familia o personal) puede entrar a `/profile` haciendo cli
 
 Cada activo (A/C, bomba de piscina, electrodoméstico, etc.) puede llevar marca, modelo, número de serie, un proveedor preferido (para saber a quién llamar) y fotos. Las fotos se guardan en el bucket `attachments` de Supabase Storage, creado junto con esas columnas en la migración `0008_assets_complete.sql`. La página de cada activo muestra su historial de mantenimiento (tareas ya hechas) y los próximos mantenimientos programados (tareas abiertas o recurrentes), y en el listado se avisa cuando una garantía está por vencer o ya venció.
 
-## 9. Desplegar
+## 9. Idioma
+
+La plataforma está en español e inglés. Cada quien elige su idioma desde `/profile` → "Idioma" — la preferencia se guarda por cuenta (columna `locale` en `profiles`, migración `0009_user_locale.sql`) y se aplica en todas las pantallas la próxima vez que carguen, sin afectar a los demás usuarios. Nuevas cuentas empiezan en español por defecto. La pantalla de login siempre está en español (ahí todavía no hay una cuenta con la cual asociar la preferencia).
+
+Las traducciones viven en `src/lib/i18n/dictionaries.ts` — un diccionario por idioma, con TypeScript verificando que ambos tengan exactamente las mismas claves.
+
+## 10. Desplegar
 
 1. Sube el repo a GitHub y conéctalo en [vercel.com/new](https://vercel.com/new).
 2. Agrega todas las variables de `.env.example` en Vercel (Project Settings → Environment Variables).

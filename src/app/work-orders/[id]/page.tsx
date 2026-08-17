@@ -7,19 +7,7 @@ import { StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, buttonUtility, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
-
-const STATUS_LABELS: Record<string, string> = {
-  open: "Abierta",
-  in_progress: "En proceso",
-  done: "Hecha",
-};
-
-const UNIT_LABELS: Record<string, string> = {
-  days: "días",
-  weeks: "semanas",
-  months: "meses",
-  years: "años",
-};
+import { getDictionary, format } from "@/lib/i18n/dictionaries";
 
 export default async function WorkOrderDetailPage({
   params,
@@ -28,6 +16,7 @@ export default async function WorkOrderDetailPage({
 }) {
   const { id } = await params;
   const profile = await requireUser();
+  const dict = getDictionary(profile.locale);
   const supabase = await createClient();
 
   const { data: workOrder } = await supabase
@@ -54,23 +43,32 @@ export default async function WorkOrderDetailPage({
   const assignee = single(workOrder.assignee);
   const creator = single(workOrder.creator);
 
+  const unitLabels: Record<string, string> = {
+    days: dict.workOrderDetail.unitDays,
+    weeks: dict.workOrderDetail.unitWeeks,
+    months: dict.workOrderDetail.unitMonths,
+    years: dict.workOrderDetail.unitYears,
+  };
+
   return (
     <div className="max-w-2xl space-y-8">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className={pageHeading}>{workOrder.title}</h1>
-          <StatusBadge status={workOrder.status} />
+          <StatusBadge status={workOrder.status} locale={profile.locale} />
         </div>
         <p className={mutedText}>
-          creada por {creator?.full_name ?? "—"}
-          {assignee ? ` · asignada a ${assignee.full_name}` : ""}
-          {workOrder.due_date ? ` · vence ${workOrder.due_date}` : ""}
+          {format(dict.workOrderDetail.createdBy, { name: creator?.full_name ?? "—" })}
+          {assignee ? ` · ${format(dict.workOrderDetail.assignedTo, { name: assignee.full_name })}` : ""}
+          {workOrder.due_date ? ` · ${format(dict.workOrderDetail.dueDate, { date: workOrder.due_date })}` : ""}
         </p>
         {workOrder.recurrence_interval_value && (
           <p className="flex items-center gap-1.5 text-sm text-ink-muted">
             <Repeat className="size-3.5" />
-            Se repite cada {workOrder.recurrence_interval_value}{" "}
-            {UNIT_LABELS[workOrder.recurrence_interval_unit] ?? workOrder.recurrence_interval_unit}
+            {format(dict.workOrderDetail.recurrence, {
+              value: workOrder.recurrence_interval_value,
+              unit: unitLabels[workOrder.recurrence_interval_unit ?? ""] ?? workOrder.recurrence_interval_unit ?? "",
+            })}
           </p>
         )}
       </div>
@@ -101,8 +99,8 @@ export default async function WorkOrderDetailPage({
             .filter((status) => status !== workOrder.status)
             .map((status) => (
               <form key={status} action={updateWorkOrderStatus.bind(null, workOrder.id, status)}>
-                <SubmitButton className={buttonUtility} pendingLabel="...">
-                  Marcar {STATUS_LABELS[status].toLowerCase()}
+                <SubmitButton className={buttonUtility} pendingLabel={dict.workOrderDetail.markPending}>
+                  {format(dict.workOrderDetail.markAs, { status: dict.statuses[status].toLowerCase() })}
                 </SubmitButton>
               </form>
             ))}
@@ -110,7 +108,7 @@ export default async function WorkOrderDetailPage({
       )}
 
       <section className="space-y-4">
-        <h2 className={sectionHeading}>Notas</h2>
+        <h2 className={sectionHeading}>{dict.workOrderDetail.notesTitle}</h2>
 
         <ul className="space-y-3">
           {notes?.map((note) => {
@@ -123,10 +121,10 @@ export default async function WorkOrderDetailPage({
                 <div className="min-w-0">
                   <p className="text-ink">{note.body}</p>
                   <p className={`mt-1.5 flex items-center gap-1 text-xs ${mutedText}`}>
-                    {author?.full_name ?? "—"} · {new Date(note.created_at).toLocaleString("es")}
+                    {author?.full_name ?? "—"} · {new Date(note.created_at).toLocaleString(profile.locale)}
                     {note.notify_owner && (
                       <span className="ml-1 inline-flex items-center gap-1 text-status-progress-fg">
-                        <Bell className="size-3" /> notificó al dueño
+                        <Bell className="size-3" /> {dict.workOrderDetail.notifiedOwner}
                       </span>
                     )}
                   </p>
@@ -134,7 +132,7 @@ export default async function WorkOrderDetailPage({
               </li>
             );
           })}
-          {(!notes || notes.length === 0) && <EmptyState icon={MessageSquare} message="Sin notas todavía." />}
+          {(!notes || notes.length === 0) && <EmptyState icon={MessageSquare} message={dict.workOrderDetail.emptyNotes} />}
         </ul>
 
         <form action={addWorkOrderNote} className={`space-y-3 p-4 ${card}`}>
@@ -143,17 +141,17 @@ export default async function WorkOrderDetailPage({
             name="body"
             required
             rows={2}
-            placeholder="Escribe una nota..."
+            placeholder={dict.workOrderDetail.notePlaceholder}
             className={input}
           />
           {profile.role !== "owner" && (
             <label className="flex items-center gap-2 text-sm text-ink-muted">
               <input type="checkbox" name="notify_owner" className="size-4 rounded border-hairline accent-primary" />
-              <Bell className="size-3.5" /> Notificar al dueño por email
+              <Bell className="size-3.5" /> {dict.workOrderDetail.notifyOwner}
             </label>
           )}
-          <SubmitButton className={buttonPrimary} pendingLabel="Agregando...">
-            Agregar nota
+          <SubmitButton className={buttonPrimary} pendingLabel={dict.workOrderDetail.addNotePending}>
+            {dict.workOrderDetail.addNote}
           </SubmitButton>
         </form>
       </section>

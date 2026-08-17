@@ -6,6 +6,8 @@ import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state";
 import { buttonPrimary, listCard, listRow, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { isoDateOffset } from "@/lib/dates";
+import { getDictionary, format, type Dictionary } from "@/lib/i18n/dictionaries";
+import type { Locale } from "@/lib/types/database";
 
 type OrderRow = {
   id: string;
@@ -20,14 +22,6 @@ type OrderRow = {
 
 type ViewKey = "all" | "open" | "overdue" | "due_soon" | "done";
 
-const VIEWS: { key: ViewKey; label: string }[] = [
-  { key: "all", label: "Todas" },
-  { key: "open", label: "Pendientes" },
-  { key: "overdue", label: "Vencidas" },
-  { key: "due_soon", label: "Por vencer" },
-  { key: "done", label: "Completadas" },
-];
-
 function classify(wo: OrderRow, today: string, in7Days: string): ViewKey {
   if (wo.status === "done") return "done";
   if (wo.due_date && wo.due_date < today) return "overdue";
@@ -41,9 +35,18 @@ export default async function WorkOrdersPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const profile = await requireUser();
+  const dict = getDictionary(profile.locale);
   const supabase = await createClient();
   const { view: rawView } = await searchParams;
-  const view: ViewKey = VIEWS.some((v) => v.key === rawView) ? (rawView as ViewKey) : "all";
+
+  const views: { key: ViewKey; label: string }[] = [
+    { key: "all", label: dict.workOrders.viewAll },
+    { key: "open", label: dict.workOrders.viewOpen },
+    { key: "overdue", label: dict.workOrders.viewOverdue },
+    { key: "due_soon", label: dict.workOrders.viewDueSoon },
+    { key: "done", label: dict.workOrders.viewDone },
+  ];
+  const view: ViewKey = views.some((v) => v.key === rawView) ? (rawView as ViewKey) : "all";
 
   const { data: workOrders } = await supabase
     .from("work_orders")
@@ -64,18 +67,18 @@ export default async function WorkOrdersPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className={pageHeading}>Tareas</h1>
+          <h1 className={pageHeading}>{dict.workOrders.title}</h1>
           <p className={mutedText}>
-            {profile.role === "staff" ? "Tus tareas asignadas." : "Todas las tareas de la casa."}
+            {profile.role === "staff" ? dict.workOrders.subtitleStaff : dict.workOrders.subtitleAll}
           </p>
         </div>
         <Link href="/work-orders/new" className={buttonPrimary}>
-          <Plus className="size-4" /> Nueva tarea
+          <Plus className="size-4" /> {dict.workOrders.newTask}
         </Link>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {VIEWS.map((v) => (
+        {views.map((v) => (
           <Link
             key={v.key}
             href={v.key === "all" ? "/work-orders" : `/work-orders?view=${v.key}`}
@@ -92,16 +95,14 @@ export default async function WorkOrdersPage({
 
       {view === "all" ? (
         <>
-          <WorkOrderList title="Pendientes" orders={openOrders} today={today} in7Days={in7Days} />
+          <WorkOrderList title={dict.workOrders.pending} orders={openOrders} today={today} in7Days={in7Days} dict={dict} locale={profile.locale} />
           {doneOrders.length > 0 && (
-            <WorkOrderList title="Completadas" orders={doneOrders} today={today} in7Days={in7Days} />
+            <WorkOrderList title={dict.workOrders.completed} orders={doneOrders} today={today} in7Days={in7Days} dict={dict} locale={profile.locale} />
           )}
-          {orders.length === 0 && (
-            <EmptyState icon={ClipboardList} message="No hay tareas todavía. Crea la primera arriba." />
-          )}
+          {orders.length === 0 && <EmptyState icon={ClipboardList} message={dict.workOrders.empty} />}
         </>
       ) : (
-        <WorkOrderList orders={filtered} today={today} in7Days={in7Days} />
+        <WorkOrderList orders={filtered} today={today} in7Days={in7Days} dict={dict} locale={profile.locale} />
       )}
     </div>
   );
@@ -112,14 +113,18 @@ function WorkOrderList({
   orders,
   today,
   in7Days,
+  dict,
+  locale,
 }: {
   title?: string;
   orders: OrderRow[];
   today: string;
   in7Days: string;
+  dict: Dictionary;
+  locale: Locale;
 }) {
   if (orders.length === 0) {
-    return title ? null : <EmptyState icon={ClipboardList} message="No hay tareas en esta vista." />;
+    return title ? null : <EmptyState icon={ClipboardList} message={dict.workOrders.emptyView} />;
   }
 
   return (
@@ -147,13 +152,13 @@ function WorkOrderList({
                     )}
                   </p>
                   <p className={`${mutedText} truncate`}>
-                    {assignee ? assignee.full_name : "Sin asignar"}
-                    {wo.due_date ? ` · vence ${wo.due_date}` : ""}
+                    {assignee ? assignee.full_name : dict.workOrders.unassigned}
+                    {wo.due_date ? ` · ${format(dict.workOrders.dueDate, { date: wo.due_date })}` : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <PriorityBadge priority={wo.priority} />
-                  {overdue ? <OverdueBadge /> : <StatusBadge status={wo.status} />}
+                  <PriorityBadge priority={wo.priority} locale={locale} />
+                  {overdue ? <OverdueBadge locale={locale} /> : <StatusBadge status={wo.status} locale={locale} />}
                 </div>
               </Link>
             </li>

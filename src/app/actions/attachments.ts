@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export type AttachmentFormState = { error?: string; success?: boolean } | undefined;
 
@@ -15,16 +16,17 @@ export async function uploadAssetAttachment(
   formData: FormData
 ): Promise<AttachmentFormState> {
   const profile = await requireUser();
+  const dict = getDictionary(profile.locale);
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "Elige una foto primero." };
+    return { error: dict.attachments.errorMissing };
   }
   if (!ALLOWED_TYPES.includes(file.type)) {
-    return { error: "Solo se permiten fotos JPG, PNG o WEBP." };
+    return { error: dict.attachments.errorType };
   }
   if (file.size > MAX_ATTACHMENT_BYTES) {
-    return { error: "La foto no puede pesar más de 5MB." };
+    return { error: dict.attachments.errorSize };
   }
 
   const supabase = await createClient();
@@ -35,7 +37,7 @@ export async function uploadAssetAttachment(
     .upload(path, file, { contentType: file.type });
 
   if (uploadError) {
-    return { error: "No se pudo subir la foto. Intenta de nuevo." };
+    return { error: dict.attachments.errorUpload };
   }
 
   const { error: insertError } = await supabase.from("attachments").insert({
@@ -48,7 +50,7 @@ export async function uploadAssetAttachment(
 
   if (insertError) {
     await supabase.storage.from("attachments").remove([path]);
-    return { error: "No se pudo guardar la foto. Intenta de nuevo." };
+    return { error: dict.attachments.errorSave };
   }
 
   revalidatePath(`/assets/${assetId}`);

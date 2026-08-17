@@ -6,8 +6,9 @@ import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { SuccessBanner } from "@/components/ui/success-banner";
 import { buttonPrimary, input } from "@/lib/ui";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-export function PasswordForm() {
+export function PasswordForm({ dict }: { dict: Dictionary }) {
   const [state, action] = useActionState(updatePassword, undefined);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -20,7 +21,7 @@ export function PasswordForm() {
       }}
       className="space-y-4"
     >
-      <Field label="Nueva contraseña">
+      <Field label={dict.passwordForm.newPassword}>
         <input
           name="password"
           type="password"
@@ -31,7 +32,7 @@ export function PasswordForm() {
         />
       </Field>
 
-      <Field label="Confirmar contraseña">
+      <Field label={dict.passwordForm.confirmPassword}>
         <input
           name="confirm_password"
           type="password"
@@ -45,10 +46,10 @@ export function PasswordForm() {
       {state?.error && (
         <p className="rounded-lg bg-status-overdue-bg px-3 py-2 text-sm text-status-overdue-fg">{state.error}</p>
       )}
-      {state?.success && <SuccessBanner message="Contraseña actualizada." />}
+      {state?.success && <SuccessBanner message={dict.passwordForm.success} />}
 
-      <SubmitButton className={buttonPrimary} pendingLabel="Cambiando...">
-        Cambiar contraseña
+      <SubmitButton className={buttonPrimary} pendingLabel={dict.passwordForm.submitPending}>
+        {dict.passwordForm.submit}
       </SubmitButton>
     </form>
   );

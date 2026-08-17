@@ -1,16 +1,21 @@
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input, label as labelClass } from "@/lib/ui";
-import { TRADE_OPTIONS } from "@/lib/vendor-trades";
-import type { VendorTrade } from "@/lib/types/database";
+import { getTradeOptions } from "@/lib/vendor-trades";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
+import type { Locale, VendorTrade } from "@/lib/types/database";
 
 export function VendorForm({
   action,
   submitLabel,
+  dict,
+  locale,
   defaultValues,
 }: {
   action: (formData: FormData) => void;
   submitLabel: string;
+  dict: Dictionary;
+  locale: Locale;
   defaultValues?: {
     name: string;
     contact_name: string | null;
@@ -20,16 +25,18 @@ export function VendorForm({
     notes: string | null;
   };
 }) {
+  const tradeOptions = getTradeOptions(locale);
+
   return (
     <form action={action} className={`space-y-4 p-5 ${card}`}>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Nombre (empresa o persona)">
+        <Field label={dict.vendorForm.nameLabel}>
           <input name="name" required defaultValue={defaultValues?.name} className={input} />
         </Field>
-        <Field label="Persona de contacto (opcional)">
+        <Field label={dict.vendorForm.contactNameLabel}>
           <input
             name="contact_name"
-            placeholder="A quién preguntar"
+            placeholder={dict.vendorForm.contactNamePlaceholder}
             defaultValue={defaultValues?.contact_name ?? ""}
             className={input}
           />
@@ -37,9 +44,9 @@ export function VendorForm({
       </div>
 
       <div className="space-y-1.5">
-        <label className={labelClass}>Especialidades (puedes elegir varias)</label>
+        <label className={labelClass}>{dict.vendorForm.specialtiesLabel}</label>
         <div className="flex flex-wrap gap-2">
-          {TRADE_OPTIONS.map((opt) => (
+          {tradeOptions.map((opt) => (
             <label
               key={opt.value}
               className="flex cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3 py-1.5 text-sm text-ink-secondary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary-soft has-[:checked]:text-primary"
@@ -58,30 +65,30 @@ export function VendorForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Teléfono (opcional)">
+        <Field label={dict.vendorForm.phoneLabel}>
           <input
             name="phone"
-            placeholder="+507 6000-0000"
+            placeholder={dict.vendorForm.phonePlaceholder}
             defaultValue={defaultValues?.phone ?? ""}
             className={input}
           />
         </Field>
-        <Field label="Email (opcional)">
+        <Field label={dict.vendorForm.emailLabel}>
           <input
             type="email"
             name="email"
-            placeholder="Déjalo vacío si no tiene"
+            placeholder={dict.vendorForm.emailPlaceholder}
             defaultValue={defaultValues?.email ?? ""}
             className={input}
           />
         </Field>
       </div>
 
-      <Field label="Notas">
+      <Field label={dict.vendorForm.notesLabel}>
         <textarea name="notes" rows={3} defaultValue={defaultValues?.notes ?? ""} className={input} />
       </Field>
 
-      <SubmitButton className={buttonPrimary} pendingLabel="Guardando...">
+      <SubmitButton className={buttonPrimary} pendingLabel={dict.vendorForm.submitPending}>
         {submitLabel}
       </SubmitButton>
     </form>

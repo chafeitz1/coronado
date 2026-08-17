@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { updateAsset } from "@/app/actions/assets";
 import { AssetForm } from "@/components/asset-form";
 import { pageHeading } from "@/lib/ui";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export default async function EditAssetPage({
   params,
@@ -11,7 +12,8 @@ export default async function EditAssetPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  await requireOwner();
+  const profile = await requireOwner();
+  const dict = getDictionary(profile.locale);
   const supabase = await createClient();
 
   const [{ data: asset }, { data: vendors }] = await Promise.all([
@@ -22,11 +24,12 @@ export default async function EditAssetPage({
 
   return (
     <div className="max-w-lg space-y-6">
-      <h1 className={pageHeading}>Editar activo</h1>
+      <h1 className={pageHeading}>{dict.assetDetail.editAsset}</h1>
       <AssetForm
         action={updateAsset.bind(null, asset.id)}
-        submitLabel="Guardar cambios"
+        submitLabel={dict.assetForm.submitEdit}
         vendors={vendors ?? []}
+        dict={dict}
         defaultValues={asset}
       />
     </div>

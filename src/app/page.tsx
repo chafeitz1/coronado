@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/ui/badge";
 import { buttonPrimary, card, listCard, listRow, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { isoDateOffset, isoDateTimeOffset } from "@/lib/dates";
+import { getDictionary, format, type Dictionary } from "@/lib/i18n/dictionaries";
+import type { Locale } from "@/lib/types/database";
 
 type OrderRow = {
   id: string;
@@ -19,6 +21,7 @@ type OrderRow = {
 
 export default async function HomePage() {
   const profile = await requireUser();
+  const dict = getDictionary(profile.locale);
   const supabase = await createClient();
 
   const { data: workOrders } = await supabase
@@ -45,45 +48,49 @@ export default async function HomePage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className={pageHeading}>Hola, {profile.full_name.split(" ")[0]}</h1>
-          <p className={mutedText}>Esto es lo que está pasando en la casa.</p>
+          <h1 className={pageHeading}>{format(dict.home.greeting, { name: profile.full_name.split(" ")[0] })}</h1>
+          <p className={mutedText}>{dict.home.subtitle}</p>
         </div>
         <Link href="/work-orders/new" className={buttonPrimary}>
-          <Plus className="size-4" /> Nueva tarea
+          <Plus className="size-4" /> {dict.home.newTask}
         </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile href="/work-orders?view=open" icon={ClipboardList} label="Abiertas" value={openOrders.length} />
+        <StatTile href="/work-orders?view=open" icon={ClipboardList} label={dict.home.statOpen} value={openOrders.length} />
         <StatTile
           href="/work-orders?view=overdue"
           icon={AlertTriangle}
-          label="Vencidas"
+          label={dict.home.statOverdue}
           value={overdue.length}
           tone={overdue.length > 0 ? "danger" : undefined}
         />
-        <StatTile href="/work-orders?view=due_soon" icon={Clock} label="Por vencer" value={dueSoon.length} />
+        <StatTile href="/work-orders?view=due_soon" icon={Clock} label={dict.home.statDueSoon} value={dueSoon.length} />
         <StatTile
           href="/work-orders?view=done"
           icon={CheckCircle2}
-          label="Hechas esta semana"
+          label={dict.home.statDoneWeek}
           value={doneThisWeek.length}
         />
       </div>
 
-      {overdue.length > 0 && <UrgentSection title="Vencidas" icon={AlertTriangle} orders={overdue} tone="danger" />}
-      {dueSoon.length > 0 && <UrgentSection title="Por vencer esta semana" icon={Clock} orders={dueSoon} />}
+      {overdue.length > 0 && (
+        <UrgentSection title={dict.home.overdueTitle} icon={AlertTriangle} orders={overdue} tone="danger" dict={dict} locale={profile.locale} />
+      )}
+      {dueSoon.length > 0 && (
+        <UrgentSection title={dict.home.dueSoonTitle} icon={Clock} orders={dueSoon} dict={dict} locale={profile.locale} />
+      )}
 
       {overdue.length === 0 && dueSoon.length === 0 && (
         <div className={`flex items-center gap-3 p-5 text-sm ${card}`}>
           <PartyPopper className="size-5 shrink-0 text-status-done-fg" />
-          <p className="text-ink-secondary">Nada vencido ni por vencer esta semana. Todo al día.</p>
+          <p className="text-ink-secondary">{dict.home.allClear}</p>
         </div>
       )}
 
       {recent.length > 0 && (
         <section className="space-y-2">
-          <h2 className={sectionHeading}>Actividad reciente</h2>
+          <h2 className={sectionHeading}>{dict.home.recentActivity}</h2>
           <ul className={listCard}>
             {recent.map((wo) => {
               const assignee = Array.isArray(wo.profiles) ? wo.profiles[0] : wo.profiles;
@@ -97,9 +104,9 @@ export default async function HomePage() {
                           <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
                         )}
                       </p>
-                      <p className={`${mutedText} truncate`}>{assignee ? assignee.full_name : "Sin asignar"}</p>
+                      <p className={`${mutedText} truncate`}>{assignee ? assignee.full_name : dict.home.unassigned}</p>
                     </div>
-                    <StatusBadge status={wo.status} />
+                    <StatusBadge status={wo.status} locale={profile.locale} />
                   </Link>
                 </li>
               );
@@ -140,11 +147,15 @@ function UrgentSection({
   icon: Icon,
   orders,
   tone,
+  dict,
+  locale,
 }: {
   title: string;
   icon: typeof ClipboardList;
   orders: OrderRow[];
   tone?: "danger";
+  dict: Dictionary;
+  locale: Locale;
 }) {
   return (
     <section className="space-y-2">
@@ -168,13 +179,13 @@ function UrgentSection({
                     )}
                   </p>
                   <p className={`${mutedText} truncate`}>
-                    {assignee ? assignee.full_name : "Sin asignar"}
-                    {wo.due_date ? ` · vence ${wo.due_date}` : ""}
+                    {assignee ? assignee.full_name : dict.home.unassigned}
+                    {wo.due_date ? ` · ${format(dict.workOrders.dueDate, { date: wo.due_date })}` : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <PriorityBadge priority={wo.priority} />
-                  {tone === "danger" ? <OverdueBadge /> : <StatusBadge status={wo.status} />}
+                  <PriorityBadge priority={wo.priority} locale={locale} />
+                  {tone === "danger" ? <OverdueBadge locale={locale} /> : <StatusBadge status={wo.status} locale={locale} />}
                 </div>
               </Link>
             </li>

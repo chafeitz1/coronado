@@ -6,6 +6,7 @@ import { ImagePlus, Trash2 } from "lucide-react";
 import { uploadAssetAttachment, deleteAttachment } from "@/app/actions/attachments";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { buttonSecondary } from "@/lib/ui";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 type AttachmentItem = {
   id: string;
@@ -15,7 +16,15 @@ type AttachmentItem = {
   canDelete: boolean;
 };
 
-export function AssetAttachments({ assetId, attachments }: { assetId: string; attachments: AttachmentItem[] }) {
+export function AssetAttachments({
+  assetId,
+  attachments,
+  dict,
+}: {
+  assetId: string;
+  attachments: AttachmentItem[];
+  dict: Dictionary;
+}) {
   const uploadAction = uploadAssetAttachment.bind(null, assetId);
   const [state, formAction] = useActionState(uploadAction, undefined);
   const formRef = useRef<HTMLFormElement>(null);
@@ -34,7 +43,7 @@ export function AssetAttachments({ assetId, attachments }: { assetId: string; at
                   className="absolute right-1 top-1"
                 >
                   <ConfirmSubmitButton
-                    confirmMessage="¿Borrar esta foto?"
+                    confirmMessage={dict.assetDetail.deletePhotoConfirm}
                     className="flex size-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <Trash2 className="size-3.5" />
@@ -57,7 +66,7 @@ export function AssetAttachments({ assetId, attachments }: { assetId: string; at
           onChange={() => formRef.current?.requestSubmit()}
         />
         <button type="button" onClick={() => inputRef.current?.click()} className={buttonSecondary}>
-          <ImagePlus className="size-4" /> Agregar foto
+          <ImagePlus className="size-4" /> {dict.assetDetail.addPhoto}
         </button>
         {state?.error && <p className="text-sm text-status-overdue-fg">{state.error}</p>}
       </form>

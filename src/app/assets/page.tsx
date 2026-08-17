@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SuccessBanner } from "@/components/ui/success-banner";
 import { buttonPrimary, listCard, listRow, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 const WARRANTY_WARNING_DAYS = 60;
 
@@ -16,6 +17,7 @@ export default async function AssetsPage({
   searchParams: Promise<{ created?: string; deleted?: string }>;
 }) {
   const profile = await requireUser();
+  const dict = getDictionary(profile.locale);
   const supabase = await createClient();
   const { created, deleted } = await searchParams;
 
@@ -31,14 +33,14 @@ export default async function AssetsPage({
 
   return (
     <div className="space-y-6">
-      {created && <SuccessBanner message="Activo guardado." />}
-      {deleted && <SuccessBanner message="Activo borrado." />}
+      {created && <SuccessBanner message={dict.assets.createdBanner} />}
+      {deleted && <SuccessBanner message={dict.assets.deletedBanner} />}
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className={pageHeading}>Activos</h1>
+        <h1 className={pageHeading}>{dict.assets.title}</h1>
         {profile.role === "owner" && (
           <Link href="/assets/new" className={buttonPrimary}>
-            <Plus className="size-4" /> Nuevo activo
+            <Plus className="size-4" /> {dict.assets.newAsset}
           </Link>
         )}
       </div>
@@ -48,7 +50,7 @@ export default async function AssetsPage({
           <h2 className={sectionHeading}>
             <span className="inline-flex items-center gap-1.5">
               <ShieldAlert className="size-3.5 text-status-overdue-fg" />
-              Garantías por vencer <span className="text-ink-faint">· {warrantyAlerts.length}</span>
+              {dict.assets.warrantyAlertsTitle} <span className="text-ink-faint">· {warrantyAlerts.length}</span>
             </span>
           </h2>
           <ul className={listCard}>
@@ -59,7 +61,7 @@ export default async function AssetsPage({
                     <p className="truncate font-medium text-ink">{asset.name}</p>
                     <p className={mutedText}>{[asset.category, asset.location].filter(Boolean).join(" · ")}</p>
                   </div>
-                  <WarrantyBadge warrantyExpires={asset.warranty_expires!} />
+                  <WarrantyBadge warrantyExpires={asset.warranty_expires!} locale={profile.locale} />
                 </Link>
               </li>
             ))}
@@ -68,7 +70,7 @@ export default async function AssetsPage({
       )}
 
       <section className="space-y-2">
-        {warrantyAlerts.length > 0 && <h2 className={sectionHeading}>Todos los activos</h2>}
+        {warrantyAlerts.length > 0 && <h2 className={sectionHeading}>{dict.assets.allAssetsTitle}</h2>}
         {all.length > 0 ? (
           <ul className={listCard}>
             {all.map((asset) => (
@@ -80,7 +82,7 @@ export default async function AssetsPage({
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-ink">{asset.name}</p>
                     <p className={mutedText}>
-                      {[asset.category, asset.location].filter(Boolean).join(" · ") || "Sin categoría"}
+                      {[asset.category, asset.location].filter(Boolean).join(" · ") || dict.assets.noCategory}
                     </p>
                   </div>
                 </Link>
@@ -88,7 +90,7 @@ export default async function AssetsPage({
             ))}
           </ul>
         ) : (
-          <EmptyState icon={Wrench} message="No hay activos registrados." />
+          <EmptyState icon={Wrench} message={dict.assets.empty} />
         )}
       </section>
     </div>

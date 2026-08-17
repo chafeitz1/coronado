@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import type { Locale } from "@/lib/types/database";
 
 export type ProfileFormState = { error?: string; success?: boolean } | undefined;
 
@@ -11,13 +13,14 @@ export async function updateProfile(
   formData: FormData
 ): Promise<ProfileFormState> {
   const profile = await requireUser();
+  const dict = getDictionary(profile.locale);
   const supabase = await createClient();
 
   const fullName = String(formData.get("full_name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
 
   if (!fullName) {
-    return { error: "El nombre no puede estar vacío." };
+    return { error: dict.profileInfoForm.errorEmpty };
   }
 
   const { error } = await supabase
@@ -26,7 +29,7 @@ export async function updateProfile(
     .eq("id", profile.id);
 
   if (error) {
-    return { error: "No se pudo guardar. Intenta de nuevo." };
+    return { error: dict.profileInfoForm.errorGeneric };
   }
 
   revalidatePath("/profile", "layout");
@@ -37,23 +40,24 @@ export async function updatePassword(
   _state: ProfileFormState,
   formData: FormData
 ): Promise<ProfileFormState> {
-  await requireUser();
+  const profile = await requireUser();
+  const dict = getDictionary(profile.locale);
 
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirm_password") ?? "");
 
   if (password.length < 8) {
-    return { error: "La contraseña debe tener al menos 8 caracteres." };
+    return { error: dict.passwordForm.errorLength };
   }
   if (password !== confirmPassword) {
-    return { error: "Las contraseñas no coinciden." };
+    return { error: dict.passwordForm.errorMismatch };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
-    return { error: "No se pudo cambiar la contraseña. Intenta de nuevo." };
+    return { error: dict.passwordForm.errorGeneric };
   }
 
   return { success: true };
@@ -67,16 +71,17 @@ export async function uploadAvatar(
   formData: FormData
 ): Promise<ProfileFormState> {
   const profile = await requireUser();
+  const dict = getDictionary(profile.locale);
 
   const file = formData.get("avatar");
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "Elige una foto primero." };
+    return { error: dict.avatarForm.errorMissing };
   }
   if (!ALLOWED_TYPES.includes(file.type)) {
-    return { error: "Solo se permiten fotos JPG, PNG o WEBP." };
+    return { error: dict.avatarForm.errorType };
   }
   if (file.size > MAX_AVATAR_BYTES) {
-    return { error: "La foto no puede pesar más de 5MB." };
+    return { error: dict.avatarForm.errorSize };
   }
 
   const supabase = await createClient();
@@ -88,7 +93,7 @@ export async function uploadAvatar(
     .upload(path, file, { upsert: true, contentType: file.type });
 
   if (uploadError) {
-    return { error: "No se pudo subir la foto. Intenta de nuevo." };
+    return { error: dict.avatarForm.errorGeneric };
   }
 
   const {
@@ -103,9 +108,18 @@ export async function uploadAvatar(
     .eq("id", profile.id);
 
   if (updateError) {
-    return { error: "La foto se subió pero no se pudo guardar. Intenta de nuevo." };
+    return { error: dict.avatarForm.errorGeneric };
   }
 
   revalidatePath("/profile", "layout");
   return { success: true };
+}
+
+export async function updateLocale(locale: Locale) {
+  const profile = await requireUser();
+  const supabase = await createClient();
+
+  await supabase.from("profiles").update({ locale }).eq("id", profile.id);
+
+  revalidatePath("/", "layout");
 }

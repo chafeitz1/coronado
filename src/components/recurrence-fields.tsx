@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Repeat } from "lucide-react";
 import { Field } from "@/components/ui/field";
 import { input } from "@/lib/ui";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-export function RecurrenceFields() {
+export function RecurrenceFields({ dict }: { dict: Dictionary }) {
   const [enabled, setEnabled] = useState(false);
 
   return (
@@ -18,12 +19,12 @@ export function RecurrenceFields() {
           className="size-4 rounded border-hairline accent-primary"
         />
         <Repeat className="size-4 text-ink-faint" />
-        Repetir esta tarea automáticamente
+        {dict.workOrderForm.repeatLabel}
       </label>
 
       {enabled && (
         <div className="grid grid-cols-2 gap-4 pt-1">
-          <Field label="Repetir cada">
+          <Field label={dict.workOrderForm.repeatEvery}>
             <input
               type="number"
               name="recurrence_interval_value"
@@ -33,12 +34,12 @@ export function RecurrenceFields() {
               className={input}
             />
           </Field>
-          <Field label="Unidad">
+          <Field label={dict.workOrderForm.unitLabel}>
             <select name="recurrence_interval_unit" defaultValue="months" className={input}>
-              <option value="days">Días</option>
-              <option value="weeks">Semanas</option>
-              <option value="months">Meses</option>
-              <option value="years">Años</option>
+              <option value="days">{dict.workOrderForm.unitDays}</option>
+              <option value="weeks">{dict.workOrderForm.unitWeeks}</option>
+              <option value="months">{dict.workOrderForm.unitMonths}</option>
+              <option value="years">{dict.workOrderForm.unitYears}</option>
             </select>
           </Field>
         </div>

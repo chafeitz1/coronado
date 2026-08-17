@@ -6,9 +6,10 @@ import { Search, Building2, Phone, Mail } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { telHref, whatsAppHref } from "@/lib/phone";
-import { TRADE_LABELS } from "@/lib/vendor-trades";
+import { getTradeLabels } from "@/lib/vendor-trades";
+import { getDictionary, format } from "@/lib/i18n/dictionaries";
 import { input, listCard, mutedText } from "@/lib/ui";
-import type { VendorTrade } from "@/lib/types/database";
+import type { Locale, VendorTrade } from "@/lib/types/database";
 
 type VendorRow = {
   id: string;
@@ -19,7 +20,9 @@ type VendorRow = {
   email: string | null;
 };
 
-export function VendorList({ vendors }: { vendors: VendorRow[] }) {
+export function VendorList({ vendors, locale }: { vendors: VendorRow[]; locale: Locale }) {
+  const dict = getDictionary(locale);
+  const tradeLabels = getTradeLabels(locale);
   const [search, setSearch] = useState("");
   const [activeTrade, setActiveTrade] = useState<VendorTrade | null>(null);
 
@@ -28,8 +31,8 @@ export function VendorList({ vendors }: { vendors: VendorRow[] }) {
     for (const v of vendors) {
       for (const t of v.trades) counts.set(t, (counts.get(t) ?? 0) + 1);
     }
-    return [...counts.entries()].sort((a, b) => TRADE_LABELS[a[0]].localeCompare(TRADE_LABELS[b[0]]));
-  }, [vendors]);
+    return [...counts.entries()].sort((a, b) => tradeLabels[a[0]].localeCompare(tradeLabels[b[0]]));
+  }, [vendors, tradeLabels]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -48,18 +51,18 @@ export function VendorList({ vendors }: { vendors: VendorRow[] }) {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o contacto..."
+          placeholder={dict.vendors.searchPlaceholder}
           className={`${input} pl-9`}
         />
       </div>
 
       {tradeCounts.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          <FilterChip label="Todos" active={!activeTrade} onClick={() => setActiveTrade(null)} />
+          <FilterChip label={dict.vendors.allFilter} active={!activeTrade} onClick={() => setActiveTrade(null)} />
           {tradeCounts.map(([trade, count]) => (
             <FilterChip
               key={trade}
-              label={`${TRADE_LABELS[trade]} · ${count}`}
+              label={`${tradeLabels[trade]} · ${count}`}
               active={activeTrade === trade}
               onClick={() => setActiveTrade(activeTrade === trade ? null : trade)}
             />
@@ -79,8 +82,8 @@ export function VendorList({ vendors }: { vendors: VendorRow[] }) {
                 <p className={`${mutedText} truncate`}>
                   {vendor.contact_name ? `${vendor.contact_name} · ` : ""}
                   {vendor.trades.length > 0
-                    ? vendor.trades.map((t) => TRADE_LABELS[t]).join(", ")
-                    : "Sin especialidad"}
+                    ? vendor.trades.map((t) => tradeLabels[t]).join(", ")
+                    : dict.vendors.noSpecialty}
                 </p>
               </Link>
               <div className="flex shrink-0 items-center gap-1">
@@ -88,7 +91,7 @@ export function VendorList({ vendors }: { vendors: VendorRow[] }) {
                   <>
                     <a
                       href={telHref(vendor.phone)}
-                      aria-label={`Llamar a ${vendor.name}`}
+                      aria-label={format(dict.vendors.call, { name: vendor.name })}
                       className="flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-hover hover:text-primary"
                     >
                       <Phone className="size-4" />
@@ -97,7 +100,7 @@ export function VendorList({ vendors }: { vendors: VendorRow[] }) {
                       href={whatsAppHref(vendor.phone)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={`WhatsApp a ${vendor.name}`}
+                      aria-label={format(dict.vendors.whatsapp, { name: vendor.name })}
                       className="flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-hover hover:text-[#25D366]"
                     >
                       <WhatsAppIcon className="size-4" />
@@ -107,7 +110,7 @@ export function VendorList({ vendors }: { vendors: VendorRow[] }) {
                 {vendor.email && (
                   <a
                     href={`mailto:${vendor.email}`}
-                    aria-label={`Email a ${vendor.name}`}
+                    aria-label={format(dict.vendors.email, { name: vendor.name })}
                     className="flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-hover hover:text-primary"
                   >
                     <Mail className="size-4" />
@@ -120,9 +123,7 @@ export function VendorList({ vendors }: { vendors: VendorRow[] }) {
       ) : (
         <EmptyState
           icon={Building2}
-          message={
-            search || activeTrade ? "Ningún proveedor coincide con la búsqueda." : "No hay proveedores registrados."
-          }
+          message={search || activeTrade ? dict.vendors.emptySearch : dict.vendors.empty}
         />
       )}
     </div>

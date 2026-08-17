@@ -3,6 +3,7 @@
 //   npx supabase gen types typescript --project-id <id> > src/lib/types/database.ts
 
 export type UserRole = "owner" | "family" | "staff";
+export type Locale = "es" | "en";
 export type WorkOrderStatus = "open" | "in_progress" | "done";
 export type WorkOrderPriority = "low" | "medium" | "high";
 export type WorkOrderSource = "manual" | "pm";
@@ -41,6 +42,7 @@ export interface Database {
           role: UserRole;
           phone: string | null;
           avatar_url: string | null;
+          locale: Locale;
           created_at: string;
         };
         Insert: {
@@ -49,12 +51,14 @@ export interface Database {
           role: UserRole;
           phone?: string | null;
           avatar_url?: string | null;
+          locale?: Locale;
         };
         Update: Partial<{
           full_name: string;
           role: UserRole;
           phone: string | null;
           avatar_url: string | null;
+          locale: Locale;
         }>;
       };
       vendors: {

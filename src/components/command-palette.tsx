@@ -4,12 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ClipboardList, Wrench, Building2, X } from "lucide-react";
 import { card } from "@/lib/ui";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import type { Locale } from "@/lib/types/database";
 
 export const OPEN_COMMAND_PALETTE_EVENT = "open-command-palette";
 
 type Result = { id: string; label: string; href: string; icon: typeof ClipboardList; group: string };
 
-export function CommandPalette() {
+export function CommandPalette({ locale }: { locale: Locale }) {
+  const dict = getDictionary(locale);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Result[]>([]);
@@ -66,28 +69,28 @@ export function CommandPalette() {
           label: w.title,
           href: `/work-orders/${w.id}`,
           icon: ClipboardList,
-          group: "Tareas",
+          group: dict.commandPalette.groupTasks,
         })),
         ...data.assets.map((a: { id: string; name: string }) => ({
           id: a.id,
           label: a.name,
           href: `/assets`,
           icon: Wrench,
-          group: "Activos",
+          group: dict.commandPalette.groupAssets,
         })),
         ...data.vendors.map((v: { id: string; name: string }) => ({
           id: v.id,
           label: v.name,
           href: `/vendors/${v.id}`,
           icon: Building2,
-          group: "Proveedores",
+          group: dict.commandPalette.groupVendors,
         })),
       ];
       setResults(mapped);
       setActiveIndex(0);
     }, 200);
     return () => clearTimeout(timeout);
-  }, [query, open]);
+  }, [query, open, dict]);
 
   const visibleResults = useMemo(
     () => (query.trim().length >= 2 ? results : []),
@@ -112,7 +115,7 @@ export function CommandPalette() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 pt-24">
-      <button type="button" aria-label="Cerrar búsqueda" className="absolute inset-0" onClick={() => setOpen(false)} />
+      <button type="button" aria-label={dict.commandPalette.closeSearch} className="absolute inset-0" onClick={() => setOpen(false)} />
       <div className={`relative w-full max-w-lg overflow-hidden ${card}`}>
         <div className="flex items-center gap-2 border-b border-hairline px-4 py-3">
           <Search className="size-4 shrink-0 text-ink-faint" />
@@ -133,7 +136,7 @@ export function CommandPalette() {
                 setOpen(false);
               }
             }}
-            placeholder="Buscar tareas, activos, proveedores..."
+            placeholder={dict.commandPalette.placeholder}
             className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint"
           />
           <button type="button" onClick={() => setOpen(false)} className="text-ink-faint hover:text-ink">
@@ -143,7 +146,7 @@ export function CommandPalette() {
 
         <div className="max-h-80 overflow-y-auto p-2">
           {query.trim().length >= 2 && visibleResults.length === 0 && (
-            <p className="px-3 py-6 text-center text-sm text-ink-faint">Sin resultados.</p>
+            <p className="px-3 py-6 text-center text-sm text-ink-faint">{dict.commandPalette.noResults}</p>
           )}
           {[...groups.entries()].map(([group, items]) => (
             <div key={group} className="mb-1">

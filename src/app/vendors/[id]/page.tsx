@@ -40,9 +40,20 @@ export default async function VendorDetailPage({
       {updated && <SuccessBanner message="Cambios guardados." />}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="space-y-1.5">
           <h1 className={pageHeading}>{vendor.name}</h1>
-          {vendor.trade && <p className={mutedText}>{TRADE_LABELS[vendor.trade as VendorTrade]}</p>}
+          {vendor.trades?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {(vendor.trades as VendorTrade[]).map((trade) => (
+                <span
+                  key={trade}
+                  className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary"
+                >
+                  {TRADE_LABELS[trade]}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         {profile.role === "owner" && (
           <div className="flex gap-2">

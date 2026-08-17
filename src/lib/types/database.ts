@@ -58,7 +58,7 @@ export interface Database {
         Row: {
           id: string;
           name: string;
-          trade: VendorTrade | null;
+          trades: VendorTrade[];
           phone: string | null;
           email: string | null;
           notes: string | null;

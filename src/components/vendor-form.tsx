@@ -1,6 +1,6 @@
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { buttonPrimary, card, input } from "@/lib/ui";
+import { buttonPrimary, card, input, label as labelClass } from "@/lib/ui";
 import { TRADE_OPTIONS } from "@/lib/vendor-trades";
 import type { VendorTrade } from "@/lib/types/database";
 
@@ -13,7 +13,7 @@ export function VendorForm({
   submitLabel: string;
   defaultValues?: {
     name: string;
-    trade: VendorTrade | null;
+    trades: VendorTrade[];
     phone: string | null;
     email: string | null;
     notes: string | null;
@@ -25,16 +25,26 @@ export function VendorForm({
         <input name="name" required defaultValue={defaultValues?.name} className={input} />
       </Field>
 
-      <Field label="Especialidad">
-        <select name="trade" defaultValue={defaultValues?.trade ?? ""} className={input}>
-          <option value="">— Sin especificar —</option>
+      <div className="space-y-1.5">
+        <label className={labelClass}>Especialidades (puedes elegir varias)</label>
+        <div className="flex flex-wrap gap-2">
           {TRADE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
+            <label
+              key={opt.value}
+              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3 py-1.5 text-sm text-ink-secondary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary-soft has-[:checked]:text-primary"
+            >
+              <input
+                type="checkbox"
+                name="trades"
+                value={opt.value}
+                defaultChecked={defaultValues?.trades.includes(opt.value)}
+                className="sr-only"
+              />
               {opt.label}
-            </option>
+            </label>
           ))}
-        </select>
-      </Field>
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Teléfono (opcional)">

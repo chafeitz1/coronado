@@ -40,6 +40,7 @@ export interface Database {
           full_name: string;
           role: UserRole;
           phone: string | null;
+          avatar_url: string | null;
           created_at: string;
         };
         Insert: {
@@ -47,11 +48,13 @@ export interface Database {
           full_name: string;
           role: UserRole;
           phone?: string | null;
+          avatar_url?: string | null;
         };
         Update: Partial<{
           full_name: string;
           role: UserRole;
           phone: string | null;
+          avatar_url: string | null;
         }>;
       };
       vendors: {

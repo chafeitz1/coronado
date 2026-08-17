@@ -28,7 +28,7 @@ export async function Sidebar() {
 
   return (
     <SidebarClient
-      profile={{ fullName: profile.full_name, role: profile.role }}
+      profile={{ fullName: profile.full_name, role: profile.role, avatarUrl: profile.avatar_url }}
       workLinks={workLinks}
       manageLinks={manageLinks}
     />

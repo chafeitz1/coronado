@@ -59,7 +59,11 @@ Funcionan sin costo vía Web Push del navegador (service worker en `public/sw.js
 
 No hay un módulo aparte de "mantenimiento preventivo": al crear una tarea, el owner puede marcarla como recurrente (ej. "cada 3 meses"). Cuando esa tarea se marca como hecha, la app crea automáticamente la siguiente ocurrencia con la fecha límite avanzada — no depende de ningún cron.
 
-## 7. Desplegar
+## 7. Perfil de usuario
+
+Cada usuario (dueño, familia o personal) puede entrar a `/profile` haciendo clic en su nombre abajo del menú lateral, para: editar su nombre/teléfono, cambiar su contraseña y subir una foto de perfil. Las fotos se guardan en el bucket `avatars` de Supabase Storage (público para lectura, cada usuario solo puede escribir dentro de su propia carpeta). Ese bucket y sus políticas se crean automáticamente al correr la migración `0006_user_profiles.sql` — no requiere pasos manuales en el dashboard de Supabase.
+
+## 8. Desplegar
 
 1. Sube el repo a GitHub y conéctalo en [vercel.com/new](https://vercel.com/new).
 2. Agrega todas las variables de `.env.example` en Vercel (Project Settings → Environment Variables).

@@ -18,6 +18,7 @@ import {
 import { logout } from "@/app/actions/auth";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { CommandPalette, OPEN_COMMAND_PALETTE_EVENT } from "@/components/command-palette";
+import { Avatar } from "@/components/ui/avatar";
 
 const ICONS = {
   home: Home,
@@ -43,7 +44,7 @@ export function SidebarClient({
   workLinks,
   manageLinks,
 }: {
-  profile: { fullName: string; role: string };
+  profile: { fullName: string; role: string; avatarUrl: string | null };
   workLinks: SidebarLink[];
   manageLinks: SidebarLink[];
 }) {
@@ -145,13 +146,13 @@ export function SidebarClient({
             <PushSubscribeButton />
           </div>
           <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-hover">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
-              {profile.fullName.slice(0, 1).toUpperCase()}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-ink">{profile.fullName}</p>
-              <p className="truncate text-xs text-ink-muted">{roleLabel(profile.role)}</p>
-            </div>
+            <Link href="/profile" onClick={() => setOpen(false)} className="flex min-w-0 flex-1 items-center gap-2.5">
+              <Avatar fullName={profile.fullName} avatarUrl={profile.avatarUrl} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-ink">{profile.fullName}</p>
+                <p className="truncate text-xs text-ink-muted">{roleLabel(profile.role)}</p>
+              </div>
+            </Link>
             <form action={logout}>
               <button
                 type="submit"

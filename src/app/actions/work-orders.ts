@@ -55,6 +55,7 @@ export async function createWorkOrder(formData: FormData) {
   }
 
   revalidatePath("/");
+  revalidatePath("/work-orders");
   redirect(`/work-orders/${workOrder.id}`);
 }
 
@@ -85,6 +86,7 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
   }
 
   revalidatePath(`/work-orders/${workOrderId}`);
+  revalidatePath("/work-orders");
   revalidatePath("/");
 }
 

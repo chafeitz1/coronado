@@ -4,20 +4,24 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Home,
   ClipboardList,
   Wrench,
   Building2,
   RefreshCw,
   UserCog,
   Menu,
+  Search,
   X,
   ChevronRight,
   LogOut,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
+import { CommandPalette, OPEN_COMMAND_PALETTE_EVENT } from "@/components/command-palette";
 
 const ICONS = {
+  home: Home,
   tasks: ClipboardList,
   assets: Wrench,
   vendors: Building2,
@@ -31,6 +35,10 @@ export type SidebarLink = {
   icon: keyof typeof ICONS;
   badge?: number;
 };
+
+function openSearch() {
+  window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE_EVENT));
+}
 
 export function SidebarClient({
   profile,
@@ -48,6 +56,8 @@ export function SidebarClient({
 
   return (
     <>
+      <CommandPalette />
+
       {/* Mobile top bar */}
       <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hairline bg-canvas px-4 py-3 md:hidden">
         <Link href="/" className="flex items-center gap-2">
@@ -56,14 +66,24 @@ export function SidebarClient({
           </span>
           <span className="font-semibold tracking-tight text-ink">Casa Coronado</span>
         </Link>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Abrir menú"
-          className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
-        >
-          <Menu className="size-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={openSearch}
+            aria-label="Buscar"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
+          >
+            <Search className="size-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Abrir menú"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
+          >
+            <Menu className="size-5" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile drawer backdrop */}
@@ -95,6 +115,18 @@ export function SidebarClient({
             className="rounded-md p-1 text-ink-muted hover:bg-surface-hover md:hidden"
           >
             <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="px-3 pb-3">
+          <button
+            type="button"
+            onClick={openSearch}
+            className="flex w-full items-center gap-2 rounded-lg border border-hairline bg-canvas-soft px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-hover"
+          >
+            <Search className="size-4" />
+            <span className="flex-1 text-left">Buscar...</span>
+            <kbd className="rounded border border-hairline bg-surface px-1.5 py-0.5 text-xs text-ink-faint">⌘K</kbd>
           </button>
         </div>
 

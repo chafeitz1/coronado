@@ -13,7 +13,8 @@ export async function Sidebar() {
     .neq("status", "done");
 
   const workLinks: SidebarLink[] = [
-    { href: "/", label: "Tareas", icon: "tasks", badge: openCount ?? 0 },
+    { href: "/", label: "Inicio", icon: "home" },
+    { href: "/work-orders", label: "Tareas", icon: "tasks", badge: openCount ?? 0 },
     { href: "/assets", label: "Activos", icon: "assets" },
   ];
 

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/auth";
+import { uploadAssetPhoto } from "@/lib/attachments-server";
 
 function readAssetFields(formData: FormData) {
   return {
@@ -27,16 +28,25 @@ export async function createAsset(formData: FormData) {
   const fields = readAssetFields(formData);
   if (!fields.name) return;
 
-  const { error } = await supabase.from("assets").insert({ ...fields, created_by: profile.id });
+  const { data: asset, error } = await supabase
+    .from("assets")
+    .insert({ ...fields, created_by: profile.id })
+    .select("id")
+    .single();
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/assets");
-  redirect("/assets?created=1");
+  const photo = formData.get("photo");
+  if (photo instanceof File && photo.size > 0) {
+    await uploadAssetPhoto(supabase, asset.id, profile.id, photo);
+  }
+
+  revalidatePath("/assets", "layout");
+  redirect(`/assets/${asset.id}?created=1`);
 }
 
 export async function updateAsset(assetId: string, formData: FormData) {
-  await requireOwner();
+  const profile = await requireOwner();
   const supabase = await createClient();
 
   const fields = readAssetFields(formData);
@@ -46,8 +56,12 @@ export async function updateAsset(assetId: string, formData: FormData) {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/assets");
-  revalidatePath(`/assets/${assetId}`);
+  const photo = formData.get("photo");
+  if (photo instanceof File && photo.size > 0) {
+    await uploadAssetPhoto(supabase, assetId, profile.id, photo);
+  }
+
+  revalidatePath("/assets", "layout");
   redirect(`/assets/${assetId}?updated=1`);
 }
 
@@ -58,6 +72,6 @@ export async function deleteAsset(assetId: string) {
   const { error } = await supabase.from("assets").delete().eq("id", assetId);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/assets");
+  revalidatePath("/assets", "layout");
   redirect("/assets?deleted=1");
 }

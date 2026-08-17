@@ -25,10 +25,10 @@ export default async function AssetDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ updated?: string }>;
+  searchParams: Promise<{ created?: string; updated?: string }>;
 }) {
   const { id } = await params;
-  const { updated } = await searchParams;
+  const { created, updated } = await searchParams;
   const profile = await requireUser();
   const dict = getDictionary(profile.locale);
   const supabase = await createClient();
@@ -88,7 +88,8 @@ export default async function AssetDetailPage({
   ].filter((d) => d.value);
 
   return (
-    <div className="max-w-2xl space-y-8">
+    <div className="space-y-8">
+      {created && <SuccessBanner message={dict.assets.createdBanner} />}
       {updated && <SuccessBanner message={dict.assetDetail.updatedBanner} />}
 
       <div className="flex flex-wrap items-start justify-between gap-4">

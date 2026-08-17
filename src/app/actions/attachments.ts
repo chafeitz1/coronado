@@ -53,7 +53,7 @@ export async function uploadAssetAttachment(
     return { error: dict.attachments.errorSave };
   }
 
-  revalidatePath(`/assets/${assetId}`);
+  revalidatePath("/assets", "layout");
   return { success: true };
 }
 
@@ -66,4 +66,5 @@ export async function deleteAttachment(attachmentId: string, storagePath: string
   if (error) throw new Error(error.message);
 
   revalidatePath(`/assets/${assetId}`);
+  revalidatePath("/assets", "layout");
 }

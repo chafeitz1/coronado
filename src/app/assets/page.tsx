@@ -1,98 +1,22 @@
-import Link from "next/link";
-import { Plus, ShieldAlert, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { WarrantyBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuccessBanner } from "@/components/ui/success-banner";
-import { buttonPrimary, listCard, listRow, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
-import { daysUntil } from "@/lib/dates";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
-const WARRANTY_WARNING_DAYS = 60;
-
-export default async function AssetsPage({
+export default async function AssetsIndexPage({
   searchParams,
 }: {
-  searchParams: Promise<{ created?: string; deleted?: string }>;
+  searchParams: Promise<{ deleted?: string }>;
 }) {
   const profile = await requireUser();
   const dict = getDictionary(profile.locale);
-  const supabase = await createClient();
-  const { created, deleted } = await searchParams;
-
-  const { data: assets } = await supabase
-    .from("assets")
-    .select("id, name, category, location, warranty_expires")
-    .order("name");
-
-  const all = assets ?? [];
-  const warrantyAlerts = all
-    .filter((a) => a.warranty_expires && daysUntil(a.warranty_expires) <= WARRANTY_WARNING_DAYS)
-    .sort((a, b) => (a.warranty_expires ?? "").localeCompare(b.warranty_expires ?? ""));
+  const { deleted } = await searchParams;
 
   return (
-    <div className="space-y-6">
-      {created && <SuccessBanner message={dict.assets.createdBanner} />}
+    <div className="space-y-4">
       {deleted && <SuccessBanner message={dict.assets.deletedBanner} />}
-
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className={pageHeading}>{dict.assets.title}</h1>
-        {profile.role === "owner" && (
-          <Link href="/assets/new" className={buttonPrimary}>
-            <Plus className="size-4" /> {dict.assets.newAsset}
-          </Link>
-        )}
-      </div>
-
-      {warrantyAlerts.length > 0 && (
-        <section className="space-y-2">
-          <h2 className={sectionHeading}>
-            <span className="inline-flex items-center gap-1.5">
-              <ShieldAlert className="size-3.5 text-status-overdue-fg" />
-              {dict.assets.warrantyAlertsTitle} <span className="text-ink-faint">· {warrantyAlerts.length}</span>
-            </span>
-          </h2>
-          <ul className={listCard}>
-            {warrantyAlerts.map((asset) => (
-              <li key={asset.id}>
-                <Link href={`/assets/${asset.id}`} className={listRow}>
-                  <div className="min-w-40 flex-1">
-                    <p className="truncate font-medium text-ink">{asset.name}</p>
-                    <p className={mutedText}>{[asset.category, asset.location].filter(Boolean).join(" · ")}</p>
-                  </div>
-                  <WarrantyBadge warrantyExpires={asset.warranty_expires!} locale={profile.locale} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section className="space-y-2">
-        {warrantyAlerts.length > 0 && <h2 className={sectionHeading}>{dict.assets.allAssetsTitle}</h2>}
-        {all.length > 0 ? (
-          <ul className={listCard}>
-            {all.map((asset) => (
-              <li key={asset.id}>
-                <Link href={`/assets/${asset.id}`} className={listRow}>
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
-                    <Wrench className="size-4" strokeWidth={2} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-ink">{asset.name}</p>
-                    <p className={mutedText}>
-                      {[asset.category, asset.location].filter(Boolean).join(" · ") || dict.assets.noCategory}
-                    </p>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <EmptyState icon={Wrench} message={dict.assets.empty} />
-        )}
-      </section>
+      <EmptyState icon={Wrench} message={dict.assets.selectPrompt} />
     </div>
   );
 }

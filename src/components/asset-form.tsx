@@ -33,6 +33,10 @@ export function AssetForm({
         <input name="name" required defaultValue={defaultValues?.name} className={input} />
       </Field>
 
+      <Field label={dict.assetForm.photoLabel}>
+        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" className={input} />
+      </Field>
+
       <div className="grid grid-cols-2 gap-4">
         <Field label={dict.assetForm.categoryLabel}>
           <input

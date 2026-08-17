@@ -65,7 +65,9 @@ Cada usuario (dueño, familia o personal) puede entrar a `/profile` haciendo cli
 
 ## 8. Activos
 
-Cada activo (A/C, bomba de piscina, electrodoméstico, etc.) puede llevar marca, modelo, número de serie, un proveedor preferido (para saber a quién llamar) y fotos. Las fotos se guardan en el bucket `attachments` de Supabase Storage, creado junto con esas columnas en la migración `0008_assets_complete.sql`. La página de cada activo muestra su historial de mantenimiento (tareas ya hechas) y los próximos mantenimientos programados (tareas abiertas o recurrentes), y en el listado se avisa cuando una garantía está por vencer o ya venció.
+Cada activo (A/C, bomba de piscina, electrodoméstico, etc.) puede llevar marca, modelo, número de serie, un proveedor preferido (para saber a quién llamar) y fotos — incluso puedes subir la primera foto desde el mismo formulario al crearlo. Las fotos se guardan en el bucket `attachments` de Supabase Storage, creado junto con esas columnas en la migración `0008_assets_complete.sql`. La página de cada activo muestra su historial de mantenimiento (tareas ya hechas) y los próximos mantenimientos programados (tareas abiertas o recurrentes), y en el listado se avisa cuando una garantía está por vencer o ya venció.
+
+`/assets` usa una vista tipo panel (como Airtable/Linear): la lista queda fija a la izquierda con una miniatura de foto por activo y un menú de editar/borrar directo en cada fila, y al hacer clic el detalle se abre a la derecha sin recargar la página. En celular se muestra un solo panel a la vez, con un link para volver a la lista.
 
 ## 9. Idioma
 

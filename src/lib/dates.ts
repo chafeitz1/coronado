@@ -12,6 +12,13 @@ export function isoDateTimeOffset(days: number) {
   return d.toISOString();
 }
 
+export function daysUntil(dateStr: string): number {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const target = new Date(`${dateStr}T00:00:00Z`);
+  return Math.round((target.getTime() - today.getTime()) / 86400000);
+}
+
 export function advanceDate(dateStr: string, unit: "days" | "weeks" | "months" | "years", value: number): string {
   const date = new Date(`${dateStr}T00:00:00Z`);
   if (unit === "days") date.setUTCDate(date.getUTCDate() + value);

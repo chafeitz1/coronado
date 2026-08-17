@@ -1,5 +1,6 @@
 import { Lock, RefreshCw, CheckCircle2 } from "lucide-react";
 import type { WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
+import { daysUntil } from "@/lib/dates";
 
 const baseClass = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide";
 
@@ -55,4 +56,19 @@ export function PriorityBadge({ priority }: { priority: WorkOrderPriority | stri
 
 export function OverdueBadge() {
   return <span className={`${baseClass} bg-status-overdue-bg text-status-overdue-fg`}>Vencida</span>;
+}
+
+const WARRANTY_WARNING_DAYS = 60;
+
+export function WarrantyBadge({ warrantyExpires }: { warrantyExpires: string }) {
+  const days = daysUntil(warrantyExpires);
+  if (days < 0) return <span className={`${baseClass} bg-status-overdue-bg text-status-overdue-fg`}>Garantía vencida</span>;
+  if (days <= WARRANTY_WARNING_DAYS) {
+    return (
+      <span className={`${baseClass} bg-status-progress-bg text-status-progress-fg`}>
+        Garantía vence en {days} días
+      </span>
+    );
+  }
+  return null;
 }

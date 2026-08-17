@@ -63,7 +63,11 @@ No hay un módulo aparte de "mantenimiento preventivo": al crear una tarea, el o
 
 Cada usuario (dueño, familia o personal) puede entrar a `/profile` haciendo clic en su nombre abajo del menú lateral, para: editar su nombre/teléfono, cambiar su contraseña y subir una foto de perfil. Las fotos se guardan en el bucket `avatars` de Supabase Storage (público para lectura, cada usuario solo puede escribir dentro de su propia carpeta). Ese bucket y sus políticas se crean automáticamente al correr la migración `0006_user_profiles.sql` — no requiere pasos manuales en el dashboard de Supabase.
 
-## 8. Desplegar
+## 8. Activos
+
+Cada activo (A/C, bomba de piscina, electrodoméstico, etc.) puede llevar marca, modelo, número de serie, un proveedor preferido (para saber a quién llamar) y fotos. Las fotos se guardan en el bucket `attachments` de Supabase Storage, creado junto con esas columnas en la migración `0008_assets_complete.sql`. La página de cada activo muestra su historial de mantenimiento (tareas ya hechas) y los próximos mantenimientos programados (tareas abiertas o recurrentes), y en el listado se avisa cuando una garantía está por vencer o ya venció.
+
+## 9. Desplegar
 
 1. Sube el repo a GitHub y conéctalo en [vercel.com/new](https://vercel.com/new).
 2. Agrega todas las variables de `.env.example` en Vercel (Project Settings → Environment Variables).
@@ -74,4 +78,4 @@ Cada usuario (dueño, familia o personal) puede entrar a `/profile` haciendo cli
 - **Fase 2 (pendiente)**: control de planilla del personal y días libres.
 - Iconos propios para el manifest PWA (`public/manifest.json` usa el favicon por ahora — para una instalación más pulida en el celular conviene agregar `icon-192.png` / `icon-512.png` y un `apple-touch-icon`).
 - **Type-safe Supabase queries**: los clientes de Supabase (`src/lib/supabase/*.ts`) no están tipados con `Database` todavía porque el generador de tipos de postgrest-js necesita un proyecto real para resolver relaciones (`supabase gen types typescript --project-id <id> > src/lib/types/database.ts`). Una vez que exista el proyecto, se puede pasar `<Database>` a `createBrowserClient`/`createServerClient`/`createClient` para autocompletar y validar las queries.
-- Adjuntar fotos/documentos a tareas y activos (la tabla `attachments` y el bucket de Supabase Storage están listos en el esquema, falta el flujo de subida en la UI).
+- Adjuntar fotos a tareas (ya funciona para activos — falta extender el mismo flujo de subida a las tareas).

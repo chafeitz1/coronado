@@ -78,6 +78,10 @@ export interface Database {
           name: string;
           category: string | null;
           location: string | null;
+          brand: string | null;
+          model: string | null;
+          serial_number: string | null;
+          preferred_vendor_id: string | null;
           purchase_date: string | null;
           warranty_expires: string | null;
           notes: string | null;

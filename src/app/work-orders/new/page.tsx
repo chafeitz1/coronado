@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createWorkOrder } from "@/app/actions/work-orders";
 import { Field } from "@/components/ui/field";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input, pageHeading } from "@/lib/ui";
 
 export default async function NewWorkOrderPage() {
@@ -66,9 +67,9 @@ export default async function NewWorkOrderPage() {
           </Field>
         )}
 
-        <button type="submit" className={buttonPrimary}>
+        <SubmitButton className={buttonPrimary} pendingLabel="Creando...">
           Crear tarea
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

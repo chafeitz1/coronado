@@ -1,5 +1,6 @@
 import { createAsset } from "@/app/actions/assets";
 import { Field } from "@/components/ui/field";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input, pageHeading } from "@/lib/ui";
 
 export default function NewAssetPage() {
@@ -34,9 +35,9 @@ export default function NewAssetPage() {
           <textarea name="notes" rows={3} className={input} />
         </Field>
 
-        <button type="submit" className={buttonPrimary}>
+        <SubmitButton className={buttonPrimary} pendingLabel="Guardando...">
           Guardar
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

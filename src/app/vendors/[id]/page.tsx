@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deleteVendor } from "@/app/actions/vendors";
 import { StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SuccessBanner } from "@/components/ui/success-banner";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { telHref, whatsAppHref } from "@/lib/phone";
@@ -15,10 +16,13 @@ import { buttonSecondary, buttonUtility, card, listCard, listRow, mutedText, pag
 
 export default async function VendorDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ updated?: string }>;
 }) {
   const { id } = await params;
+  const { updated } = await searchParams;
   const profile = await requireUser();
   const supabase = await createClient();
 
@@ -33,6 +37,8 @@ export default async function VendorDetailPage({
 
   return (
     <div className="max-w-2xl space-y-8">
+      {updated && <SuccessBanner message="Cambios guardados." />}
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className={pageHeading}>{vendor.name}</h1>

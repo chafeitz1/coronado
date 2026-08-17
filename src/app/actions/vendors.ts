@@ -28,7 +28,7 @@ export async function createVendor(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/vendors");
-  redirect("/vendors");
+  redirect("/vendors?created=1");
 }
 
 export async function updateVendor(vendorId: string, formData: FormData) {
@@ -44,7 +44,7 @@ export async function updateVendor(vendorId: string, formData: FormData) {
 
   revalidatePath("/vendors");
   revalidatePath(`/vendors/${vendorId}`);
-  redirect(`/vendors/${vendorId}`);
+  redirect(`/vendors/${vendorId}?updated=1`);
 }
 
 export async function deleteVendor(vendorId: string) {
@@ -55,5 +55,5 @@ export async function deleteVendor(vendorId: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/vendors");
-  redirect("/vendors");
+  redirect("/vendors?deleted=1");
 }

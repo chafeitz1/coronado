@@ -1,4 +1,5 @@
 import { Field } from "@/components/ui/field";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input } from "@/lib/ui";
 import { TRADE_OPTIONS } from "@/lib/vendor-trades";
 import type { VendorTrade } from "@/lib/types/database";
@@ -59,9 +60,9 @@ export function VendorForm({
         <textarea name="notes" rows={3} defaultValue={defaultValues?.notes ?? ""} className={input} />
       </Field>
 
-      <button type="submit" className={buttonPrimary}>
+      <SubmitButton className={buttonPrimary} pendingLabel="Guardando...">
         {submitLabel}
-      </button>
+      </SubmitButton>
     </form>
   );
 }

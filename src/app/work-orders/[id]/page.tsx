@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { updateWorkOrderStatus, addWorkOrderNote } from "@/app/actions/work-orders";
 import { StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, buttonUtility, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -86,9 +87,9 @@ export default async function WorkOrderDetailPage({
             .filter((status) => status !== workOrder.status)
             .map((status) => (
               <form key={status} action={updateWorkOrderStatus.bind(null, workOrder.id, status)}>
-                <button type="submit" className={buttonUtility}>
+                <SubmitButton className={buttonUtility} pendingLabel="...">
                   Marcar {STATUS_LABELS[status].toLowerCase()}
-                </button>
+                </SubmitButton>
               </form>
             ))}
         </div>
@@ -137,9 +138,9 @@ export default async function WorkOrderDetailPage({
               <Bell className="size-3.5" /> Notificar al dueño por email
             </label>
           )}
-          <button type="submit" className={buttonPrimary}>
+          <SubmitButton className={buttonPrimary} pendingLabel="Agregando...">
             Agregar nota
-          </button>
+          </SubmitButton>
         </form>
       </section>
     </div>

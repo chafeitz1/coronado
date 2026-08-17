@@ -5,6 +5,7 @@ import { inviteMember } from "@/app/actions/admin";
 import { PrefToggle } from "@/components/pref-toggle";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field } from "@/components/ui/field";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import type { NotificationEventType } from "@/lib/types/database";
 
@@ -70,9 +71,9 @@ export default async function StaffAdminPage() {
               <option value="family">Familia</option>
             </select>
           </Field>
-          <button type="submit" className={buttonPrimary}>
+          <SubmitButton className={buttonPrimary} pendingLabel="Enviando...">
             Enviar invitación
-          </button>
+          </SubmitButton>
         </form>
       </section>
 

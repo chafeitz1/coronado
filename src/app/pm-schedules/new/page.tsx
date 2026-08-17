@@ -2,6 +2,7 @@ import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createPmSchedule } from "@/app/actions/pm-schedules";
 import { Field } from "@/components/ui/field";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input, pageHeading } from "@/lib/ui";
 
 export default async function NewPmSchedulePage() {
@@ -65,9 +66,9 @@ export default async function NewPmSchedulePage() {
           </select>
         </Field>
 
-        <button type="submit" className={buttonPrimary}>
+        <SubmitButton className={buttonPrimary} pendingLabel="Guardando...">
           Guardar
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

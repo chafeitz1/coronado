@@ -3,6 +3,7 @@ import { Plus, Building2, Phone, Mail } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SuccessBanner } from "@/components/ui/success-banner";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { TRADE_LABELS } from "@/lib/vendor-trades";
@@ -12,11 +13,11 @@ import type { VendorTrade } from "@/lib/types/database";
 export default async function VendorsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ trade?: string }>;
+  searchParams: Promise<{ trade?: string; created?: string; deleted?: string }>;
 }) {
   const profile = await requireUser();
   const supabase = await createClient();
-  const { trade: activeTrade } = await searchParams;
+  const { trade: activeTrade, created, deleted } = await searchParams;
 
   const { data: allVendors } = await supabase
     .from("vendors")
@@ -32,6 +33,9 @@ export default async function VendorsPage({
 
   return (
     <div className="space-y-6">
+      {created && <SuccessBanner message="Proveedor guardado." />}
+      {deleted && <SuccessBanner message="Proveedor borrado." />}
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className={pageHeading}>Proveedores</h1>
         {profile.role === "owner" && (

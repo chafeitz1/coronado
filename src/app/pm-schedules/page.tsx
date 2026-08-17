@@ -4,6 +4,7 @@ import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { togglePmSchedule } from "@/app/actions/pm-schedules";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, buttonUtility, listCard, mutedText, pageHeading } from "@/lib/ui";
 
 const UNIT_LABELS: Record<string, string> = {
@@ -60,9 +61,9 @@ export default async function PmSchedulesPage() {
                   </p>
                 </div>
                 <form action={togglePmSchedule.bind(null, s.id, !s.active)} className="shrink-0">
-                  <button type="submit" className={buttonUtility}>
+                  <SubmitButton className={buttonUtility} pendingLabel="...">
                     {s.active ? "Desactivar" : "Activar"}
-                  </button>
+                  </SubmitButton>
                 </form>
               </li>
             );

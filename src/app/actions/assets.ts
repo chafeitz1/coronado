@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/auth";
-import { uploadAssetPhoto } from "@/lib/attachments-server";
+import { uploadAttachment } from "@/lib/attachments-server";
 
 function readAssetFields(formData: FormData) {
   return {
@@ -38,7 +38,7 @@ export async function createAsset(formData: FormData) {
 
   const photo = formData.get("photo");
   if (photo instanceof File && photo.size > 0) {
-    await uploadAssetPhoto(supabase, asset.id, profile.id, photo);
+    await uploadAttachment(supabase, { assetId: asset.id }, profile.id, photo);
   }
 
   revalidatePath("/assets", "layout");
@@ -58,7 +58,7 @@ export async function updateAsset(assetId: string, formData: FormData) {
 
   const photo = formData.get("photo");
   if (photo instanceof File && photo.size > 0) {
-    await uploadAssetPhoto(supabase, assetId, profile.id, photo);
+    await uploadAttachment(supabase, { assetId }, profile.id, photo);
   }
 
   revalidatePath("/assets", "layout");

@@ -19,6 +19,27 @@ export function daysUntil(dateStr: string): number {
   return Math.round((target.getTime() - today.getTime()) / 86400000);
 }
 
+export function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+// 6 weeks (42 days) covering the given month, Monday-start, including the
+// leading/trailing days from adjacent months that fill out the grid.
+export function getMonthGrid(year: number, month: number): Date[] {
+  const first = new Date(Date.UTC(year, month, 1));
+  const firstWeekday = (first.getUTCDay() + 6) % 7; // Monday = 0
+  const start = new Date(first);
+  start.setUTCDate(first.getUTCDate() - firstWeekday);
+
+  const days: Date[] = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setUTCDate(start.getUTCDate() + i);
+    days.push(d);
+  }
+  return days;
+}
+
 export function advanceDate(dateStr: string, unit: "days" | "weeks" | "months" | "years", value: number): string {
   const date = new Date(`${dateStr}T00:00:00Z`);
   if (unit === "days") date.setUTCDate(date.getUTCDate() + value);

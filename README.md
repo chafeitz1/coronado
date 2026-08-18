@@ -69,13 +69,17 @@ Cada activo (A/C, bomba de piscina, electrodoméstico, etc.) puede llevar marca,
 
 `/assets` usa una vista tipo panel (como Airtable/Linear): la lista queda fija a la izquierda con una miniatura de foto por activo y un menú de editar/borrar directo en cada fila, y al hacer clic el detalle se abre a la derecha sin recargar la página. En celular se muestra un solo panel a la vez, con un link para volver a la lista.
 
-## 9. Idioma
+## 9. Tareas: vista tipo panel, tabla y calendario
+
+`/work-orders` sigue el mismo lenguaje visual de MaintainX: un selector de vista (Lista/Tabla/Calendario), chips de filtro (fecha límite, ubicación del activo, prioridad), pestañas "Por hacer/Hechas", orden configurable, y agrupación colapsable ("Asignadas a mí" / "Otras tareas"). El estado de cada tarea se puede cambiar directo desde la fila (sin abrir el detalle) con un chip tipo 🔒 Abierta ▾. La vista Lista comparte panel con el detalle (como Activos); Tabla y Calendario usan todo el ancho de la pantalla. El formulario de nueva tarea tiene un título grande sin caja, zona para arrastrar una foto, y campos de Activo/Asignar a tipo buscador en vez de listas desplegables normales.
+
+## 10. Idioma
 
 La plataforma está en español e inglés. Cada quien elige su idioma desde `/profile` → "Idioma" — la preferencia se guarda por cuenta (columna `locale` en `profiles`, migración `0009_user_locale.sql`) y se aplica en todas las pantallas la próxima vez que carguen, sin afectar a los demás usuarios. Nuevas cuentas empiezan en español por defecto. La pantalla de login siempre está en español (ahí todavía no hay una cuenta con la cual asociar la preferencia).
 
 Las traducciones viven en `src/lib/i18n/dictionaries.ts` — un diccionario por idioma, con TypeScript verificando que ambos tengan exactamente las mismas claves.
 
-## 10. Desplegar
+## 11. Desplegar
 
 1. Sube el repo a GitHub y conéctalo en [vercel.com/new](https://vercel.com/new).
 2. Agrega todas las variables de `.env.example` en Vercel (Project Settings → Environment Variables).

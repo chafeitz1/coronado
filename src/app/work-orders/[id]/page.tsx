@@ -51,7 +51,7 @@ export default async function WorkOrderDetailPage({
   };
 
   return (
-    <div className="max-w-2xl space-y-8">
+    <div className="space-y-8">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className={pageHeading}>{workOrder.title}</h1>

@@ -4,12 +4,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_ATTACHMENT_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-// Shared by the "add a photo" gallery action and by createAsset/updateAsset
-// (which attach a photo inline as part of saving the asset itself).
-export async function uploadAssetPhoto(
+type AttachmentTarget = { assetId: string; workOrderId?: never } | { workOrderId: string; assetId?: never };
+
+// Shared by the "add a photo" gallery actions and by createAsset/updateAsset/
+// createWorkOrder (which attach a photo inline as part of saving the record
+// itself, rather than as a separate follow-up step).
+export async function uploadAttachment(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any>,
-  assetId: string,
+  target: AttachmentTarget,
   userId: string,
   file: File
 ) {
@@ -20,7 +23,8 @@ export async function uploadAssetPhoto(
     throw new Error("La foto no puede pesar más de 5MB.");
   }
 
-  const path = `${assetId}/${userId}/${Date.now()}-${file.name}`;
+  const ownerId = target.assetId ?? target.workOrderId;
+  const path = `${ownerId}/${userId}/${Date.now()}-${file.name}`;
 
   const { error: uploadError } = await supabase.storage
     .from("attachments")
@@ -28,8 +32,8 @@ export async function uploadAssetPhoto(
   if (uploadError) throw new Error(uploadError.message);
 
   const { error: insertError } = await supabase.from("attachments").insert({
-    asset_id: assetId,
-    work_order_id: null,
+    asset_id: target.assetId ?? null,
+    work_order_id: target.workOrderId ?? null,
     storage_path: path,
     file_name: file.name,
     uploaded_by: userId,

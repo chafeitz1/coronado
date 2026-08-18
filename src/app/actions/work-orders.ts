@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { notifyUser } from "@/lib/notifications/send";
 import { advanceDate, isoDateOffset } from "@/lib/dates";
+import { uploadAttachment } from "@/lib/attachments-server";
 import type { IntervalUnit, WorkOrderPriority } from "@/lib/types/database";
 
 async function getOwnerId(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -58,6 +59,11 @@ export async function createWorkOrder(formData: FormData) {
     throw new Error(error?.message ?? "No se pudo crear la tarea.");
   }
 
+  const photo = formData.get("photo");
+  if (photo instanceof File && photo.size > 0) {
+    await uploadAttachment(supabase, { workOrderId: workOrder.id }, profile.id, photo);
+  }
+
   if (assignedTo) {
     await notifyUser(assignedTo, "task_assigned", {
       body: `Se te asignó: ${title}`,
@@ -66,7 +72,7 @@ export async function createWorkOrder(formData: FormData) {
   }
 
   revalidatePath("/");
-  revalidatePath("/work-orders");
+  revalidatePath("/work-orders", "layout");
   redirect(`/work-orders/${workOrder.id}`);
 }
 
@@ -132,7 +138,7 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
   }
 
   revalidatePath(`/work-orders/${workOrderId}`);
-  revalidatePath("/work-orders");
+  revalidatePath("/work-orders", "layout");
   revalidatePath("/");
 }
 

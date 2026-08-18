@@ -3,8 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createWorkOrder } from "@/app/actions/work-orders";
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Combobox } from "@/components/ui/combobox";
+import { PhotoDropzone } from "@/components/ui/photo-dropzone";
 import { RecurrenceFields } from "@/components/recurrence-fields";
-import { buttonPrimary, card, input, mutedText, pageHeading } from "@/lib/ui";
+import { buttonPrimary, card, input, mutedText } from "@/lib/ui";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export default async function NewWorkOrderPage() {
@@ -21,12 +23,15 @@ export default async function NewWorkOrderPage() {
 
   return (
     <div className="max-w-lg space-y-6">
-      <h1 className={pageHeading}>{dict.workOrderForm.title}</h1>
+      <form action={createWorkOrder} className={`space-y-5 p-5 ${card}`}>
+        <input
+          name="title"
+          required
+          placeholder={dict.workOrderForm.titleLabel + "... *"}
+          className="w-full border-0 border-b-2 border-hairline bg-transparent px-0 py-2 text-lg font-semibold text-ink outline-none placeholder:text-ink-faint focus:border-primary"
+        />
 
-      <form action={createWorkOrder} className={`space-y-4 p-5 ${card}`}>
-        <Field label={dict.workOrderForm.titleLabel}>
-          <input name="title" required className={input} />
-        </Field>
+        <PhotoDropzone name="photo" label={dict.workOrderForm.addPhoto} />
 
         <Field label={dict.workOrderForm.descriptionLabel}>
           <textarea name="description" rows={3} className={input} />
@@ -47,27 +52,23 @@ export default async function NewWorkOrderPage() {
         </div>
 
         <Field label={dict.workOrderForm.assetLabel}>
-          <select name="asset_id" defaultValue="" className={input}>
-            <option value="">{dict.workOrderForm.noneOption}</option>
-            {assets?.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          <Combobox
+            name="asset_id"
+            placeholder={dict.workOrderForm.startTyping}
+            noResultsLabel={dict.workOrderForm.noOptions}
+            options={(assets ?? []).map((a) => ({ value: a.id, label: a.name }))}
+          />
         </Field>
 
         {profile.role === "owner" && (
           <>
             <Field label={dict.workOrderForm.assignLabel}>
-              <select name="assigned_to" defaultValue="" className={input}>
-                <option value="">{dict.workOrderForm.unassignedOption}</option>
-                {staff?.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.full_name}
-                  </option>
-                ))}
-              </select>
+              <Combobox
+                name="assigned_to"
+                placeholder={dict.workOrderForm.startTyping}
+                noResultsLabel={dict.workOrderForm.noOptions}
+                options={(staff ?? []).map((s) => ({ value: s.id, label: s.full_name }))}
+              />
             </Field>
 
             <RecurrenceFields dict={dict} />
@@ -75,7 +76,7 @@ export default async function NewWorkOrderPage() {
           </>
         )}
 
-        <SubmitButton className={buttonPrimary} pendingLabel={dict.workOrderForm.submitPending}>
+        <SubmitButton className={`w-full ${buttonPrimary}`} pendingLabel={dict.workOrderForm.submitPending}>
           {dict.workOrderForm.submit}
         </SubmitButton>
       </form>

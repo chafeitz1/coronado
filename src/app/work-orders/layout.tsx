@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { WorkOrdersShell } from "@/components/work-orders-shell";
 import { WorkOrdersExplorer } from "@/components/work-orders/work-orders-explorer";
+import { ViewSwitcher, type DisplayMode } from "@/components/view-switcher";
 import type { WorkOrderRow } from "@/components/work-orders/types";
 import { buttonPrimary, pageHeading } from "@/lib/ui";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -40,10 +41,19 @@ export default async function WorkOrdersLayout({ children }: { children: React.R
 
   const today = new Date().toISOString().slice(0, 10);
 
+  const viewOptions: { key: DisplayMode; label: string }[] = [
+    { key: "list", label: dict.workOrders.viewListDisplay },
+    { key: "table", label: dict.workOrders.viewTable },
+    { key: "calendar", label: dict.workOrders.viewCalendar },
+  ];
+
   const listPane = (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className={pageHeading}>{dict.workOrders.title}</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className={pageHeading}>{dict.workOrders.title}</h1>
+          <ViewSwitcher options={viewOptions} />
+        </div>
         <Link href="/work-orders/new" className={buttonPrimary}>
           <Plus className="size-4" /> {dict.workOrders.newTask}
         </Link>

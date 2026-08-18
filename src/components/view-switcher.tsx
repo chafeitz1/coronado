@@ -13,19 +13,16 @@ const ICONS: Record<DisplayMode, typeof LayoutPanelLeft> = {
 };
 
 // Matches MaintainX's "◫ To Do View ⌄" control: switches how the same
-// underlying list is displayed via a `display` query param.
-export function ViewSwitcher({
-  value,
-  options,
-}: {
-  value: DisplayMode;
-  options: { key: DisplayMode; label: string }[];
-}) {
+// underlying list is displayed via a `display` query param. Reads its own
+// current value from the URL so it can be dropped anywhere (e.g. next to a
+// server-rendered page heading) without a parent having to thread it down.
+export function ViewSwitcher({ options }: { options: { key: DisplayMode; label: string }[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const value = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
   const Icon = ICONS[value];
 
   useEffect(() => {

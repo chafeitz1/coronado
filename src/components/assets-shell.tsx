@@ -25,7 +25,7 @@ export function AssetsShell({
   return (
     <div className="flex flex-col md:flex-row md:items-start">
       <div
-        className={`w-full shrink-0 md:w-80 md:border-r md:border-hairline md:pr-6 lg:w-96 ${isIndex ? "block" : "hidden md:block"}`}
+        className={`w-full shrink-0 md:w-96 md:border-r md:border-hairline md:pr-6 lg:w-[28rem] ${isIndex ? "block" : "hidden md:block"}`}
       >
         {listPane}
       </div>

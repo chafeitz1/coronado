@@ -5,11 +5,9 @@ import Link from "next/link";
 import { ClipboardList, Repeat, ChevronUp, ChevronDown as ChevronDownIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
-import { OverdueBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { listCard, mutedText, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
-import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
 
 export function WorkOrderListView({
@@ -17,7 +15,6 @@ export function WorkOrderListView({
   orders,
   today,
   dict,
-  locale,
   currentUserId,
   isOwner,
   emptyMessage,
@@ -26,7 +23,6 @@ export function WorkOrderListView({
   orders: WorkOrderRow[];
   today: string;
   dict: Dictionary;
-  locale: Locale;
   currentUserId: string;
   isOwner: boolean;
   emptyMessage?: string;
@@ -54,10 +50,6 @@ export function WorkOrderListView({
           {orders.map((wo) => {
             const overdue = wo.status !== "done" && !!wo.due_date && wo.due_date < today;
             const canEdit = isOwner || wo.assigned_to === currentUserId;
-            const subtitleParts = [
-              wo.asset?.name,
-              wo.due_date ? format(dict.workOrders.dueDate, { date: wo.due_date }) : null,
-            ].filter(Boolean) as string[];
 
             return (
               <li key={wo.id}>
@@ -68,23 +60,32 @@ export function WorkOrderListView({
                   <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
                     <ClipboardList className="size-4" strokeWidth={2} />
                   </span>
-                  <div className="min-w-40 flex-1">
-                    <p className="flex items-center gap-1.5 truncate font-medium text-ink">
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-1.5 font-medium text-ink">
                       {wo.recurrence_interval_value && (
                         <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
                       )}
-                      {wo.title}
+                      <span className="truncate">{wo.title}</span>
                     </p>
                     <p className={`${mutedText} truncate`}>
-                      {subtitleParts.length > 0 ? subtitleParts.join(" · ") : dict.workOrders.unassigned}
+                      {wo.asset?.name || wo.due_date ? (
+                        <>
+                          {wo.asset?.name}
+                          {wo.asset?.name && wo.due_date && " · "}
+                          {wo.due_date && (
+                            <span className={overdue ? "font-medium text-status-overdue-fg" : undefined}>
+                              {format(dict.workOrders.dueDate, { date: wo.due_date })}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        dict.workOrders.unassigned
+                      )}
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
                     {wo.assignee && <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />}
-                    <div className="flex items-center gap-1.5">
-                      {overdue && <OverdueBadge locale={locale} />}
-                      <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
-                    </div>
+                    <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
                   </div>
                 </Link>
               </li>

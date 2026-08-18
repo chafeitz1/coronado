@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Calendar as CalendarIcon, MapPin, Flag } from "lucide-react";
-import { ViewSwitcher, type DisplayMode } from "@/components/view-switcher";
+import type { DisplayMode } from "@/components/view-switcher";
 import { FilterChip, FilterChipOption } from "@/components/ui/filter-chip";
 import { WorkOrderListView } from "./work-order-list-view";
 import { WorkOrderTableView } from "./work-order-table-view";
@@ -86,16 +86,8 @@ export function WorkOrdersExplorer({
   const priorityLabel = priority ? dict.priorities[priority] : null;
   const sortLabel = sortKey === "priority" ? dict.workOrders.sortPriority : dict.workOrders.sortDueDate;
 
-  const viewOptions: { key: DisplayMode; label: string }[] = [
-    { key: "list", label: dict.workOrders.viewListDisplay },
-    { key: "table", label: dict.workOrders.viewTable },
-    { key: "calendar", label: dict.workOrders.viewCalendar },
-  ];
-
   return (
     <div className="space-y-4">
-      <ViewSwitcher value={display} options={viewOptions} />
-
       <div className="flex flex-wrap items-center gap-2">
         <FilterChip
           icon={CalendarIcon}
@@ -144,8 +136,8 @@ export function WorkOrdersExplorer({
       </div>
 
       {display !== "calendar" && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-1 rounded-full border border-hairline bg-surface p-1">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline">
+          <div className="flex gap-5">
             <button type="button" onClick={() => setTab("to_do")} className={tabClass(tab === "to_do")}>
               {dict.workOrders.tabToDo}
             </button>
@@ -185,7 +177,6 @@ export function WorkOrdersExplorer({
               orders={mine}
               today={today}
               dict={dict}
-              locale={locale}
               currentUserId={currentUserId}
               isOwner={isOwner}
             />
@@ -194,7 +185,6 @@ export function WorkOrdersExplorer({
               orders={others}
               today={today}
               dict={dict}
-              locale={locale}
               currentUserId={currentUserId}
               isOwner={isOwner}
             />
@@ -204,7 +194,6 @@ export function WorkOrdersExplorer({
             orders={sorted}
             today={today}
             dict={dict}
-            locale={locale}
             currentUserId={currentUserId}
             isOwner={isOwner}
             emptyMessage={dict.workOrders.emptyView}
@@ -215,7 +204,7 @@ export function WorkOrdersExplorer({
 }
 
 function tabClass(active: boolean) {
-  return `rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-    active ? "bg-primary-soft text-primary" : "text-ink-muted hover:text-ink"
+  return `-mb-px border-b-2 px-1 pb-2.5 text-sm font-medium transition-colors ${
+    active ? "border-primary text-primary" : "border-transparent text-ink-muted hover:text-ink"
   }`;
 }

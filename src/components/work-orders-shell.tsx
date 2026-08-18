@@ -28,11 +28,13 @@ export function WorkOrdersShell({
   }
 
   return (
-    <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
-      <div className={`w-full shrink-0 md:w-80 lg:w-96 ${isIndex ? "block" : "hidden md:block"}`}>
+    <div className="flex flex-col md:flex-row md:items-start">
+      <div
+        className={`w-full shrink-0 md:w-80 md:border-r md:border-hairline md:pr-6 lg:w-96 ${isIndex ? "block" : "hidden md:block"}`}
+      >
         {listPane}
       </div>
-      <div className={`min-w-0 flex-1 ${isIndex ? "hidden md:block" : "block"}`}>
+      <div className={`min-w-0 flex-1 md:pl-6 ${isIndex ? "hidden md:block" : "block"}`}>
         {!isIndex && (
           <Link
             href="/work-orders"

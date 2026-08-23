@@ -126,7 +126,7 @@ export default async function AssetDetailPage({
 
       {preferredVendor && (
         <Link
-          href={`/vendors/${preferredVendor.id}`}
+          href={`/directory?vendor=${preferredVendor.id}`}
           className={`flex items-center gap-3 p-4 text-sm transition-colors hover:bg-surface-hover ${card}`}
         >
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">

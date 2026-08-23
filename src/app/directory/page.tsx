@@ -1,20 +1,14 @@
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { SuccessBanner } from "@/components/ui/success-banner";
 import { DirectoryExplorer } from "@/components/directory-explorer";
 import { mutedText, pageHeading } from "@/lib/ui";
 import { getDictionary, format } from "@/lib/i18n/dictionaries";
 import type { NotificationEventType } from "@/lib/types/database";
 
-export default async function DirectoryPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ created?: string; deleted?: string }>;
-}) {
+export default async function DirectoryPage() {
   const profile = await requireUser();
   const dict = getDictionary(profile.locale);
   const supabase = await createClient();
-  const { created, deleted } = await searchParams;
   const isOwner = profile.role === "owner";
 
   const [{ data: vendors }, { data: people }] = await Promise.all([
@@ -46,9 +40,6 @@ export default async function DirectoryPage({
 
   return (
     <div className="space-y-6">
-      {created && <SuccessBanner message={dict.directory.createdBanner} />}
-      {deleted && <SuccessBanner message={dict.directory.deletedBanner} />}
-
       <div>
         <h1 className={pageHeading}>{dict.directory.title}</h1>
         <p className={mutedText}>

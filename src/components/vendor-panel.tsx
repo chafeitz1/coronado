@@ -1,0 +1,187 @@
+"use client";
+
+import { useActionState, useEffect, useState, useTransition } from "react";
+import { Pencil, Trash2, Phone, Mail, User as UserIcon, Building2, Siren } from "lucide-react";
+import { SidePanel } from "@/components/ui/side-panel";
+import { VendorForm } from "@/components/vendor-form";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
+import { createVendor, updateVendor, deleteVendor } from "@/app/actions/vendors";
+import { telHref, whatsAppHref } from "@/lib/phone";
+import { buttonSecondary, sectionHeading } from "@/lib/ui";
+import { format, type Dictionary } from "@/lib/i18n/dictionaries";
+import type { Locale, VendorTrade } from "@/lib/types/database";
+import type { VendorRow } from "@/components/directory-explorer";
+
+export type VendorPanelMode = "create" | "view" | "edit";
+
+export function VendorPanel({
+  mode: initialMode,
+  vendor,
+  dict,
+  locale,
+  isOwner,
+  tradeLabels,
+  onClose,
+}: {
+  mode: VendorPanelMode;
+  vendor: VendorRow | null;
+  dict: Dictionary;
+  locale: Locale;
+  isOwner: boolean;
+  tradeLabels: Record<VendorTrade, string>;
+  onClose: () => void;
+}) {
+  const [mode, setMode] = useState<VendorPanelMode>(initialMode);
+  const [deletePending, startDelete] = useTransition();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const [createState, createAction] = useActionState(createVendor, null);
+  const [updateState, updateAction] = useActionState(
+    vendor ? updateVendor.bind(null, vendor.id) : createVendor,
+    null
+  );
+
+  useEffect(() => {
+    if (createState?.ok) onClose();
+  }, [createState, onClose]);
+
+  useEffect(() => {
+    if (updateState?.ok) onClose();
+  }, [updateState, onClose]);
+
+  function handleDelete() {
+    if (!vendor) return;
+    if (!window.confirm(format(dict.vendorDetail.deleteConfirm, { name: vendor.name }))) return;
+    startDelete(async () => {
+      const result = await deleteVendor(vendor.id);
+      if (result.error) setDeleteError(result.error);
+      else onClose();
+    });
+  }
+
+  const title =
+    mode === "create" ? dict.vendorForm.title : mode === "edit" ? dict.vendorForm.editTitle : (vendor?.name ?? "");
+
+  return (
+    <SidePanel open onClose={onClose} title={title}>
+      {mode === "create" && (
+        <VendorForm
+          action={createAction}
+          submitLabel={dict.vendorForm.submit}
+          dict={dict}
+          locale={locale}
+          error={createState && !createState.ok ? createState.error : undefined}
+          onCancel={onClose}
+        />
+      )}
+
+      {mode === "edit" && vendor && (
+        <VendorForm
+          action={updateAction}
+          submitLabel={dict.vendorForm.submitEdit}
+          dict={dict}
+          locale={locale}
+          defaultValues={vendor}
+          error={updateState && !updateState.ok ? updateState.error : undefined}
+          onCancel={() => setMode("view")}
+        />
+      )}
+
+      {mode === "view" && vendor && (
+        <div className="space-y-5">
+          <div className="flex items-start gap-3">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <Building2 className="size-5" strokeWidth={2} />
+            </span>
+            <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+              {vendor.is_emergency && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-status-overdue-fg px-2.5 py-0.5 text-xs font-semibold text-white">
+                  <Siren className="size-3" /> {dict.directory.emergencyBadge}
+                </span>
+              )}
+              {vendor.trades.map((t) => (
+                <span key={t} className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
+                  {tradeLabels[t]}
+                </span>
+              ))}
+              {vendor.trades.length === 0 && !vendor.is_emergency && (
+                <span className="text-xs text-ink-faint">{dict.directory.noSpecialty}</span>
+              )}
+            </div>
+          </div>
+
+          {(vendor.contact_name || vendor.phone || vendor.email) && (
+            <div className="space-y-1.5 text-sm text-ink-secondary">
+              {vendor.contact_name && (
+                <p className="flex items-center gap-2">
+                  <UserIcon className="size-3.5 shrink-0 text-ink-faint" /> {vendor.contact_name}
+                </p>
+              )}
+              {vendor.phone && (
+                <p className="flex items-center gap-2">
+                  <Phone className="size-3.5 shrink-0 text-ink-faint" /> {vendor.phone}
+                </p>
+              )}
+              {vendor.email && (
+                <p className="flex items-center gap-2">
+                  <Mail className="size-3.5 shrink-0 text-ink-faint" /> {vendor.email}
+                </p>
+              )}
+            </div>
+          )}
+
+          {vendor.notes && (
+            <div className="space-y-1.5">
+              <h3 className={sectionHeading}>{dict.vendorDetail.notesTitle}</h3>
+              <p className="text-sm text-ink-secondary">{vendor.notes}</p>
+            </div>
+          )}
+
+          {(vendor.phone || vendor.email) && (
+            <div className="flex gap-2">
+              {vendor.phone && (
+                <a href={telHref(vendor.phone)} className={`flex-1 ${buttonSecondary}`}>
+                  <Phone className="size-3.5" /> {dict.vendorDetail.call}
+                </a>
+              )}
+              {vendor.phone && (
+                <a
+                  href={whatsAppHref(vendor.phone)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex-1 ${buttonSecondary}`}
+                >
+                  <WhatsAppIcon className="size-3.5" /> {dict.vendorDetail.whatsapp}
+                </a>
+              )}
+              {vendor.email && (
+                <a href={`mailto:${vendor.email}`} className={`flex-1 ${buttonSecondary}`}>
+                  <Mail className="size-3.5" /> {dict.vendorDetail.email}
+                </a>
+              )}
+            </div>
+          )}
+
+          {isOwner && (
+            <div className="space-y-2 border-t border-hairline pt-4">
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setMode("edit")} className={`flex-1 ${buttonSecondary}`}>
+                  <Pencil className="size-3.5" /> {dict.vendorDetail.edit}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deletePending}
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-hairline bg-surface px-4 py-2 text-sm font-medium text-status-overdue-fg transition-colors hover:bg-status-overdue-bg disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <Trash2 className="size-3.5" /> {deletePending ? dict.vendorDetail.deleting : dict.vendorDetail.delete}
+                </button>
+              </div>
+              {deleteError && <p className="text-sm text-status-overdue-fg">{deleteError}</p>}
+            </div>
+          )}
+        </div>
+      )}
+    </SidePanel>
+  );
+}

@@ -1,6 +1,6 @@
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { buttonPrimary, card, input, label as labelClass } from "@/lib/ui";
+import { buttonPrimary, buttonSecondary, input, label as labelClass } from "@/lib/ui";
 import { getTradeOptions } from "@/lib/vendor-trades";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale, VendorTrade } from "@/lib/types/database";
@@ -11,6 +11,8 @@ export function VendorForm({
   dict,
   locale,
   defaultValues,
+  error,
+  onCancel,
 }: {
   action: (formData: FormData) => void;
   submitLabel: string;
@@ -25,24 +27,24 @@ export function VendorForm({
     notes: string | null;
     is_emergency: boolean;
   };
+  error?: string;
+  onCancel?: () => void;
 }) {
   const tradeOptions = getTradeOptions(locale);
 
   return (
-    <form action={action} className={`space-y-4 p-5 ${card}`}>
-      <div className="grid grid-cols-2 gap-4">
-        <Field label={dict.vendorForm.nameLabel}>
-          <input name="name" required defaultValue={defaultValues?.name} className={input} />
-        </Field>
-        <Field label={dict.vendorForm.contactNameLabel}>
-          <input
-            name="contact_name"
-            placeholder={dict.vendorForm.contactNamePlaceholder}
-            defaultValue={defaultValues?.contact_name ?? ""}
-            className={input}
-          />
-        </Field>
-      </div>
+    <form action={action} className="space-y-4">
+      <Field label={dict.vendorForm.nameLabel}>
+        <input name="name" required defaultValue={defaultValues?.name} className={input} />
+      </Field>
+      <Field label={dict.vendorForm.contactNameLabel}>
+        <input
+          name="contact_name"
+          placeholder={dict.vendorForm.contactNamePlaceholder}
+          defaultValue={defaultValues?.contact_name ?? ""}
+          className={input}
+        />
+      </Field>
 
       <div className="space-y-1.5">
         <label className={labelClass}>{dict.vendorForm.specialtiesLabel}</label>
@@ -65,25 +67,23 @@ export function VendorForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Field label={dict.vendorForm.phoneLabel}>
-          <input
-            name="phone"
-            placeholder={dict.vendorForm.phonePlaceholder}
-            defaultValue={defaultValues?.phone ?? ""}
-            className={input}
-          />
-        </Field>
-        <Field label={dict.vendorForm.emailLabel}>
-          <input
-            type="email"
-            name="email"
-            placeholder={dict.vendorForm.emailPlaceholder}
-            defaultValue={defaultValues?.email ?? ""}
-            className={input}
-          />
-        </Field>
-      </div>
+      <Field label={dict.vendorForm.phoneLabel}>
+        <input
+          name="phone"
+          placeholder={dict.vendorForm.phonePlaceholder}
+          defaultValue={defaultValues?.phone ?? ""}
+          className={input}
+        />
+      </Field>
+      <Field label={dict.vendorForm.emailLabel}>
+        <input
+          type="email"
+          name="email"
+          placeholder={dict.vendorForm.emailPlaceholder}
+          defaultValue={defaultValues?.email ?? ""}
+          className={input}
+        />
+      </Field>
 
       <Field label={dict.vendorForm.notesLabel}>
         <textarea name="notes" rows={3} defaultValue={defaultValues?.notes ?? ""} className={input} />
@@ -99,9 +99,18 @@ export function VendorForm({
         {dict.vendorForm.emergencyLabel}
       </label>
 
-      <SubmitButton className={buttonPrimary} pendingLabel={dict.vendorForm.submitPending}>
-        {submitLabel}
-      </SubmitButton>
+      {error && <p className="text-sm text-status-overdue-fg">{error}</p>}
+
+      <div className="flex gap-2 pt-1">
+        <SubmitButton className={`flex-1 ${buttonPrimary}`} pendingLabel={dict.vendorForm.submitPending}>
+          {submitLabel}
+        </SubmitButton>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className={buttonSecondary}>
+            {dict.vendorForm.cancel}
+          </button>
+        )}
+      </div>
     </form>
   );
 }

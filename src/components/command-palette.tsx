@@ -81,7 +81,7 @@ export function CommandPalette({ locale }: { locale: Locale }) {
         ...data.vendors.map((v: { id: string; name: string }) => ({
           id: v.id,
           label: v.name,
-          href: `/vendors/${v.id}`,
+          href: `/directory?vendor=${v.id}`,
           icon: Building2,
           group: dict.commandPalette.groupVendors,
         })),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   Building2,
@@ -20,6 +20,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { PrefToggle } from "@/components/pref-toggle";
 import { Avatar } from "@/components/ui/avatar";
+import { VendorPanel, type VendorPanelMode } from "@/components/vendor-panel";
 import { inviteMember } from "@/app/actions/admin";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { getTradeLabels } from "@/lib/vendor-trades";
@@ -27,7 +28,7 @@ import { type Dictionary } from "@/lib/i18n/dictionaries";
 import { buttonSecondary, card, input, mutedText, sectionHeading } from "@/lib/ui";
 import type { Locale, VendorTrade, UserRole, NotificationEventType } from "@/lib/types/database";
 
-type VendorRow = {
+export type VendorRow = {
   id: string;
   name: string;
   contact_name: string | null;
@@ -77,6 +78,18 @@ export function DirectoryExplorer({
   const [activeTrade, setActiveTrade] = useState<VendorTrade | null>(null);
   const [emergencyOnly, setEmergencyOnly] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+  // Lazy initializer so a `?vendor=<id>` deep link (from the command
+  // palette or an asset's preferred-vendor link) opens the panel on first
+  // render, without an effect racing the initial paint.
+  const [panel, setPanel] = useState<{ mode: VendorPanelMode; vendor: VendorRow | null } | null>(() => {
+    const vendorId = searchParams.get("vendor");
+    if (!vendorId) return null;
+    const match = vendors.find((v) => v.id === vendorId);
+    if (!match) return null;
+    return { mode: searchParams.get("edit") === "1" ? "edit" : "view", vendor: match };
+  });
 
   const q = search.trim().toLowerCase();
 
@@ -182,9 +195,13 @@ export function DirectoryExplorer({
               {dict.directory.vendorsHeading} <span className="text-ink-faint">· {filteredVendors.length}</span>
             </h2>
             {isOwner && (
-              <Link href="/vendors/new" className="text-xs font-medium text-primary hover:underline">
+              <button
+                type="button"
+                onClick={() => setPanel({ mode: "create", vendor: null })}
+                className="text-xs font-medium text-primary hover:underline"
+              >
                 + {dict.directory.newVendor}
-              </Link>
+              </button>
             )}
           </div>
 
@@ -206,7 +223,13 @@ export function DirectoryExplorer({
           {filteredVendors.length > 0 ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {filteredVendors.map((vendor) => (
-                <VendorCard key={vendor.id} vendor={vendor} tradeLabels={tradeLabels} dict={dict} />
+                <VendorCard
+                  key={vendor.id}
+                  vendor={vendor}
+                  tradeLabels={tradeLabels}
+                  dict={dict}
+                  onSelect={() => setPanel({ mode: "view", vendor })}
+                />
               ))}
             </div>
           ) : (
@@ -286,6 +309,19 @@ export function DirectoryExplorer({
           )}
         </section>
       )}
+
+      {panel && (
+        <VendorPanel
+          key={panel.mode === "create" ? "create" : `${panel.mode}-${panel.vendor!.id}`}
+          mode={panel.mode}
+          vendor={panel.vendor}
+          dict={dict}
+          locale={locale}
+          isOwner={isOwner}
+          tradeLabels={tradeLabels}
+          onClose={() => setPanel(null)}
+        />
+      )}
     </div>
   );
 }
@@ -294,14 +330,16 @@ function VendorCard({
   vendor,
   tradeLabels,
   dict,
+  onSelect,
 }: {
   vendor: VendorRow;
   tradeLabels: Record<VendorTrade, string>;
   dict: Dictionary;
+  onSelect: () => void;
 }) {
   return (
     <div className={`p-4 ${card}`}>
-      <Link href={`/vendors/${vendor.id}`} className="flex items-start gap-3">
+      <button type="button" onClick={onSelect} className="flex w-full items-start gap-3 text-left">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
           <Building2 className="size-5" strokeWidth={2} />
         </span>
@@ -325,7 +363,7 @@ function VendorCard({
           </div>
         </div>
         <ChevronRight className="mt-2 size-4 shrink-0 text-ink-faint" />
-      </Link>
+      </button>
 
       {(vendor.contact_name || vendor.phone || vendor.email) && (
         <div className="mt-3 space-y-1.5 text-sm text-ink-secondary">

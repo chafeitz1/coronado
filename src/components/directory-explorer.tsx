@@ -46,8 +46,6 @@ type NotifEvent = { key: NotificationEventType; label: string };
 
 type DirectoryType = "all" | "vendors" | "people";
 
-const ROLE_RANK: Record<UserRole, number> = { owner: 0, family: 1, staff: 2 };
-
 export function DirectoryExplorer({
   vendors,
   people,
@@ -94,12 +92,22 @@ export function DirectoryExplorer({
     });
   }, [vendors, type, activeTrade, q]);
 
-  const sortedPeople = useMemo(() => {
+  const peopleByRole = useMemo(() => {
     if (type === "vendors") return [];
-    return people
-      .filter((p) => !q || p.full_name.toLowerCase().includes(q))
-      .sort((a, b) => ROLE_RANK[a.role] - ROLE_RANK[b.role] || a.full_name.localeCompare(b.full_name));
-  }, [people, type, q]);
+    const filtered = people.filter((p) => !q || p.full_name.toLowerCase().includes(q));
+    const groups: { role: UserRole; label: string; members: PersonRow[] }[] = [
+      { role: "owner", label: dict.roles.owner, members: [] },
+      { role: "family", label: dict.roles.family, members: [] },
+      { role: "staff", label: dict.roles.staff, members: [] },
+    ];
+    for (const p of filtered) {
+      groups.find((g) => g.role === p.role)?.members.push(p);
+    }
+    for (const g of groups) g.members.sort((a, b) => a.full_name.localeCompare(b.full_name));
+    return groups.filter((g) => g.members.length > 0);
+  }, [people, type, q, dict]);
+
+  const peopleCount = peopleByRole.reduce((sum, g) => sum + g.members.length, 0);
 
   const showVendors = type !== "people";
   const showPeople = type !== "vendors";
@@ -201,7 +209,7 @@ export function DirectoryExplorer({
         <section className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className={sectionHeading}>
-              {dict.directory.peopleHeading} <span className="text-ink-faint">· {sortedPeople.length}</span>
+              {dict.directory.peopleHeading} <span className="text-ink-faint">· {peopleCount}</span>
             </h2>
             {isOwner && (
               <button
@@ -237,20 +245,29 @@ export function DirectoryExplorer({
             </form>
           )}
 
-          {sortedPeople.length > 0 ? (
-            <ul className={listCard}>
-              {sortedPeople.map((person) => (
-                <PersonRowItem
-                  key={person.id}
-                  person={person}
-                  isSelf={person.id === currentUserId}
-                  isOwner={isOwner}
-                  dict={dict}
-                  events={notifEvents}
-                  prefLookup={prefLookup}
-                />
+          {peopleByRole.length > 0 ? (
+            <div className="space-y-4">
+              {peopleByRole.map((group) => (
+                <div key={group.role} className="space-y-1.5">
+                  <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                    {group.label} <span className="text-ink-faint">· {group.members.length}</span>
+                  </h3>
+                  <ul className={listCard}>
+                    {group.members.map((person) => (
+                      <PersonRowItem
+                        key={person.id}
+                        person={person}
+                        isSelf={person.id === currentUserId}
+                        isOwner={isOwner}
+                        dict={dict}
+                        events={notifEvents}
+                        prefLookup={prefLookup}
+                      />
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
             <EmptyState icon={Users} message={dict.directory.emptyPeopleSearch} />
           )}
@@ -287,7 +304,6 @@ function PersonRowItem({
             {person.full_name}
             {isSelf && <span className={`ml-1 font-normal ${mutedText}`}>{dict.directory.you}</span>}
           </p>
-          <p className={`${mutedText} truncate`}>{dict.roles[person.role]}</p>
         </div>
         <ContactIcons phone={person.phone} email={null} name={person.full_name} dict={dict} />
         {canExpand && (

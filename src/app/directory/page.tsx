@@ -26,22 +26,15 @@ export default async function DirectoryPage({
   ]);
 
   let prefLookup: Record<string, boolean> = {};
-  let ownerNoteEmailEnabled = true;
 
   if (isOwner) {
-    const [{ data: prefs }, { data: ownerPrefs }] = await Promise.all([
-      supabase.from("notification_preferences").select("user_id, event_type, channel, enabled"),
-      supabase
-        .from("notification_preferences")
-        .select("channel, enabled")
-        .eq("user_id", profile.id)
-        .eq("event_type", "note_flagged"),
-    ]);
+    const { data: prefs } = await supabase
+      .from("notification_preferences")
+      .select("user_id, event_type, channel, enabled");
 
     prefLookup = Object.fromEntries(
       (prefs ?? []).map((p) => [`${p.user_id}:${p.event_type}:${p.channel}`, p.enabled])
     );
-    ownerNoteEmailEnabled = ownerPrefs?.find((p) => p.channel === "email")?.enabled ?? true;
   }
 
   const notifEvents: { key: NotificationEventType; label: string }[] = [
@@ -72,8 +65,6 @@ export default async function DirectoryPage({
         locale={profile.locale}
         notifEvents={notifEvents}
         prefLookup={prefLookup}
-        ownerId={profile.id}
-        ownerNoteEmailEnabled={ownerNoteEmailEnabled}
       />
     </div>
   );

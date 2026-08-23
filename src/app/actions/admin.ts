@@ -41,4 +41,5 @@ export async function setNotificationPreference(
     );
 
   revalidatePath("/directory");
+  revalidatePath("/profile");
 }

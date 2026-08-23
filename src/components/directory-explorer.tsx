@@ -9,7 +9,6 @@ import {
   User,
   Phone,
   Mail,
-  Bell,
   Siren,
   ChevronRight,
   ChevronDown,
@@ -62,8 +61,6 @@ export function DirectoryExplorer({
   locale,
   notifEvents,
   prefLookup,
-  ownerId,
-  ownerNoteEmailEnabled,
 }: {
   vendors: VendorRow[];
   people: PersonRow[];
@@ -73,8 +70,6 @@ export function DirectoryExplorer({
   locale: Locale;
   notifEvents: NotifEvent[];
   prefLookup: Record<string, boolean>;
-  ownerId: string;
-  ownerNoteEmailEnabled: boolean;
 }) {
   const tradeLabels = getTradeLabels(locale);
   const [search, setSearch] = useState("");
@@ -179,18 +174,6 @@ export function DirectoryExplorer({
           </>
         )}
       </div>
-
-      {isOwner && (
-        <label className="flex items-center gap-2 text-sm text-ink-muted">
-          <PrefToggle
-            userId={ownerId}
-            eventType="note_flagged"
-            channel="email"
-            defaultEnabled={ownerNoteEmailEnabled}
-          />
-          <Bell className="size-3.5" /> {dict.directory.notifyMe}
-        </label>
-      )}
 
       {showVendors && (
         <section className="space-y-3">

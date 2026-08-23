@@ -6,9 +6,11 @@ import {
   Search,
   Building2,
   Users,
+  User,
   Phone,
   Mail,
   Bell,
+  ChevronRight,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -21,8 +23,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { inviteMember } from "@/app/actions/admin";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { getTradeLabels } from "@/lib/vendor-trades";
-import { format, type Dictionary } from "@/lib/i18n/dictionaries";
-import { input, listCard, mutedText, sectionHeading, card } from "@/lib/ui";
+import { type Dictionary } from "@/lib/i18n/dictionaries";
+import { buttonSecondary, card, input, mutedText, sectionHeading } from "@/lib/ui";
 import type { Locale, VendorTrade, UserRole, NotificationEventType } from "@/lib/types/database";
 
 type VendorRow = {
@@ -32,6 +34,7 @@ type VendorRow = {
   trades: VendorTrade[];
   phone: string | null;
   email: string | null;
+  notes: string | null;
 };
 
 type PersonRow = {
@@ -45,6 +48,8 @@ type PersonRow = {
 type NotifEvent = { key: NotificationEventType; label: string };
 
 type DirectoryType = "all" | "vendors" | "people";
+
+const actionButton = `flex-1 ${buttonSecondary}`;
 
 export function DirectoryExplorer({
   vendors,
@@ -77,37 +82,40 @@ export function DirectoryExplorer({
 
   const q = search.trim().toLowerCase();
 
+  const searchedVendors = useMemo(
+    () => vendors.filter((v) => !q || v.name.toLowerCase().includes(q) || v.contact_name?.toLowerCase().includes(q)),
+    [vendors, q]
+  );
+  const searchedPeople = useMemo(
+    () => people.filter((p) => !q || p.full_name.toLowerCase().includes(q)),
+    [people, q]
+  );
+
   const tradeCounts = useMemo(() => {
     const counts = new Map<VendorTrade, number>();
-    for (const v of vendors) for (const t of v.trades) counts.set(t, (counts.get(t) ?? 0) + 1);
+    for (const v of searchedVendors) for (const t of v.trades) counts.set(t, (counts.get(t) ?? 0) + 1);
     return [...counts.entries()].sort((a, b) => tradeLabels[a[0]].localeCompare(tradeLabels[b[0]]));
-  }, [vendors, tradeLabels]);
+  }, [searchedVendors, tradeLabels]);
 
   const filteredVendors = useMemo(() => {
     if (type === "people") return [];
-    return vendors.filter((v) => {
-      if (activeTrade && !v.trades.includes(activeTrade)) return false;
-      if (q && !v.name.toLowerCase().includes(q) && !v.contact_name?.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [vendors, type, activeTrade, q]);
+    if (!activeTrade) return searchedVendors;
+    return searchedVendors.filter((v) => v.trades.includes(activeTrade));
+  }, [searchedVendors, type, activeTrade]);
 
   const peopleByRole = useMemo(() => {
     if (type === "vendors") return [];
-    const filtered = people.filter((p) => !q || p.full_name.toLowerCase().includes(q));
     const groups: { role: UserRole; label: string; members: PersonRow[] }[] = [
       { role: "owner", label: dict.roles.owner, members: [] },
       { role: "family", label: dict.roles.family, members: [] },
       { role: "staff", label: dict.roles.staff, members: [] },
     ];
-    for (const p of filtered) {
+    for (const p of searchedPeople) {
       groups.find((g) => g.role === p.role)?.members.push(p);
     }
     for (const g of groups) g.members.sort((a, b) => a.full_name.localeCompare(b.full_name));
     return groups.filter((g) => g.members.length > 0);
-  }, [people, type, q, dict]);
-
-  const peopleCount = peopleByRole.reduce((sum, g) => sum + g.members.length, 0);
+  }, [searchedPeople, type, dict]);
 
   const showVendors = type !== "people";
   const showPeople = type !== "vendors";
@@ -126,9 +134,21 @@ export function DirectoryExplorer({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Pill label={dict.directory.filterAll} active={type === "all"} onClick={() => setType("all")} />
-        <Pill label={dict.directory.filterVendors} active={type === "vendors"} onClick={() => setType("vendors")} />
-        <Pill label={dict.directory.filterPeople} active={type === "people"} onClick={() => setType("people")} />
+        <Pill
+          label={`${dict.directory.filterAll} · ${searchedVendors.length + searchedPeople.length}`}
+          active={type === "all"}
+          onClick={() => setType("all")}
+        />
+        <Pill
+          label={`${dict.directory.filterVendors} · ${searchedVendors.length}`}
+          active={type === "vendors"}
+          onClick={() => setType("vendors")}
+        />
+        <Pill
+          label={`${dict.directory.filterPeople} · ${searchedPeople.length}`}
+          active={type === "people"}
+          onClick={() => setType("people")}
+        />
       </div>
 
       {isOwner && (
@@ -172,35 +192,11 @@ export function DirectoryExplorer({
           )}
 
           {filteredVendors.length > 0 ? (
-            <ul className={listCard}>
+            <div className="space-y-3">
               {filteredVendors.map((vendor) => (
-                <li key={vendor.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
-                    <Building2 className="size-4" strokeWidth={2} />
-                  </span>
-                  <Link href={`/vendors/${vendor.id}`} className="min-w-40 flex-1 hover:underline">
-                    <p className="truncate font-medium text-ink">{vendor.name}</p>
-                    <p className={`${mutedText} truncate`}>
-                      {vendor.contact_name ? `${vendor.contact_name} · ` : ""}
-                      {vendor.trades.length > 0
-                        ? vendor.trades.map((t) => tradeLabels[t]).join(", ")
-                        : dict.directory.noSpecialty}
-                    </p>
-                    {(vendor.phone || vendor.email) && (
-                      <p className="truncate text-xs text-ink-faint">
-                        {[vendor.phone, vendor.email].filter(Boolean).join(" · ")}
-                      </p>
-                    )}
-                  </Link>
-                  <ContactIcons
-                    phone={vendor.phone}
-                    email={vendor.email}
-                    name={vendor.name}
-                    dict={dict}
-                  />
-                </li>
+                <VendorCard key={vendor.id} vendor={vendor} tradeLabels={tradeLabels} dict={dict} />
               ))}
-            </ul>
+            </div>
           ) : (
             <EmptyState
               icon={Building2}
@@ -214,7 +210,7 @@ export function DirectoryExplorer({
         <section className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className={sectionHeading}>
-              {dict.directory.peopleHeading} <span className="text-ink-faint">· {peopleCount}</span>
+              {dict.directory.peopleHeading} <span className="text-ink-faint">· {searchedPeople.length}</span>
             </h2>
             {isOwner && (
               <button
@@ -253,13 +249,13 @@ export function DirectoryExplorer({
           {peopleByRole.length > 0 ? (
             <div className="space-y-4">
               {peopleByRole.map((group) => (
-                <div key={group.role} className="space-y-1.5">
+                <div key={group.role} className="space-y-2">
                   <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">
                     {group.label} <span className="text-ink-faint">· {group.members.length}</span>
                   </h3>
-                  <ul className={listCard}>
+                  <div className="space-y-3">
                     {group.members.map((person) => (
-                      <PersonRowItem
+                      <PersonCard
                         key={person.id}
                         person={person}
                         isSelf={person.id === currentUserId}
@@ -269,7 +265,7 @@ export function DirectoryExplorer({
                         prefLookup={prefLookup}
                       />
                     ))}
-                  </ul>
+                  </div>
                 </div>
               ))}
             </div>
@@ -282,7 +278,84 @@ export function DirectoryExplorer({
   );
 }
 
-function PersonRowItem({
+function VendorCard({
+  vendor,
+  tradeLabels,
+  dict,
+}: {
+  vendor: VendorRow;
+  tradeLabels: Record<VendorTrade, string>;
+  dict: Dictionary;
+}) {
+  return (
+    <div className={`p-4 ${card}`}>
+      <Link href={`/vendors/${vendor.id}`} className="flex items-start gap-3">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+          <Building2 className="size-5" strokeWidth={2} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-ink">{vendor.name}</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {vendor.trades.length > 0 ? (
+              vendor.trades.map((t) => (
+                <span key={t} className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
+                  {tradeLabels[t]}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-ink-faint">{dict.directory.noSpecialty}</span>
+            )}
+          </div>
+        </div>
+        <ChevronRight className="mt-2 size-4 shrink-0 text-ink-faint" />
+      </Link>
+
+      {(vendor.contact_name || vendor.phone || vendor.email) && (
+        <div className="mt-3 space-y-1.5 text-sm text-ink-secondary">
+          {vendor.contact_name && (
+            <p className="flex items-center gap-2">
+              <User className="size-3.5 shrink-0 text-ink-faint" /> {vendor.contact_name}
+            </p>
+          )}
+          {vendor.phone && (
+            <p className="flex items-center gap-2">
+              <Phone className="size-3.5 shrink-0 text-ink-faint" /> {vendor.phone}
+            </p>
+          )}
+          {vendor.email && (
+            <p className="flex items-center gap-2">
+              <Mail className="size-3.5 shrink-0 text-ink-faint" /> {vendor.email}
+            </p>
+          )}
+        </div>
+      )}
+
+      {vendor.notes && <p className="mt-3 text-sm text-ink-muted">{vendor.notes}</p>}
+
+      {(vendor.phone || vendor.email) && (
+        <div className="mt-3 flex gap-2">
+          {vendor.phone && (
+            <a href={telHref(vendor.phone)} className={actionButton}>
+              <Phone className="size-3.5" /> {dict.vendorDetail.call}
+            </a>
+          )}
+          {vendor.phone && (
+            <a href={whatsAppHref(vendor.phone)} target="_blank" rel="noopener noreferrer" className={actionButton}>
+              <WhatsAppIcon className="size-3.5" /> {dict.vendorDetail.whatsapp}
+            </a>
+          )}
+          {vendor.email && (
+            <a href={`mailto:${vendor.email}`} className={actionButton}>
+              <Mail className="size-3.5" /> {dict.vendorDetail.email}
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PersonCard({
   person,
   isSelf,
   isOwner,
@@ -301,17 +374,15 @@ function PersonRowItem({
   const canExpand = isOwner && person.role === "staff" && !isSelf;
 
   return (
-    <li>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5">
-        <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} />
-        <div className="min-w-40 flex-1">
-          <p className="truncate font-medium text-ink">
+    <div className={`p-4 ${card}`}>
+      <div className="flex items-start gap-3">
+        <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} size="md" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-ink">
             {person.full_name}
-            {isSelf && <span className={`ml-1 font-normal ${mutedText}`}>{dict.directory.you}</span>}
+            {isSelf && <span className={`ml-1.5 text-sm font-normal ${mutedText}`}>{dict.directory.you}</span>}
           </p>
-          {person.phone && <p className="truncate text-xs text-ink-faint">{person.phone}</p>}
         </div>
-        <ContactIcons phone={person.phone} email={null} name={person.full_name} dict={dict} />
         {canExpand && (
           <button
             type="button"
@@ -324,8 +395,25 @@ function PersonRowItem({
         )}
       </div>
 
+      {person.phone && (
+        <p className="mt-3 flex items-center gap-2 text-sm text-ink-secondary">
+          <Phone className="size-3.5 shrink-0 text-ink-faint" /> {person.phone}
+        </p>
+      )}
+
+      {person.phone && (
+        <div className="mt-3 flex gap-2">
+          <a href={telHref(person.phone)} className={actionButton}>
+            <Phone className="size-3.5" /> {dict.vendorDetail.call}
+          </a>
+          <a href={whatsAppHref(person.phone)} target="_blank" rel="noopener noreferrer" className={actionButton}>
+            <WhatsAppIcon className="size-3.5" /> {dict.vendorDetail.whatsapp}
+          </a>
+        </div>
+      )}
+
       {canExpand && expanded && (
-        <div className="overflow-x-auto border-t border-hairline bg-canvas-soft px-4 py-3">
+        <div className="mt-3 overflow-x-auto border-t border-hairline pt-3">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-ink-faint">
@@ -359,53 +447,6 @@ function PersonRowItem({
             </tbody>
           </table>
         </div>
-      )}
-    </li>
-  );
-}
-
-function ContactIcons({
-  phone,
-  email,
-  name,
-  dict,
-}: {
-  phone: string | null;
-  email: string | null;
-  name: string;
-  dict: Dictionary;
-}) {
-  if (!phone && !email) return null;
-  return (
-    <div className="flex shrink-0 items-center gap-1">
-      {phone && (
-        <>
-          <a
-            href={telHref(phone)}
-            aria-label={format(dict.directory.call, { name })}
-            className="flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-hover hover:text-primary"
-          >
-            <Phone className="size-4" />
-          </a>
-          <a
-            href={whatsAppHref(phone)}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={format(dict.directory.whatsapp, { name })}
-            className="flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-hover hover:text-[#25D366]"
-          >
-            <WhatsAppIcon className="size-4" />
-          </a>
-        </>
-      )}
-      {email && (
-        <a
-          href={`mailto:${email}`}
-          aria-label={format(dict.directory.email, { name })}
-          className="flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-hover hover:text-primary"
-        >
-          <Mail className="size-4" />
-        </a>
       )}
     </div>
   );

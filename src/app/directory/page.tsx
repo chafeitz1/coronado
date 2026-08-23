@@ -18,7 +18,7 @@ export default async function DirectoryPage({
   const isOwner = profile.role === "owner";
 
   const [{ data: vendors }, { data: people }] = await Promise.all([
-    supabase.from("vendors").select("id, name, contact_name, trades, phone, email").order("name"),
+    supabase.from("vendors").select("id, name, contact_name, trades, phone, email, notes").order("name"),
     supabase.from("profiles").select("id, full_name, role, phone, avatar_url").order("full_name"),
   ]);
 

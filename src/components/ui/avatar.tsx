@@ -2,6 +2,7 @@ import Image from "next/image";
 
 const SIZES = {
   sm: "size-8 text-sm",
+  md: "size-11 text-lg",
   lg: "size-20 text-2xl",
 } as const;
 
@@ -15,7 +16,7 @@ export function Avatar({
   size?: keyof typeof SIZES;
 }) {
   if (avatarUrl) {
-    const dimension = size === "lg" ? 80 : 32;
+    const dimension = size === "lg" ? 80 : size === "md" ? 44 : 32;
     return (
       <Image
         src={avatarUrl}

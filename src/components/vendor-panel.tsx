@@ -88,43 +88,46 @@ export function VendorPanel({
       )}
 
       {mode === "view" && vendor && (
-        <div className="space-y-5">
-          <div className="flex items-start gap-3">
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <Building2 className="size-5" strokeWidth={2} />
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <Building2 className="size-6" strokeWidth={2} />
             </span>
-            <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
-              {vendor.is_emergency && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-status-overdue-fg px-2.5 py-0.5 text-xs font-semibold text-white">
-                  <Siren className="size-3" /> {dict.directory.emergencyBadge}
-                </span>
-              )}
-              {vendor.trades.map((t) => (
-                <span key={t} className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
-                  {tradeLabels[t]}
-                </span>
-              ))}
-              {vendor.trades.length === 0 && !vendor.is_emergency && (
-                <span className="text-xs text-ink-faint">{dict.directory.noSpecialty}</span>
-              )}
+            <div className="min-w-0">
+              <p className="text-lg font-semibold text-ink">{vendor.name}</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {vendor.is_emergency && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-status-overdue-fg px-2.5 py-0.5 text-xs font-semibold text-white">
+                    <Siren className="size-3" /> {dict.directory.emergencyBadge}
+                  </span>
+                )}
+                {vendor.trades.map((t) => (
+                  <span key={t} className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
+                    {tradeLabels[t]}
+                  </span>
+                ))}
+                {vendor.trades.length === 0 && !vendor.is_emergency && (
+                  <span className="text-xs text-ink-faint">{dict.directory.noSpecialty}</span>
+                )}
+              </div>
             </div>
           </div>
 
           {(vendor.contact_name || vendor.phone || vendor.email) && (
-            <div className="space-y-1.5 text-sm text-ink-secondary">
+            <div className="space-y-2 rounded-lg border border-hairline bg-canvas-soft p-3.5 text-sm text-ink-secondary">
               {vendor.contact_name && (
-                <p className="flex items-center gap-2">
-                  <UserIcon className="size-3.5 shrink-0 text-ink-faint" /> {vendor.contact_name}
+                <p className="flex items-center gap-2.5">
+                  <UserIcon className="size-4 shrink-0 text-ink-faint" /> {vendor.contact_name}
                 </p>
               )}
               {vendor.phone && (
-                <p className="flex items-center gap-2">
-                  <Phone className="size-3.5 shrink-0 text-ink-faint" /> {vendor.phone}
+                <p className="flex items-center gap-2.5">
+                  <Phone className="size-4 shrink-0 text-ink-faint" /> {vendor.phone}
                 </p>
               )}
               {vendor.email && (
-                <p className="flex items-center gap-2">
-                  <Mail className="size-3.5 shrink-0 text-ink-faint" /> {vendor.email}
+                <p className="flex items-center gap-2.5">
+                  <Mail className="size-4 shrink-0 text-ink-faint" /> {vendor.email}
                 </p>
               )}
             </div>
@@ -133,7 +136,7 @@ export function VendorPanel({
           {vendor.notes && (
             <div className="space-y-1.5">
               <h3 className={sectionHeading}>{dict.vendorDetail.notesTitle}</h3>
-              <p className="text-sm text-ink-secondary">{vendor.notes}</p>
+              <p className="text-sm leading-relaxed text-ink-secondary">{vendor.notes}</p>
             </div>
           )}
 

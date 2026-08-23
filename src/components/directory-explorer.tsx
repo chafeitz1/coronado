@@ -186,6 +186,11 @@ export function DirectoryExplorer({
                         ? vendor.trades.map((t) => tradeLabels[t]).join(", ")
                         : dict.directory.noSpecialty}
                     </p>
+                    {(vendor.phone || vendor.email) && (
+                      <p className="truncate text-xs text-ink-faint">
+                        {[vendor.phone, vendor.email].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
                   </Link>
                   <ContactIcons
                     phone={vendor.phone}
@@ -304,6 +309,7 @@ function PersonRowItem({
             {person.full_name}
             {isSelf && <span className={`ml-1 font-normal ${mutedText}`}>{dict.directory.you}</span>}
           </p>
+          {person.phone && <p className="truncate text-xs text-ink-faint">{person.phone}</p>}
         </div>
         <ContactIcons phone={person.phone} email={null} name={person.full_name} dict={dict} />
         {canExpand && (

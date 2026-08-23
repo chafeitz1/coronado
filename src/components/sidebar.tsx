@@ -18,21 +18,13 @@ export async function Sidebar() {
     { href: "/", label: dict.sidebar.home, icon: "home" },
     { href: "/work-orders", label: dict.sidebar.tasks, icon: "tasks", badge: openCount ?? 0 },
     { href: "/assets", label: dict.sidebar.assets, icon: "assets" },
+    { href: "/directory", label: dict.sidebar.directory, icon: "directory" },
   ];
-
-  const manageLinks: SidebarLink[] =
-    profile.role === "owner"
-      ? [
-          { href: "/vendors", label: dict.sidebar.vendors, icon: "vendors" },
-          { href: "/admin/staff", label: dict.sidebar.staff, icon: "staff" },
-        ]
-      : [];
 
   return (
     <SidebarClient
       profile={{ fullName: profile.full_name, role: profile.role, avatarUrl: profile.avatar_url }}
       workLinks={workLinks}
-      manageLinks={manageLinks}
       locale={profile.locale}
     />
   );

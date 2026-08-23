@@ -7,8 +7,7 @@ import {
   Home,
   ClipboardList,
   Wrench,
-  Building2,
-  UserCog,
+  BookUser,
   Menu,
   Search,
   X,
@@ -26,8 +25,7 @@ const ICONS = {
   home: Home,
   tasks: ClipboardList,
   assets: Wrench,
-  vendors: Building2,
-  staff: UserCog,
+  directory: BookUser,
 };
 
 export type SidebarLink = {
@@ -44,12 +42,10 @@ function openSearch() {
 export function SidebarClient({
   profile,
   workLinks,
-  manageLinks,
   locale,
 }: {
   profile: { fullName: string; role: string; avatarUrl: string | null };
   workLinks: SidebarLink[];
-  manageLinks: SidebarLink[];
   locale: Locale;
 }) {
   const [open, setOpen] = useState(false);
@@ -141,14 +137,6 @@ export function SidebarClient({
             isActive={isActive}
             onNavigate={() => setOpen(false)}
           />
-          {manageLinks.length > 0 && (
-            <SidebarSection
-              title={dict.sidebar.manageSection}
-              links={manageLinks}
-              isActive={isActive}
-              onNavigate={() => setOpen(false)}
-            />
-          )}
         </nav>
 
         <div className="border-t border-hairline p-3">

@@ -28,8 +28,8 @@ export async function createVendor(formData: FormData) {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/vendors");
-  redirect("/vendors?created=1");
+  revalidatePath("/directory");
+  redirect("/directory?created=1");
 }
 
 export async function updateVendor(vendorId: string, formData: FormData) {
@@ -43,7 +43,7 @@ export async function updateVendor(vendorId: string, formData: FormData) {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/vendors");
+  revalidatePath("/directory");
   revalidatePath(`/vendors/${vendorId}`);
   redirect(`/vendors/${vendorId}?updated=1`);
 }
@@ -55,6 +55,6 @@ export async function deleteVendor(vendorId: string) {
   const { error } = await supabase.from("vendors").delete().eq("id", vendorId);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/vendors");
-  redirect("/vendors?deleted=1");
+  revalidatePath("/directory");
+  redirect("/directory?deleted=1");
 }

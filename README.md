@@ -11,7 +11,7 @@ Herramienta de mantenimiento para la casa de playa: tareas (puntuales o recurren
 | **owner** | Todo: activos, tareas (puntuales o recurrentes), proveedores, invitar personal/familia, configurar notificaciones |
 | **family** | Ver todas las tareas, crear tareas puntuales (nunca recurrentes) |
 | **staff** | Ver y atender las tareas que se le asignan (cambiar estado, agregar notas) |
-| *(proveedores)* | No tienen cuenta — solo quedan en el directorio de `/vendors` como referencia |
+| *(proveedores)* | No tienen cuenta — solo quedan en `/directory` como referencia |
 
 ## 1. Crear el proyecto de Supabase
 
@@ -39,13 +39,13 @@ npm run dev
 
 Abre [http://localhost:3000](http://localhost:3000). Inicia sesión con el usuario `owner` que creaste en Supabase.
 
-## 4. Invitar a familia y personal
+## 4. Directorio: proveedores, familia y personal
 
-Desde `/admin/staff` (solo visible para el owner):
+`/directory` es una sola vista para todos (dueño, familia y personal): un buscador y un filtro de tipo (Todos/Proveedores/Personal y familia) sobre dos listados — proveedores clasificados por especialidad, y las personas de la casa (dueño, familia, personal) con su teléfono para llamar o escribir por WhatsApp. Para familia y personal es de solo lectura; el dueño ve además:
 
-- Invita por email con nombre y rol (`family` o `staff`). Se les crea el registro de perfil automáticamente cuando aceptan la invitación (trigger `handle_new_user`, que lee `full_name`/`role` de los metadatos de la invitación).
-- Ahí mismo puedes activar/desactivar push y email por tipo de evento, por cada persona de `staff`.
-- Arriba, en "Tus notificaciones", controlas si te llega un email cuando alguien marca una nota como importante (🔔 en una tarea).
+- Botones para agregar un proveedor nuevo o invitar a alguien por email con nombre y rol (`family` o `staff`). Se les crea el registro de perfil automáticamente cuando aceptan la invitación (trigger `handle_new_user`, que lee `full_name`/`role` de los metadatos de la invitación).
+- En cada persona de `staff`, un botón para desplegar sus preferencias de notificación (push/email por tipo de evento).
+- Arriba, en "Tus notificaciones", controla si le llega un email cuando alguien marca una nota como importante (🔔 en una tarea).
 
 > Nota técnica: la invitación usa `supabase.auth.admin.inviteUserByEmail`, que envía un correo de Supabase con un link para poner contraseña. Si prefieres otro flujo de invitación, ajusta la plantilla de email en **Authentication → Email Templates** de tu proyecto Supabase.
 

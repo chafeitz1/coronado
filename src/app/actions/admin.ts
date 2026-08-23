@@ -21,7 +21,7 @@ export async function inviteMember(formData: FormData) {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/admin/staff");
+  revalidatePath("/directory");
 }
 
 export async function setNotificationPreference(
@@ -40,5 +40,5 @@ export async function setNotificationPreference(
       { onConflict: "user_id,event_type,channel" }
     );
 
-  revalidatePath("/admin/staff");
+  revalidatePath("/directory");
 }

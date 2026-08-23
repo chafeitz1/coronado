@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Phone, Mail, Pencil, Trash2, ClipboardList } from "lucide-react";
+import { Phone, Mail, Pencil, Trash2, ClipboardList, Siren } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { deleteVendor } from "@/app/actions/vendors";
@@ -48,8 +48,13 @@ export default async function VendorDetailPage({
           {vendor.contact_name && (
             <p className={mutedText}>{format(dict.vendorDetail.contact, { name: vendor.contact_name })}</p>
           )}
-          {vendor.trades?.length > 0 && (
+          {(vendor.is_emergency || vendor.trades?.length > 0) && (
             <div className="flex flex-wrap gap-1.5">
+              {vendor.is_emergency && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-status-overdue-fg px-2.5 py-0.5 text-xs font-semibold text-white">
+                  <Siren className="size-3" /> {dict.directory.emergencyBadge}
+                </span>
+              )}
               {(vendor.trades as VendorTrade[]).map((trade) => (
                 <span
                   key={trade}

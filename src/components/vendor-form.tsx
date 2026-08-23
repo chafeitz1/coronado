@@ -23,6 +23,7 @@ export function VendorForm({
     phone: string | null;
     email: string | null;
     notes: string | null;
+    is_emergency: boolean;
   };
 }) {
   const tradeOptions = getTradeOptions(locale);
@@ -87,6 +88,16 @@ export function VendorForm({
       <Field label={dict.vendorForm.notesLabel}>
         <textarea name="notes" rows={3} defaultValue={defaultValues?.notes ?? ""} className={input} />
       </Field>
+
+      <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-secondary">
+        <input
+          type="checkbox"
+          name="is_emergency"
+          defaultChecked={defaultValues?.is_emergency}
+          className="size-4 rounded border-hairline accent-status-overdue-fg"
+        />
+        {dict.vendorForm.emergencyLabel}
+      </label>
 
       <SubmitButton className={buttonPrimary} pendingLabel={dict.vendorForm.submitPending}>
         {submitLabel}

@@ -14,6 +14,7 @@ function readVendorFields(formData: FormData) {
     phone: String(formData.get("phone") ?? "").trim() || null,
     email: String(formData.get("email") ?? "").trim() || null,
     notes: String(formData.get("notes") ?? "").trim() || null,
+    is_emergency: formData.get("is_emergency") === "on",
   };
 }
 

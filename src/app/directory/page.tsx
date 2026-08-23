@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SuccessBanner } from "@/components/ui/success-banner";
 import { DirectoryExplorer } from "@/components/directory-explorer";
 import { mutedText, pageHeading } from "@/lib/ui";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getDictionary, format } from "@/lib/i18n/dictionaries";
 import type { NotificationEventType } from "@/lib/types/database";
 
 export default async function DirectoryPage({
@@ -18,7 +18,10 @@ export default async function DirectoryPage({
   const isOwner = profile.role === "owner";
 
   const [{ data: vendors }, { data: people }] = await Promise.all([
-    supabase.from("vendors").select("id, name, contact_name, trades, phone, email, notes").order("name"),
+    supabase
+      .from("vendors")
+      .select("id, name, contact_name, trades, phone, email, notes, is_emergency")
+      .order("name"),
     supabase.from("profiles").select("id, full_name, role, phone, avatar_url").order("full_name"),
   ]);
 
@@ -55,7 +58,9 @@ export default async function DirectoryPage({
 
       <div>
         <h1 className={pageHeading}>{dict.directory.title}</h1>
-        <p className={mutedText}>{dict.directory.subtitle}</p>
+        <p className={mutedText}>
+          {format(dict.directory.subtitleCount, { count: (vendors?.length ?? 0) + (people?.length ?? 0) })}
+        </p>
       </div>
 
       <DirectoryExplorer

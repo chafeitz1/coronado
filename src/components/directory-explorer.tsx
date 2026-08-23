@@ -10,6 +10,7 @@ import {
   Phone,
   Mail,
   Bell,
+  Siren,
   ChevronRight,
   ChevronDown,
   ChevronUp,
@@ -35,6 +36,7 @@ type VendorRow = {
   phone: string | null;
   email: string | null;
   notes: string | null;
+  is_emergency: boolean;
 };
 
 type PersonRow = {
@@ -78,6 +80,7 @@ export function DirectoryExplorer({
   const [search, setSearch] = useState("");
   const [type, setType] = useState<DirectoryType>("all");
   const [activeTrade, setActiveTrade] = useState<VendorTrade | null>(null);
+  const [emergencyOnly, setEmergencyOnly] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
 
   const q = search.trim().toLowerCase();
@@ -91,17 +94,24 @@ export function DirectoryExplorer({
     [people, q]
   );
 
+  const emergencyCount = useMemo(() => searchedVendors.filter((v) => v.is_emergency).length, [searchedVendors]);
+
+  const emergencyFilteredVendors = useMemo(
+    () => (emergencyOnly ? searchedVendors.filter((v) => v.is_emergency) : searchedVendors),
+    [searchedVendors, emergencyOnly]
+  );
+
   const tradeCounts = useMemo(() => {
     const counts = new Map<VendorTrade, number>();
-    for (const v of searchedVendors) for (const t of v.trades) counts.set(t, (counts.get(t) ?? 0) + 1);
+    for (const v of emergencyFilteredVendors) for (const t of v.trades) counts.set(t, (counts.get(t) ?? 0) + 1);
     return [...counts.entries()].sort((a, b) => tradeLabels[a[0]].localeCompare(tradeLabels[b[0]]));
-  }, [searchedVendors, tradeLabels]);
+  }, [emergencyFilteredVendors, tradeLabels]);
 
   const filteredVendors = useMemo(() => {
     if (type === "people") return [];
-    if (!activeTrade) return searchedVendors;
-    return searchedVendors.filter((v) => v.trades.includes(activeTrade));
-  }, [searchedVendors, type, activeTrade]);
+    if (!activeTrade) return emergencyFilteredVendors;
+    return emergencyFilteredVendors.filter((v) => v.trades.includes(activeTrade));
+  }, [emergencyFilteredVendors, type, activeTrade]);
 
   const peopleByRole = useMemo(() => {
     if (type === "vendors") return [];
@@ -118,7 +128,7 @@ export function DirectoryExplorer({
   }, [searchedPeople, type, dict]);
 
   const showVendors = type !== "people";
-  const showPeople = type !== "vendors";
+  const showPeople = type !== "vendors" && !emergencyOnly;
 
   return (
     <div className="space-y-6">
@@ -149,6 +159,25 @@ export function DirectoryExplorer({
           active={type === "people"}
           onClick={() => setType("people")}
         />
+        {emergencyCount > 0 && (
+          <>
+            <span className="mx-1 hidden w-px self-stretch bg-hairline sm:block" aria-hidden />
+            <button
+              type="button"
+              onClick={() => {
+                setEmergencyOnly((e) => !e);
+                if (type === "people") setType("all");
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                emergencyOnly
+                  ? "border-status-overdue-fg bg-status-overdue-fg text-white"
+                  : "border-status-overdue-fg/40 bg-status-overdue-bg text-status-overdue-fg hover:bg-status-overdue-fg/15"
+              }`}
+            >
+              <Siren className="size-3.5" /> {dict.directory.filterEmergency} · {emergencyCount}
+            </button>
+          </>
+        )}
       </div>
 
       {isOwner && (
@@ -192,7 +221,7 @@ export function DirectoryExplorer({
           )}
 
           {filteredVendors.length > 0 ? (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {filteredVendors.map((vendor) => (
                 <VendorCard key={vendor.id} vendor={vendor} tradeLabels={tradeLabels} dict={dict} />
               ))}
@@ -200,7 +229,7 @@ export function DirectoryExplorer({
           ) : (
             <EmptyState
               icon={Building2}
-              message={q || activeTrade ? dict.directory.emptyVendorsSearch : dict.directory.emptyVendors}
+              message={q || activeTrade || emergencyOnly ? dict.directory.emptyVendorsSearch : dict.directory.emptyVendors}
             />
           )}
         </section>
@@ -253,7 +282,7 @@ export function DirectoryExplorer({
                   <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">
                     {group.label} <span className="text-ink-faint">· {group.members.length}</span>
                   </h3>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {group.members.map((person) => (
                       <PersonCard
                         key={person.id}
@@ -296,6 +325,11 @@ function VendorCard({
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-ink">{vendor.name}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {vendor.is_emergency && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-status-overdue-fg px-2.5 py-0.5 text-xs font-semibold text-white">
+                <Siren className="size-3" /> {dict.directory.emergencyBadge}
+              </span>
+            )}
             {vendor.trades.length > 0 ? (
               vendor.trades.map((t) => (
                 <span key={t} className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">

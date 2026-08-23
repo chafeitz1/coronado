@@ -70,6 +70,7 @@ export interface Database {
           phone: string | null;
           email: string | null;
           notes: string | null;
+          is_emergency: boolean;
           created_by: string;
           created_at: string;
         };

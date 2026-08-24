@@ -50,6 +50,13 @@ export function PersonPanel({
   const canManage = isOwner && !isSelf;
   const canManageStaff = canManage && person.role === "staff";
 
+  const roleLabel =
+    person.role === "staff"
+      ? dict.directory.staffOption
+      : person.role === "resident"
+        ? dict.directory.residentOption
+        : dict.directory.ownerOption;
+
   const [invitePending, startInvite] = useTransition();
   const [inviteResult, setInviteResult] = useState<"error" | "sent" | null>(null);
 
@@ -139,6 +146,11 @@ export function PersonPanel({
               {person.full_name}
               {isSelf && <span className="ml-1.5 text-sm font-normal text-ink-faint">{dict.directory.you}</span>}
             </p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
+                {roleLabel}
+              </span>
+            </div>
             {avatarState?.error && <p className="text-sm text-status-overdue-fg">{avatarState.error}</p>}
           </div>
         </div>

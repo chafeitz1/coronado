@@ -521,7 +521,7 @@ function PersonCard({
       </button>
 
       {(hireDate || person.phone) && (
-        <div className="mt-3 space-y-1.5 text-sm text-ink-secondary">
+        <div className="mt-3 space-y-1.5 pl-14 text-sm text-ink-secondary">
           {person.role === "staff" && hireDate && (
             <p className="flex items-center gap-2">
               <Calendar className="size-3.5 shrink-0 text-ink-faint" />

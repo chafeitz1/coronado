@@ -140,6 +140,14 @@ export async function uploadPersonAvatar(
 const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
 const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 
+// Supabase Storage rejects object keys built from an unsanitized filename
+// (e.g. a phone screenshot's default "Screenshot 2026-08-24 at 12.19.22
+// PM.png" — the spaces make it an "Invalid key") — strip it down to safe
+// characters before using it in the path.
+function sanitizeFileName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+}
+
 export async function uploadStaffDocument(
   userId: string,
   _prevState: { error?: string } | null,
@@ -155,7 +163,7 @@ export async function uploadStaffDocument(
   if (file.size > MAX_DOCUMENT_BYTES) return { error: "El archivo no puede pesar más de 10MB." };
 
   const supabase = await createClient();
-  const path = `${userId}/${Date.now()}-${file.name}`;
+  const path = `${userId}/${Date.now()}-${sanitizeFileName(file.name)}`;
 
   const { error: uploadError } = await supabase.storage
     .from("staff-documents")

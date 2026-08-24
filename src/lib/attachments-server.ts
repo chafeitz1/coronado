@@ -24,7 +24,12 @@ export async function uploadAttachment(
   }
 
   const ownerId = target.assetId ?? target.workOrderId;
-  const path = `${ownerId}/${userId}/${Date.now()}-${file.name}`;
+  // Supabase Storage rejects object keys built from an unsanitized
+  // filename (e.g. a phone screenshot's default "Screenshot 2026-08-24 at
+  // 12.19.22 PM.png" — the spaces make it an "Invalid key") — strip it
+  // down to safe characters before using it in the path.
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+  const path = `${ownerId}/${userId}/${Date.now()}-${safeName}`;
 
   const { error: uploadError } = await supabase.storage
     .from("attachments")

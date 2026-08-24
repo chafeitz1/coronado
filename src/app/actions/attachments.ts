@@ -30,7 +30,8 @@ export async function uploadAssetAttachment(
   }
 
   const supabase = await createClient();
-  const path = `${assetId}/${profile.id}/${Date.now()}-${file.name}`;
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+  const path = `${assetId}/${profile.id}/${Date.now()}-${safeName}`;
 
   const { error: uploadError } = await supabase.storage
     .from("attachments")

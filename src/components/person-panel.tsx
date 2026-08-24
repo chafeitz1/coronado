@@ -1,13 +1,14 @@
 "use client";
 
-import { Phone } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Phone, Send } from "lucide-react";
 import { SidePanel } from "@/components/ui/side-panel";
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { PrefToggle } from "@/components/pref-toggle";
 import { Avatar } from "@/components/ui/avatar";
-import { updateStaffHireDate, addSalaryChange } from "@/app/actions/admin";
+import { updateStaffHireDate, addSalaryChange, sendInvite } from "@/app/actions/admin";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { buttonSecondary, input, sectionHeading } from "@/lib/ui";
 import { type Dictionary } from "@/lib/i18n/dictionaries";
@@ -34,7 +35,19 @@ export function PersonPanel({
   salaryHistory: SalaryEntry[];
   onClose: () => void;
 }) {
-  const canManageStaff = isOwner && person.role === "staff" && !isSelf;
+  const canManage = isOwner && !isSelf;
+  const canManageStaff = canManage && person.role === "staff";
+
+  const [invitePending, startInvite] = useTransition();
+  const [inviteResult, setInviteResult] = useState<"error" | "sent" | null>(null);
+
+  function handleSendInvite() {
+    setInviteResult(null);
+    startInvite(async () => {
+      const result = await sendInvite(person.id);
+      setInviteResult(result.error ? "error" : "sent");
+    });
+  }
 
   return (
     <SidePanel open onClose={onClose} title={person.full_name}>
@@ -70,6 +83,22 @@ export function PersonPanel({
             >
               <WhatsAppIcon className="size-3.5" /> {dict.vendorDetail.whatsapp}
             </a>
+          </div>
+        )}
+
+        {canManage && (
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={handleSendInvite}
+              disabled={invitePending}
+              className={`w-full ${buttonSecondary} disabled:pointer-events-none disabled:opacity-50`}
+            >
+              <Send className="size-3.5" />
+              {invitePending ? dict.directory.sendInvitePending : dict.directory.sendInvite}
+            </button>
+            {inviteResult === "sent" && <p className="text-sm text-ink-secondary">{dict.directory.inviteSent}</p>}
+            {inviteResult === "error" && <p className="text-sm text-status-overdue-fg">{dict.directory.inviteError}</p>}
           </div>
         )}
 

@@ -287,6 +287,15 @@ export function DirectoryExplorer({
                   <option value="family">{dict.directory.familyOption}</option>
                 </select>
               </Field>
+              <label className="flex items-center gap-2 pb-2 text-sm text-ink-secondary">
+                <input
+                  type="checkbox"
+                  name="send_invite"
+                  defaultChecked
+                  className="size-4 rounded border-hairline accent-primary"
+                />
+                {dict.directory.sendInviteNow}
+              </label>
               <SubmitButton
                 className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-medium text-on-primary transition-colors hover:bg-primary-active disabled:pointer-events-none disabled:opacity-50"
                 pendingLabel={dict.directory.sendInvitePending}

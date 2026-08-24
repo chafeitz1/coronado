@@ -98,6 +98,22 @@ async function sendPushToUser(userId: string, title: string, payload: NotifyPayl
   );
 }
 
+/**
+ * Sends a Supabase-generated auth link (magic link / invite) by hand via
+ * Resend, for accounts the owner created without triggering Supabase's
+ * built-in invite email (see inviteMember/sendInvite in actions/admin.ts).
+ */
+export async function sendInviteEmail(email: string, fullName: string, actionLink: string) {
+  if (!resend) return;
+
+  await resend.emails.send({
+    from: process.env.NOTIFICATIONS_FROM_EMAIL ?? "Casa Coronado <notificaciones@resend.dev>",
+    to: email,
+    subject: "Te invitaron a Casa Coronado",
+    html: `<p>Hola ${fullName},</p><p>Te invitaron a Casa Coronado. Haz clic para entrar y configurar tu cuenta:</p><p><a href="${actionLink}">Entrar a Casa Coronado</a></p>`,
+  });
+}
+
 async function sendEmailToUser(userId: string, title: string, payload: NotifyPayload) {
   if (!resend) return;
 

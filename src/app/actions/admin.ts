@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireOwner } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { sendInviteEmail } from "@/lib/notifications/send";
 import type { NotificationChannel, NotificationEventType, UserRole } from "@/lib/types/database";
 
 export async function inviteMember(formData: FormData) {
@@ -12,16 +13,48 @@ export async function inviteMember(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const fullName = String(formData.get("full_name") ?? "").trim();
   const role = String(formData.get("role") ?? "staff") as UserRole;
+  const sendNow = formData.get("send_invite") === "on";
   if (!email || !fullName) return;
 
   const admin = createAdminClient();
-  const { error } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { full_name: fullName, role },
-  });
 
-  if (error) throw new Error(error.message);
+  if (sendNow) {
+    const { error } = await admin.auth.admin.inviteUserByEmail(email, {
+      data: { full_name: fullName, role },
+    });
+    if (error) throw new Error(error.message);
+  } else {
+    // Create the account without sending Supabase's built-in invite email —
+    // the owner sends it later (once, or resends) via sendInvite below.
+    const { error } = await admin.auth.admin.createUser({
+      email,
+      email_confirm: false,
+      user_metadata: { full_name: fullName, role },
+    });
+    if (error) throw new Error(error.message);
+  }
 
   revalidatePath("/directory");
+}
+
+export async function sendInvite(userId: string): Promise<{ error?: string }> {
+  await requireOwner();
+  const supabase = await createClient();
+  const admin = createAdminClient();
+
+  const [{ data: profile }, { data: authUser }] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", userId).single(),
+    admin.auth.admin.getUserById(userId),
+  ]);
+
+  const email = authUser?.user?.email;
+  if (!profile || !email) return { error: "No se encontró la cuenta." };
+
+  const { data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+  if (error) return { error: error.message };
+
+  await sendInviteEmail(email, profile.full_name, data.properties.action_link);
+  return {};
 }
 
 export async function updateStaffHireDate(userId: string, formData: FormData) {

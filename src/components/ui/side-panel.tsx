@@ -14,7 +14,7 @@ export function SidePanel({
 }: {
   open: boolean;
   onClose: () => void;
-  title: string;
+  title?: string;
   children: React.ReactNode;
 }) {
   useEffect(() => {
@@ -37,8 +37,8 @@ export function SidePanel({
     <div className="fixed inset-0 z-50 flex justify-end">
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-black/30" />
       <div className="relative flex h-full w-full max-w-md flex-col bg-canvas shadow-[var(--shadow-elevated)]">
-        <div className="flex shrink-0 items-center justify-between border-b border-hairline px-5 py-4">
-          <h2 className="text-base font-semibold text-ink">{title}</h2>
+        <div className="flex shrink-0 items-center justify-end border-b border-hairline px-5 py-4">
+          {title && <h2 className="mr-auto text-base font-semibold text-ink">{title}</h2>}
           <button
             type="button"
             onClick={onClose}

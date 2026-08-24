@@ -64,12 +64,10 @@ export function PersonPanel({
   const avatarInputRef = useRef<HTMLFormElement>(null);
   const avatarFileRef = useRef<HTMLInputElement>(null);
 
-  const title = isSelf ? `${person.full_name} ${dict.directory.you}` : person.full_name;
-
   return (
-    <SidePanel open onClose={onClose} title={title}>
+    <SidePanel open onClose={onClose}>
       <div className="space-y-6">
-        <div>
+        <div className="flex items-center gap-3">
           {isOwner ? (
             <form ref={avatarInputRef} action={avatarAction}>
               <input
@@ -96,7 +94,13 @@ export function PersonPanel({
           ) : (
             <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} size="md" />
           )}
-          {avatarState?.error && <p className="mt-1.5 text-sm text-status-overdue-fg">{avatarState.error}</p>}
+          <div className="min-w-0">
+            <p className="text-lg font-semibold text-ink">
+              {person.full_name}
+              {isSelf && <span className="ml-1.5 text-sm font-normal text-ink-faint">{dict.directory.you}</span>}
+            </p>
+            {avatarState?.error && <p className="text-sm text-status-overdue-fg">{avatarState.error}</p>}
+          </div>
         </div>
 
         {person.phone && (

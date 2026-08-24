@@ -57,8 +57,9 @@ export function VendorPanel({
     });
   }
 
-  const title =
-    mode === "create" ? dict.vendorForm.title : mode === "edit" ? dict.vendorForm.editTitle : (vendor?.name ?? "");
+  // View mode shows the vendor's icon + name in the body instead — no need
+  // to repeat it in the panel header too.
+  const title = mode === "create" ? dict.vendorForm.title : mode === "edit" ? dict.vendorForm.editTitle : undefined;
 
   return (
     <SidePanel open onClose={onClose} title={title}>

@@ -348,7 +348,7 @@ function VendorCard({
 }) {
   const primaryContact = vendor.contacts[0] ?? null;
   return (
-    <div className={`p-4 ${card}`}>
+    <div className={`flex h-full flex-col p-4 ${card}`}>
       <button type="button" onClick={onSelect} className="flex w-full items-start gap-3 text-left">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
           <Building2 className="size-5" strokeWidth={2} />
@@ -404,7 +404,7 @@ function VendorCard({
       {vendor.notes && <p className="mt-3 text-sm text-ink-muted">{vendor.notes}</p>}
 
       {primaryContact && (primaryContact.phone || primaryContact.email) && (
-        <div className="mt-3 flex gap-2">
+        <div className="mt-auto flex gap-2 pt-3">
           {primaryContact.phone && (
             <a href={telHref(primaryContact.phone)} className={actionButton}>
               <Phone className="size-3.5" /> {dict.vendorDetail.call}
@@ -450,7 +450,7 @@ function PersonCard({
   const canExpand = isOwner && person.role === "staff" && !isSelf;
 
   return (
-    <div className={`p-4 ${card}`}>
+    <div className={`flex h-full flex-col p-4 ${card}`}>
       <div className="flex items-start gap-3">
         <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} size="md" />
         <div className="min-w-0 flex-1">
@@ -478,7 +478,7 @@ function PersonCard({
       )}
 
       {person.phone && (
-        <div className="mt-3 flex gap-2">
+        <div className="mt-auto flex gap-2 pt-3">
           <a href={telHref(person.phone)} className={actionButton}>
             <Phone className="size-3.5" /> {dict.vendorDetail.call}
           </a>

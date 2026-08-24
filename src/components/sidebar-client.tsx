@@ -1,19 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Home,
-  ClipboardList,
-  Wrench,
-  BookUser,
-  Menu,
-  Search,
-  X,
-  ChevronRight,
-  LogOut,
-} from "lucide-react";
+import { Home, ClipboardList, Wrench, BookUser, Search, ChevronRight, LogOut } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { CommandPalette, OPEN_COMMAND_PALETTE_EVENT } from "@/components/command-palette";
@@ -48,7 +37,6 @@ export function SidebarClient({
   workLinks: SidebarLink[];
   locale: Locale;
 }) {
-  const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const dict = getDictionary(locale);
 
@@ -58,7 +46,7 @@ export function SidebarClient({
     <>
       <CommandPalette locale={locale} />
 
-      {/* Mobile top bar */}
+      {/* Mobile top bar: logo left, search + profile right */}
       <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hairline bg-canvas px-4 py-3 md:hidden">
         <Link href="/" className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">
@@ -66,7 +54,7 @@ export function SidebarClient({
           </span>
           <span className="font-semibold tracking-tight text-ink">{dict.sidebar.appName}</span>
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={openSearch}
@@ -75,47 +63,49 @@ export function SidebarClient({
           >
             <Search className="size-5" />
           </button>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label={dict.sidebar.openMenu}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
-          >
-            <Menu className="size-5" />
-          </button>
+          <Link href="/profile" aria-label={dict.profile.title}>
+            <Avatar fullName={profile.fullName} avatarUrl={profile.avatarUrl} size="sm" />
+          </Link>
         </div>
       </div>
 
-      {/* Mobile drawer backdrop */}
-      {open && (
-        <button
-          type="button"
-          aria-label={dict.sidebar.closeMenu}
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 z-30 bg-black/30 md:hidden"
-        />
-      )}
-
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-hairline bg-canvas transition-transform md:sticky md:top-0 md:h-screen md:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+      {/* Mobile bottom tab bar */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-hairline bg-canvas pb-[env(safe-area-inset-bottom)] md:hidden"
+        aria-label={dict.sidebar.workSection}
       >
-        <div className="flex items-center justify-between px-4 py-4">
-          <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+        {workLinks.map((link) => {
+          const Icon = ICONS[link.icon];
+          const active = isActive(link.href);
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+                active ? "text-primary" : "text-ink-muted"
+              }`}
+            >
+              <Icon className="size-5" strokeWidth={2} />
+              {link.label}
+              {!!link.badge && (
+                <span className="absolute right-[calc(50%-18px)] top-1 flex size-4 items-center justify-center rounded-full bg-status-overdue-fg text-[10px] font-semibold text-white">
+                  {link.badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden shrink-0 flex-col border-r border-hairline bg-canvas md:sticky md:top-0 md:flex md:h-screen md:w-64">
+        <div className="flex items-center px-4 py-4">
+          <Link href="/" className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">
               C
             </span>
             <span className="font-semibold tracking-tight text-ink">{dict.sidebar.appName}</span>
           </Link>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label={dict.sidebar.closeMenu}
-            className="rounded-md p-1 text-ink-muted hover:bg-surface-hover md:hidden"
-          >
-            <X className="size-5" />
-          </button>
         </div>
 
         <div className="px-3 pb-3">
@@ -131,12 +121,7 @@ export function SidebarClient({
         </div>
 
         <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
-          <SidebarSection
-            title={dict.sidebar.workSection}
-            links={workLinks}
-            isActive={isActive}
-            onNavigate={() => setOpen(false)}
-          />
+          <SidebarSection title={dict.sidebar.workSection} links={workLinks} isActive={isActive} />
         </nav>
 
         <div className="border-t border-hairline p-3">
@@ -144,7 +129,7 @@ export function SidebarClient({
             <PushSubscribeButton locale={locale} />
           </div>
           <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-hover">
-            <Link href="/profile" onClick={() => setOpen(false)} className="flex min-w-0 flex-1 items-center gap-2.5">
+            <Link href="/profile" className="flex min-w-0 flex-1 items-center gap-2.5">
               <Avatar fullName={profile.fullName} avatarUrl={profile.avatarUrl} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-ink">{profile.fullName}</p>
@@ -171,12 +156,10 @@ function SidebarSection({
   title,
   links,
   isActive,
-  onNavigate,
 }: {
   title: string;
   links: SidebarLink[];
   isActive: (href: string) => boolean;
-  onNavigate: () => void;
 }) {
   return (
     <div>
@@ -189,7 +172,6 @@ function SidebarSection({
             <li key={link.href}>
               <Link
                 href={link.href}
-                onClick={onNavigate}
                 className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors ${
                   active
                     ? "bg-primary-soft text-primary"

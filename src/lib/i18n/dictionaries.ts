@@ -10,8 +10,6 @@ const es = {
     tasks: "Tareas",
     assets: "Activos",
     directory: "Directorio",
-    openMenu: "Abrir menú",
-    closeMenu: "Cerrar menú",
     logout: "Salir",
   },
   roles: {
@@ -351,8 +349,6 @@ const en: Dictionary = {
     tasks: "Tasks",
     assets: "Assets",
     directory: "Directory",
-    openMenu: "Open menu",
-    closeMenu: "Close menu",
     logout: "Log out",
   },
   roles: {

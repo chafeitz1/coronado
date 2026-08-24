@@ -1,13 +1,15 @@
-import { Bell } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { logout } from "@/app/actions/auth";
 import { AvatarForm } from "@/app/profile/avatar-form";
 import { ProfileInfoForm } from "@/app/profile/profile-info-form";
 import { PasswordForm } from "@/app/profile/password-form";
 import { LanguageForm } from "@/app/profile/language-form";
 import { PrefToggle } from "@/components/pref-toggle";
+import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { card, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
+import { buttonSecondary, card, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 
 export default async function ProfilePage() {
   const profile = await requireUser();
@@ -70,10 +72,11 @@ export default async function ProfilePage() {
         </div>
       </section>
 
-      {isOwner && (
-        <section className="space-y-3">
-          <h2 className={sectionHeading}>{dict.profile.notifications}</h2>
-          <div className={`p-5 ${card}`}>
+      <section className="space-y-3">
+        <h2 className={sectionHeading}>{dict.profile.notifications}</h2>
+        <div className={`space-y-3 p-5 ${card}`}>
+          <PushSubscribeButton locale={profile.locale} />
+          {isOwner && (
             <label className="flex items-center gap-2 text-sm text-ink-muted">
               <PrefToggle
                 userId={profile.id}
@@ -83,9 +86,15 @@ export default async function ProfilePage() {
               />
               <Bell className="size-3.5" /> {dict.profile.notifyMe}
             </label>
-          </div>
-        </section>
-      )}
+          )}
+        </div>
+      </section>
+
+      <form action={logout}>
+        <button type="submit" className={`w-full ${buttonSecondary}`}>
+          <LogOut className="size-3.5" /> {dict.sidebar.logout}
+        </button>
+      </form>
     </div>
   );
 }

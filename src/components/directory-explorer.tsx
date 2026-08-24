@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Building2, Users, User, Phone, Mail, Siren, ChevronRight } from "lucide-react";
+import { Search, Building2, Users, User, Phone, Mail, Siren, ChevronRight, Plus, UserPlus } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Avatar } from "@/components/ui/avatar";
@@ -147,15 +147,24 @@ export function DirectoryExplorer({
 
   return (
     <div className="space-y-6">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={dict.directory.searchPlaceholder}
-          className={`${input} pl-9`}
-        />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={dict.directory.searchPlaceholder}
+            className={`${input} pl-9`}
+          />
+        </div>
+        {isOwner && (
+          <AddMenu
+            dict={dict}
+            onAddVendor={() => setPanel({ mode: "create", vendor: null })}
+            onAddPerson={() => setInviteOpen(true)}
+          />
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -197,20 +206,9 @@ export function DirectoryExplorer({
 
       {showVendors && (
         <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className={sectionHeading}>
-              {dict.directory.vendorsHeading} <span className="text-ink-faint">· {filteredVendors.length}</span>
-            </h2>
-            {isOwner && (
-              <button
-                type="button"
-                onClick={() => setPanel({ mode: "create", vendor: null })}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                + {dict.directory.newVendor}
-              </button>
-            )}
-          </div>
+          <h2 className={sectionHeading}>
+            {dict.directory.vendorsHeading} <span className="text-ink-faint">· {filteredVendors.length}</span>
+          </h2>
 
           {tradeCounts.length > 0 && (
             <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
@@ -256,20 +254,9 @@ export function DirectoryExplorer({
 
       {showPeople && (
         <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className={sectionHeading}>
-              {dict.directory.peopleHeading} <span className="text-ink-faint">· {searchedPeople.length}</span>
-            </h2>
-            {isOwner && (
-              <button
-                type="button"
-                onClick={() => setInviteOpen(true)}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                + {dict.directory.inviteButton}
-              </button>
-            )}
-          </div>
+          <h2 className={sectionHeading}>
+            {dict.directory.peopleHeading} <span className="text-ink-faint">· {searchedPeople.length}</span>
+          </h2>
 
           {peopleByRole.length > 0 ? (
             <div className="space-y-4">
@@ -326,6 +313,65 @@ export function DirectoryExplorer({
       )}
 
       {isOwner && inviteOpen && <InvitePanel dict={dict} onClose={() => setInviteOpen(false)} />}
+    </div>
+  );
+}
+
+function AddMenu({
+  dict,
+  onAddVendor,
+  onAddPerson,
+}: {
+  dict: Dictionary;
+  onAddVendor: () => void;
+  onAddPerson: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label={dict.directory.addButton}
+        className="flex size-10 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-active"
+      >
+        <Plus className="size-5" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 min-w-48 overflow-hidden rounded-lg border border-hairline bg-surface p-1 shadow-[var(--shadow-soft)]">
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onAddVendor();
+            }}
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
+          >
+            <Building2 className="size-4" /> {dict.directory.addVendorOption}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onAddPerson();
+            }}
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
+          >
+            <UserPlus className="size-4" /> {dict.directory.addPersonOption}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

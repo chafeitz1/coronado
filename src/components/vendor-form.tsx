@@ -1,6 +1,7 @@
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { TagInput } from "@/components/ui/tag-input";
+import { VendorContactsField, type VendorContactValue } from "@/components/vendor-contacts-field";
 import { buttonPrimary, buttonSecondary, input, label as labelClass } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { VendorTrade } from "@/lib/types/database";
@@ -20,12 +21,10 @@ export function VendorForm({
   existingTrades: VendorTrade[];
   defaultValues?: {
     name: string;
-    contact_name: string | null;
     trades: VendorTrade[];
-    phone: string | null;
-    email: string | null;
     notes: string | null;
     is_emergency: boolean;
+    contacts: VendorContactValue[];
   };
   error?: string;
   onCancel?: () => void;
@@ -34,14 +33,6 @@ export function VendorForm({
     <form action={action} className="space-y-4">
       <Field label={dict.vendorForm.nameLabel}>
         <input name="name" required defaultValue={defaultValues?.name} className={input} />
-      </Field>
-      <Field label={dict.vendorForm.contactNameLabel}>
-        <input
-          name="contact_name"
-          placeholder={dict.vendorForm.contactNamePlaceholder}
-          defaultValue={defaultValues?.contact_name ?? ""}
-          className={input}
-        />
       </Field>
 
       <div className="space-y-1.5">
@@ -54,23 +45,7 @@ export function VendorForm({
         />
       </div>
 
-      <Field label={dict.vendorForm.phoneLabel}>
-        <input
-          name="phone"
-          placeholder={dict.vendorForm.phonePlaceholder}
-          defaultValue={defaultValues?.phone ?? ""}
-          className={input}
-        />
-      </Field>
-      <Field label={dict.vendorForm.emailLabel}>
-        <input
-          type="email"
-          name="email"
-          placeholder={dict.vendorForm.emailPlaceholder}
-          defaultValue={defaultValues?.email ?? ""}
-          className={input}
-        />
-      </Field>
+      <VendorContactsField defaultValue={defaultValues?.contacts} dict={dict} />
 
       <Field label={dict.vendorForm.notesLabel}>
         <textarea name="notes" rows={3} defaultValue={defaultValues?.notes ?? ""} className={input} />

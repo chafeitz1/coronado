@@ -79,7 +79,15 @@ export function VendorPanel({
           submitLabel={dict.vendorForm.submitEdit}
           dict={dict}
           existingTrades={existingTrades}
-          defaultValues={vendor}
+          defaultValues={{
+            ...vendor,
+            contacts: vendor.contacts.map((c) => ({
+              contact_name: c.contact_name ?? "",
+              role_label: c.role_label ?? "",
+              phone: c.phone ?? "",
+              email: c.email ?? "",
+            })),
+          }}
           error={updateState && !updateState.ok ? updateState.error : undefined}
           onCancel={() => setMode("view")}
         />
@@ -111,55 +119,64 @@ export function VendorPanel({
             </div>
           </div>
 
-          {(vendor.contact_name || vendor.phone || vendor.email) && (
-            <div className="space-y-2 rounded-lg border border-hairline bg-canvas-soft p-3.5 text-sm text-ink-secondary">
-              {vendor.contact_name && (
-                <p className="flex items-center gap-2.5">
-                  <UserIcon className="size-4 shrink-0 text-ink-faint" /> {vendor.contact_name}
-                </p>
-              )}
-              {vendor.phone && (
-                <p className="flex items-center gap-2.5">
-                  <Phone className="size-4 shrink-0 text-ink-faint" /> {vendor.phone}
-                </p>
-              )}
-              {vendor.email && (
-                <p className="flex items-center gap-2.5">
-                  <Mail className="size-4 shrink-0 text-ink-faint" /> {vendor.email}
-                </p>
-              )}
+          {vendor.contacts.length > 0 ? (
+            <div className="space-y-3">
+              {vendor.contacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  className="space-y-2 rounded-lg border border-hairline bg-canvas-soft p-3.5 text-sm text-ink-secondary"
+                >
+                  {(contact.contact_name || contact.role_label) && (
+                    <p className="flex items-center gap-2.5 font-medium text-ink">
+                      <UserIcon className="size-4 shrink-0 text-ink-faint" />
+                      {[contact.contact_name, contact.role_label].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                  {contact.phone && (
+                    <p className="flex items-center gap-2.5">
+                      <Phone className="size-4 shrink-0 text-ink-faint" /> {contact.phone}
+                    </p>
+                  )}
+                  {contact.email && (
+                    <p className="flex items-center gap-2.5">
+                      <Mail className="size-4 shrink-0 text-ink-faint" /> {contact.email}
+                    </p>
+                  )}
+                  {(contact.phone || contact.email) && (
+                    <div className="flex gap-2 pt-1">
+                      {contact.phone && (
+                        <a href={telHref(contact.phone)} className={`flex-1 ${buttonSecondary}`}>
+                          <Phone className="size-3.5" /> {dict.vendorDetail.call}
+                        </a>
+                      )}
+                      {contact.phone && (
+                        <a
+                          href={whatsAppHref(contact.phone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex-1 ${buttonSecondary}`}
+                        >
+                          <WhatsAppIcon className="size-3.5" /> {dict.vendorDetail.whatsapp}
+                        </a>
+                      )}
+                      {contact.email && (
+                        <a href={`mailto:${contact.email}`} className={`flex-1 ${buttonSecondary}`}>
+                          <Mail className="size-3.5" /> {dict.vendorDetail.email}
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
+          ) : (
+            <p className="text-sm text-ink-faint">{dict.directory.noContacts}</p>
           )}
 
           {vendor.notes && (
             <div className="space-y-1.5">
               <h3 className={sectionHeading}>{dict.vendorDetail.notesTitle}</h3>
               <p className="text-sm leading-relaxed text-ink-secondary">{vendor.notes}</p>
-            </div>
-          )}
-
-          {(vendor.phone || vendor.email) && (
-            <div className="flex gap-2">
-              {vendor.phone && (
-                <a href={telHref(vendor.phone)} className={`flex-1 ${buttonSecondary}`}>
-                  <Phone className="size-3.5" /> {dict.vendorDetail.call}
-                </a>
-              )}
-              {vendor.phone && (
-                <a
-                  href={whatsAppHref(vendor.phone)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`flex-1 ${buttonSecondary}`}
-                >
-                  <WhatsAppIcon className="size-3.5" /> {dict.vendorDetail.whatsapp}
-                </a>
-              )}
-              {vendor.email && (
-                <a href={`mailto:${vendor.email}`} className={`flex-1 ${buttonSecondary}`}>
-                  <Mail className="size-3.5" /> {dict.vendorDetail.email}
-                </a>
-              )}
             </div>
           )}
 

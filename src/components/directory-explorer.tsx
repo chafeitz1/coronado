@@ -23,19 +23,25 @@ import { Avatar } from "@/components/ui/avatar";
 import { VendorPanel, type VendorPanelMode } from "@/components/vendor-panel";
 import { inviteMember } from "@/app/actions/admin";
 import { telHref, whatsAppHref } from "@/lib/phone";
-import { type Dictionary } from "@/lib/i18n/dictionaries";
+import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { buttonSecondary, card, input, mutedText, sectionHeading } from "@/lib/ui";
 import type { VendorTrade, UserRole, NotificationEventType } from "@/lib/types/database";
+
+export type VendorContact = {
+  id: string;
+  contact_name: string | null;
+  role_label: string | null;
+  phone: string | null;
+  email: string | null;
+};
 
 export type VendorRow = {
   id: string;
   name: string;
-  contact_name: string | null;
   trades: VendorTrade[];
-  phone: string | null;
-  email: string | null;
   notes: string | null;
   is_emergency: boolean;
+  contacts: VendorContact[];
 };
 
 type PersonRow = {
@@ -90,7 +96,13 @@ export function DirectoryExplorer({
   const q = search.trim().toLowerCase();
 
   const searchedVendors = useMemo(
-    () => vendors.filter((v) => !q || v.name.toLowerCase().includes(q) || v.contact_name?.toLowerCase().includes(q)),
+    () =>
+      vendors.filter(
+        (v) =>
+          !q ||
+          v.name.toLowerCase().includes(q) ||
+          v.contacts.some((c) => c.contact_name?.toLowerCase().includes(q))
+      ),
     [vendors, q]
   );
   const searchedPeople = useMemo(
@@ -334,6 +346,7 @@ function VendorCard({
   dict: Dictionary;
   onSelect: () => void;
 }) {
+  const primaryContact = vendor.contacts[0] ?? null;
   return (
     <div className={`p-4 ${card}`}>
       <button type="button" onClick={onSelect} className="flex w-full items-start gap-3 text-left">
@@ -362,42 +375,53 @@ function VendorCard({
         <ChevronRight className="mt-2 size-4 shrink-0 text-ink-faint" />
       </button>
 
-      {(vendor.contact_name || vendor.phone || vendor.email) && (
+      {primaryContact ? (
         <div className="mt-3 space-y-1.5 text-sm text-ink-secondary">
-          {vendor.contact_name && (
+          {(primaryContact.contact_name || primaryContact.role_label) && (
             <p className="flex items-center gap-2">
-              <User className="size-3.5 shrink-0 text-ink-faint" /> {vendor.contact_name}
+              <User className="size-3.5 shrink-0 text-ink-faint" />
+              {[primaryContact.contact_name, primaryContact.role_label].filter(Boolean).join(" · ")}
             </p>
           )}
-          {vendor.phone && (
+          {primaryContact.phone && (
             <p className="flex items-center gap-2">
-              <Phone className="size-3.5 shrink-0 text-ink-faint" /> {vendor.phone}
+              <Phone className="size-3.5 shrink-0 text-ink-faint" /> {primaryContact.phone}
             </p>
           )}
-          {vendor.email && (
+          {primaryContact.email && (
             <p className="flex items-center gap-2">
-              <Mail className="size-3.5 shrink-0 text-ink-faint" /> {vendor.email}
+              <Mail className="size-3.5 shrink-0 text-ink-faint" /> {primaryContact.email}
             </p>
+          )}
+          {vendor.contacts.length > 1 && (
+            <p className="text-xs text-ink-faint">{format(dict.directory.moreContacts, { count: vendor.contacts.length - 1 })}</p>
           )}
         </div>
+      ) : (
+        <p className="mt-3 text-sm text-ink-faint">{dict.directory.noContacts}</p>
       )}
 
       {vendor.notes && <p className="mt-3 text-sm text-ink-muted">{vendor.notes}</p>}
 
-      {(vendor.phone || vendor.email) && (
+      {primaryContact && (primaryContact.phone || primaryContact.email) && (
         <div className="mt-3 flex gap-2">
-          {vendor.phone && (
-            <a href={telHref(vendor.phone)} className={actionButton}>
+          {primaryContact.phone && (
+            <a href={telHref(primaryContact.phone)} className={actionButton}>
               <Phone className="size-3.5" /> {dict.vendorDetail.call}
             </a>
           )}
-          {vendor.phone && (
-            <a href={whatsAppHref(vendor.phone)} target="_blank" rel="noopener noreferrer" className={actionButton}>
+          {primaryContact.phone && (
+            <a
+              href={whatsAppHref(primaryContact.phone)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={actionButton}
+            >
               <WhatsAppIcon className="size-3.5" /> {dict.vendorDetail.whatsapp}
             </a>
           )}
-          {vendor.email && (
-            <a href={`mailto:${vendor.email}`} className={actionButton}>
+          {primaryContact.email && (
+            <a href={`mailto:${primaryContact.email}`} className={actionButton}>
               <Mail className="size-3.5" /> {dict.vendorDetail.email}
             </a>
           )}

@@ -35,7 +35,7 @@ export default async function AssetDetailPage({
 
   const { data: asset } = await supabase
     .from("assets")
-    .select("*, preferred_vendor:vendors(id, name, phone)")
+    .select("*, preferred_vendor:vendors(id, name)")
     .eq("id", id)
     .single();
 

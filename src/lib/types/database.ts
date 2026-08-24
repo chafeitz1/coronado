@@ -53,10 +53,7 @@ export interface Database {
         Row: {
           id: string;
           name: string;
-          contact_name: string | null;
           trades: VendorTrade[];
-          phone: string | null;
-          email: string | null;
           notes: string | null;
           is_emergency: boolean;
           created_by: string;
@@ -64,6 +61,20 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["vendors"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["vendors"]["Insert"]>;
+      };
+      vendor_contacts: {
+        Row: {
+          id: string;
+          vendor_id: string;
+          contact_name: string | null;
+          role_label: string | null;
+          phone: string | null;
+          email: string | null;
+          position: number;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["vendor_contacts"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["vendor_contacts"]["Insert"]>;
       };
       assets: {
         Row: {

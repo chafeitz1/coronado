@@ -22,7 +22,7 @@ export default async function WorkOrderDetailPage({
   const { data: workOrder } = await supabase
     .from("work_orders")
     .select(
-      "*, assets(name), vendors(name, phone), assignee:profiles!work_orders_assigned_to_fkey(full_name), creator:profiles!work_orders_created_by_fkey(full_name)"
+      "*, assets(name), vendors(name), assignee:profiles!work_orders_assigned_to_fkey(full_name), creator:profiles!work_orders_created_by_fkey(full_name)"
     )
     .eq("id", id)
     .single();
@@ -87,7 +87,6 @@ export default async function WorkOrderDetailPage({
             <span className="flex items-center gap-2">
               <Building2 className="size-4 text-ink-faint" strokeWidth={2} />
               {vendor.name}
-              {vendor.phone ? ` (${vendor.phone})` : ""}
             </span>
           )}
         </div>

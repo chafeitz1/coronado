@@ -11,13 +11,19 @@ export default async function DirectoryPage() {
   const supabase = await createClient();
   const isOwner = profile.role === "owner";
 
-  const [{ data: vendors }, { data: people }] = await Promise.all([
+  const [{ data: vendorRows }, { data: people }] = await Promise.all([
     supabase
       .from("vendors")
-      .select("id, name, contact_name, trades, phone, email, notes, is_emergency")
-      .order("name"),
+      .select("id, name, trades, notes, is_emergency, vendor_contacts(id, contact_name, role_label, phone, email, position)")
+      .order("name")
+      .order("position", { referencedTable: "vendor_contacts" }),
     supabase.from("profiles").select("id, full_name, role, phone, avatar_url").order("full_name"),
   ]);
+
+  const vendors = (vendorRows ?? []).map(({ vendor_contacts, ...vendor }) => ({
+    ...vendor,
+    contacts: vendor_contacts,
+  }));
 
   let prefLookup: Record<string, boolean> = {};
 
@@ -43,12 +49,12 @@ export default async function DirectoryPage() {
       <div>
         <h1 className={pageHeading}>{dict.directory.title}</h1>
         <p className={mutedText}>
-          {format(dict.directory.subtitleCount, { count: (vendors?.length ?? 0) + (people?.length ?? 0) })}
+          {format(dict.directory.subtitleCount, { count: vendors.length + (people?.length ?? 0) })}
         </p>
       </div>
 
       <DirectoryExplorer
-        vendors={vendors ?? []}
+        vendors={vendors}
         people={people ?? []}
         currentUserId={profile.id}
         isOwner={isOwner}

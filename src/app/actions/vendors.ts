@@ -10,13 +10,30 @@ export type VendorActionState = { ok: true } | { ok: false; error: string } | nu
 function readVendorFields(formData: FormData) {
   return {
     name: String(formData.get("name") ?? "").trim(),
-    contact_name: String(formData.get("contact_name") ?? "").trim() || null,
     trades: formData.getAll("trades").map(String) as VendorTrade[],
-    phone: String(formData.get("phone") ?? "").trim() || null,
-    email: String(formData.get("email") ?? "").trim() || null,
     notes: String(formData.get("notes") ?? "").trim() || null,
     is_emergency: formData.get("is_emergency") === "on",
   };
+}
+
+// Contact rows are submitted as parallel arrays (one entry per row across
+// all four fields) rather than indexed field names — simpler to build in
+// the client and simpler to zip back together here.
+function readContacts(formData: FormData) {
+  const names = formData.getAll("contact_name").map(String);
+  const roles = formData.getAll("role_label").map(String);
+  const phones = formData.getAll("contact_phone").map(String);
+  const emails = formData.getAll("contact_email").map(String);
+
+  return names
+    .map((_, i) => ({
+      contact_name: names[i].trim() || null,
+      role_label: roles[i]?.trim() || null,
+      phone: phones[i]?.trim() || null,
+      email: emails[i]?.trim() || null,
+      position: i,
+    }))
+    .filter((c) => c.contact_name || c.role_label || c.phone || c.email);
 }
 
 export async function createVendor(
@@ -29,8 +46,20 @@ export async function createVendor(
   const fields = readVendorFields(formData);
   if (!fields.name) return { ok: false, error: "El nombre es obligatorio." };
 
-  const { error } = await supabase.from("vendors").insert({ ...fields, created_by: profile.id });
+  const { data: vendor, error } = await supabase
+    .from("vendors")
+    .insert({ ...fields, created_by: profile.id })
+    .select("id")
+    .single();
   if (error) return { ok: false, error: error.message };
+
+  const contacts = readContacts(formData);
+  if (contacts.length > 0) {
+    const { error: contactsError } = await supabase
+      .from("vendor_contacts")
+      .insert(contacts.map((c) => ({ ...c, vendor_id: vendor.id })));
+    if (contactsError) return { ok: false, error: contactsError.message };
+  }
 
   revalidatePath("/directory");
   return { ok: true };
@@ -49,6 +78,19 @@ export async function updateVendor(
 
   const { error } = await supabase.from("vendors").update(fields).eq("id", vendorId);
   if (error) return { ok: false, error: error.message };
+
+  // Simplest correct way to reconcile an arbitrary add/remove/reorder of
+  // contact rows: replace the set rather than diffing it.
+  const { error: deleteError } = await supabase.from("vendor_contacts").delete().eq("vendor_id", vendorId);
+  if (deleteError) return { ok: false, error: deleteError.message };
+
+  const contacts = readContacts(formData);
+  if (contacts.length > 0) {
+    const { error: contactsError } = await supabase
+      .from("vendor_contacts")
+      .insert(contacts.map((c) => ({ ...c, vendor_id: vendorId })));
+    if (contactsError) return { ok: false, error: contactsError.message };
+  }
 
   revalidatePath("/directory");
   return { ok: true };

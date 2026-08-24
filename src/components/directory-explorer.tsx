@@ -425,7 +425,7 @@ function VendorCard({
       </button>
 
       {primaryContact ? (
-        <div className="mt-3 space-y-1.5 text-sm text-ink-secondary">
+        <div className="mt-3 space-y-1.5 pl-14 text-sm text-ink-secondary">
           {(primaryContact.contact_name || primaryContact.role_label) && (
             <p className="flex items-center gap-2">
               <User className="size-3.5 shrink-0 text-ink-faint" />
@@ -447,10 +447,10 @@ function VendorCard({
           )}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-ink-faint">{dict.directory.noContacts}</p>
+        <p className="mt-3 pl-14 text-sm text-ink-faint">{dict.directory.noContacts}</p>
       )}
 
-      {vendor.notes && <p className="mt-3 text-sm text-ink-muted">{vendor.notes}</p>}
+      {vendor.notes && <p className="mt-3 pl-14 text-sm text-ink-muted">{vendor.notes}</p>}
 
       {primaryContact && (primaryContact.phone || primaryContact.email) && (
         <div className="mt-auto flex gap-2 pt-3">
@@ -495,6 +495,13 @@ function PersonCard({
   hireDate: string | null;
   onSelect: () => void;
 }) {
+  const roleLabel =
+    person.role === "staff"
+      ? dict.directory.staffOption
+      : person.role === "resident"
+        ? dict.directory.residentOption
+        : dict.directory.ownerOption;
+
   return (
     <div className={`flex h-full flex-col p-4 ${card}`}>
       <button type="button" onClick={onSelect} className="flex w-full items-center gap-3 text-left">
@@ -504,20 +511,29 @@ function PersonCard({
             {person.full_name}
             {isSelf && <span className={`ml-1.5 text-sm font-normal ${mutedText}`}>{dict.directory.you}</span>}
           </p>
-          {person.role === "staff" && hireDate && (
-            <p className="flex items-center gap-1 text-xs text-ink-faint">
-              <Calendar className="size-3 shrink-0" />
-              {format(dict.directory.sinceLabel, { date: formatLongDate(hireDate, locale) })}
-            </p>
-          )}
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
+              {roleLabel}
+            </span>
+          </div>
         </div>
         <ChevronRight className="size-4 shrink-0 text-ink-faint" />
       </button>
 
-      {person.phone && (
-        <p className="mt-3 flex items-center gap-2 text-sm text-ink-secondary">
-          <Phone className="size-3.5 shrink-0 text-ink-faint" /> {person.phone}
-        </p>
+      {(hireDate || person.phone) && (
+        <div className="mt-3 space-y-1.5 text-sm text-ink-secondary">
+          {person.role === "staff" && hireDate && (
+            <p className="flex items-center gap-2">
+              <Calendar className="size-3.5 shrink-0 text-ink-faint" />
+              {format(dict.directory.sinceLabel, { date: formatLongDate(hireDate, locale) })}
+            </p>
+          )}
+          {person.phone && (
+            <p className="flex items-center gap-2">
+              <Phone className="size-3.5 shrink-0 text-ink-faint" /> {person.phone}
+            </p>
+          )}
+        </div>
       )}
 
       {person.phone && (

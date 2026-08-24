@@ -32,6 +32,7 @@ export async function createWorkOrder(formData: FormData) {
   // this up too).
   const assignedTo =
     profile.role === "owner" ? String(formData.get("assigned_to") ?? "") || null : null;
+  const vendorId = profile.role === "owner" ? String(formData.get("vendor_id") ?? "") || null : null;
   const recurrenceValue =
     profile.role === "owner" ? Number(formData.get("recurrence_interval_value") ?? "") || null : null;
   const recurrenceUnit =
@@ -48,6 +49,7 @@ export async function createWorkOrder(formData: FormData) {
       asset_id: assetId,
       due_date: dueDate,
       assigned_to: assignedTo,
+      vendor_id: vendorId,
       created_by: profile.id,
       source: "manual",
       recurrence_interval_value: recurrenceUnit ? recurrenceValue : null,

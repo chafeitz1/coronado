@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, Trash2, Building2, ClipboardList, Repeat, History, CalendarClock } from "lucide-react";
+import { Pencil, Trash2, Building2, ClipboardList, Repeat, History, CalendarClock, Plus, Power } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { deleteAsset } from "@/app/actions/assets";
-import { StatusBadge, WarrantyBadge } from "@/components/ui/badge";
+import { deleteAsset, updateAssetStatus } from "@/app/actions/assets";
+import { StatusBadge, WarrantyBadge, AssetStatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuccessBanner } from "@/components/ui/success-banner";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { AssetAttachments } from "@/app/assets/[id]/attachments-section";
 import { getDictionary, format } from "@/lib/i18n/dictionaries";
 import {
@@ -94,14 +95,23 @@ export default async function AssetDetailPage({
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1.5">
-          <h1 className={pageHeading}>{asset.name}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className={pageHeading}>{asset.name}</h1>
+            <AssetStatusBadge status={asset.status} locale={profile.locale} />
+          </div>
           {asset.warranty_expires && <WarrantyBadge warrantyExpires={asset.warranty_expires} locale={profile.locale} />}
         </div>
         {profile.role === "owner" && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link href={`/assets/${asset.id}/edit`} className={buttonUtility}>
               <Pencil className="size-3.5" /> {dict.assetDetail.edit}
             </Link>
+            <form action={updateAssetStatus.bind(null, asset.id, asset.status === "active" ? "inactive" : "active")}>
+              <SubmitButton className={buttonUtility} pendingLabel="...">
+                <Power className="size-3.5" />
+                {asset.status === "active" ? dict.assetDetail.markInactive : dict.assetDetail.markActive}
+              </SubmitButton>
+            </form>
             <form action={deleteAsset.bind(null, asset.id)}>
               <ConfirmSubmitButton
                 confirmMessage={format(dict.assetDetail.deleteConfirm, { name: asset.name })}
@@ -152,11 +162,16 @@ export default async function AssetDetailPage({
       </section>
 
       <section className="space-y-2">
-        <h2 className={sectionHeading}>
-          <span className="inline-flex items-center gap-1.5">
-            <CalendarClock className="size-3.5" /> {dict.assetDetail.upcomingTitle}
-          </span>
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className={sectionHeading}>
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarClock className="size-3.5" /> {dict.assetDetail.upcomingTitle}
+            </span>
+          </h2>
+          <Link href={`/work-orders/new?asset_id=${asset.id}`} className={buttonUtility}>
+            <Plus className="size-3.5" /> {dict.assetDetail.newMaintenanceTask}
+          </Link>
+        </div>
         {upcoming.length > 0 ? (
           <ul className={listCard}>
             {upcoming.map((wo) => (

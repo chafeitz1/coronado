@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, ArrowDown, ClipboardList } from "lucide-react";
+import { ArrowUp, ArrowDown, Building2, ClipboardList } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { PriorityBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
@@ -42,7 +42,8 @@ export function WorkOrderTableView({
       if (sortKey === "title") cmp = a.title.localeCompare(b.title);
       else if (sortKey === "status") cmp = a.status.localeCompare(b.status);
       else if (sortKey === "priority") cmp = PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
-      else if (sortKey === "assignee") cmp = (a.assignee?.full_name ?? "").localeCompare(b.assignee?.full_name ?? "");
+      else if (sortKey === "assignee")
+        cmp = (a.assignee?.full_name ?? a.vendor?.name ?? "").localeCompare(b.assignee?.full_name ?? b.vendor?.name ?? "");
       else if (sortKey === "asset") cmp = (a.asset?.name ?? "").localeCompare(b.asset?.name ?? "");
       else cmp = (a.due_date ?? "9999-99-99").localeCompare(b.due_date ?? "9999-99-99");
       return asc ? cmp : -cmp;
@@ -111,6 +112,11 @@ export function WorkOrderTableView({
                     <span className="flex items-center gap-2 whitespace-nowrap">
                       <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />
                       {wo.assignee.full_name}
+                    </span>
+                  ) : wo.vendor ? (
+                    <span className="flex items-center gap-2 whitespace-nowrap text-ink-secondary">
+                      <Building2 className="size-4 shrink-0 text-ink-faint" strokeWidth={2} />
+                      {wo.vendor.name}
                     </span>
                   ) : (
                     <span className={mutedText}>{dict.workOrders.unassigned}</span>

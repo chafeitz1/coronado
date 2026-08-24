@@ -5,6 +5,7 @@
 export type UserRole = "owner" | "resident" | "staff";
 export type Locale = "es" | "en";
 export type WorkOrderStatus = "open" | "in_progress" | "done";
+export type AssetStatus = "active" | "inactive";
 export type WorkOrderPriority = "low" | "medium" | "high";
 export type WorkOrderSource = "manual" | "pm";
 export type IntervalUnit = "days" | "weeks" | "months" | "years";
@@ -95,10 +96,13 @@ export interface Database {
           purchase_date: string | null;
           warranty_expires: string | null;
           notes: string | null;
+          status: AssetStatus;
           created_by: string;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["assets"]["Row"], "id" | "created_at">;
+        Insert: Omit<Database["public"]["Tables"]["assets"]["Row"], "id" | "created_at" | "status"> & {
+          status?: AssetStatus;
+        };
         Update: Partial<Database["public"]["Tables"]["assets"]["Insert"]>;
       };
       work_orders: {

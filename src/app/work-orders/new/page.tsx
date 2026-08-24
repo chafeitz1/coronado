@@ -9,15 +9,23 @@ import { RecurrenceFields } from "@/components/recurrence-fields";
 import { buttonPrimary, card, input, mutedText } from "@/lib/ui";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
-export default async function NewWorkOrderPage() {
+export default async function NewWorkOrderPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ asset_id?: string }>;
+}) {
   const profile = await requireUser();
   const dict = getDictionary(profile.locale);
   const supabase = await createClient();
+  const { asset_id: presetAssetId } = await searchParams;
 
-  const [{ data: assets }, { data: staff }] = await Promise.all([
+  const [{ data: assets }, { data: staff }, { data: vendors }] = await Promise.all([
     supabase.from("assets").select("id, name").order("name"),
     profile.role === "owner"
       ? supabase.from("profiles").select("id, full_name").eq("role", "staff").order("full_name")
+      : Promise.resolve({ data: null }),
+    profile.role === "owner"
+      ? supabase.from("vendors").select("id, name").order("name")
       : Promise.resolve({ data: null }),
   ]);
 
@@ -56,6 +64,7 @@ export default async function NewWorkOrderPage() {
             name="asset_id"
             placeholder={dict.workOrderForm.startTyping}
             noResultsLabel={dict.workOrderForm.noOptions}
+            defaultValue={presetAssetId}
             options={(assets ?? []).map((a) => ({ value: a.id, label: a.name }))}
           />
         </Field>
@@ -68,6 +77,15 @@ export default async function NewWorkOrderPage() {
                 placeholder={dict.workOrderForm.startTyping}
                 noResultsLabel={dict.workOrderForm.noOptions}
                 options={(staff ?? []).map((s) => ({ value: s.id, label: s.full_name }))}
+              />
+            </Field>
+
+            <Field label={dict.workOrderForm.vendorLabel}>
+              <Combobox
+                name="vendor_id"
+                placeholder={dict.workOrderForm.startTyping}
+                noResultsLabel={dict.workOrderForm.noOptions}
+                options={(vendors ?? []).map((v) => ({ value: v.id, label: v.name }))}
               />
             </Field>
 

@@ -4,8 +4,7 @@ import { Plus, ShieldAlert, Wrench } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { WarrantyBadge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
-import { AssetRowMenu } from "@/components/asset-row-menu";
+import { AssetsList, type AssetSummary } from "@/components/assets-list";
 import { AssetsShell } from "@/components/assets-shell";
 import { buttonPrimary, listCard, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
@@ -20,7 +19,7 @@ export default async function AssetsLayout({ children }: { children: React.React
 
   const { data: assets } = await supabase
     .from("assets")
-    .select("id, name, category, location, warranty_expires")
+    .select("id, name, category, location, warranty_expires, status")
     .order("name");
 
   const all = assets ?? [];
@@ -42,9 +41,19 @@ export default async function AssetsLayout({ children }: { children: React.React
     }
   }
 
+  // Retired/disposed equipment doesn't need a warranty callout anymore.
   const warrantyAlerts = all
-    .filter((a) => a.warranty_expires && daysUntil(a.warranty_expires) <= WARRANTY_WARNING_DAYS)
+    .filter((a) => a.status === "active" && a.warranty_expires && daysUntil(a.warranty_expires) <= WARRANTY_WARNING_DAYS)
     .sort((a, b) => (a.warranty_expires ?? "").localeCompare(b.warranty_expires ?? ""));
+
+  const assetSummaries: AssetSummary[] = all.map((a) => ({
+    id: a.id,
+    name: a.name,
+    category: a.category,
+    location: a.location,
+    status: a.status,
+    coverUrl: coverByAsset.get(a.id),
+  }));
 
   const listPane = (
     <div className="space-y-6">
@@ -87,30 +96,7 @@ export default async function AssetsLayout({ children }: { children: React.React
 
       <section className="space-y-2">
         {warrantyAlerts.length > 0 && <h2 className={sectionHeading}>{dict.assets.allAssetsTitle}</h2>}
-        {all.length > 0 ? (
-          <ul className={listCard}>
-            {all.map((asset) => (
-              <li key={asset.id}>
-                <div className="flex items-center gap-1 pl-4 pr-2 transition-colors hover:bg-surface-hover">
-                  <Link href={`/assets/${asset.id}`} className="flex min-w-0 flex-1 items-center gap-3 py-3">
-                    <AssetThumb url={coverByAsset.get(asset.id)} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-ink">{asset.name}</p>
-                      <p className={`${mutedText} truncate`}>
-                        {[asset.category, asset.location].filter(Boolean).join(" · ") || dict.assets.noCategory}
-                      </p>
-                    </div>
-                  </Link>
-                  {profile.role === "owner" && (
-                    <AssetRowMenu assetId={asset.id} assetName={asset.name} dict={dict} />
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <EmptyState icon={Wrench} message={dict.assets.empty} />
-        )}
+        <AssetsList assets={assetSummaries} isOwner={profile.role === "owner"} dict={dict} locale={profile.locale} />
       </section>
     </div>
   );

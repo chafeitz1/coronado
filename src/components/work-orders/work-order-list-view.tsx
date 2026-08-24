@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ClipboardList, Repeat, ChevronUp, ChevronDown as ChevronDownIcon } from "lucide-react";
+import { ClipboardList, Repeat, Building2, ChevronUp, ChevronDown as ChevronDownIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -84,7 +84,16 @@ export function WorkOrderListView({
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
-                    {wo.assignee && <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />}
+                    {wo.assignee ? (
+                      <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />
+                    ) : (
+                      wo.vendor && (
+                        <span className="flex items-center gap-1 text-xs text-ink-muted">
+                          <Building2 className="size-3.5 shrink-0" strokeWidth={2} />
+                          <span className="max-w-24 truncate">{wo.vendor.name}</span>
+                        </span>
+                      )
+                    )}
                     <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
                   </div>
                 </Link>

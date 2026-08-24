@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/auth";
 import { uploadAttachment } from "@/lib/attachments-server";
+import type { AssetStatus } from "@/lib/types/database";
 
 function readAssetFields(formData: FormData) {
   return {
@@ -74,4 +75,18 @@ export async function deleteAsset(assetId: string) {
 
   revalidatePath("/assets", "layout");
   redirect("/assets?deleted=1");
+}
+
+// Marking an asset inactive (damaged, disposed, sold...) instead of
+// deleting it keeps its full maintenance/attachment history intact —
+// deleteAsset above still exists separately for a genuine mistaken entry.
+export async function updateAssetStatus(assetId: string, status: AssetStatus) {
+  await requireOwner();
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("assets").update({ status }).eq("id", assetId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/assets", "layout");
+  revalidatePath(`/assets/${assetId}`);
 }

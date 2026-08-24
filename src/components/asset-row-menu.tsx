@@ -2,19 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
-import { deleteAsset } from "@/app/actions/assets";
+import { MoreVertical, Pencil, Power, Trash2 } from "lucide-react";
+import { deleteAsset, updateAssetStatus } from "@/app/actions/assets";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { format } from "@/lib/i18n/dictionaries";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import type { AssetStatus } from "@/lib/types/database";
 
 export function AssetRowMenu({
   assetId,
   assetName,
+  status = "active",
   dict,
 }: {
   assetId: string;
   assetName: string;
+  status?: AssetStatus;
   dict: Dictionary;
 }) {
   const [open, setOpen] = useState(false);
@@ -40,7 +44,7 @@ export function AssetRowMenu({
         <MoreVertical className="size-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-10 mt-1 w-36 overflow-hidden rounded-lg border border-hairline bg-surface py-1 shadow-[var(--shadow-soft)]">
+        <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-lg border border-hairline bg-surface py-1 shadow-[var(--shadow-soft)]">
           <Link
             href={`/assets/${assetId}/edit`}
             onClick={() => setOpen(false)}
@@ -48,6 +52,18 @@ export function AssetRowMenu({
           >
             <Pencil className="size-3.5" /> {dict.assetDetail.edit}
           </Link>
+          <form
+            action={updateAssetStatus.bind(null, assetId, status === "active" ? "inactive" : "active")}
+            onSubmit={() => setOpen(false)}
+          >
+            <SubmitButton
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
+              pendingLabel="..."
+            >
+              <Power className="size-3.5" />
+              {status === "active" ? dict.assetDetail.markInactive : dict.assetDetail.markActive}
+            </SubmitButton>
+          </form>
           <form action={deleteAsset.bind(null, assetId)}>
             <ConfirmSubmitButton
               confirmMessage={format(dict.assetDetail.deleteConfirm, { name: assetName })}

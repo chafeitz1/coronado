@@ -1,5 +1,5 @@
-import { Lock, RefreshCw, CheckCircle2 } from "lucide-react";
-import type { Locale, WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
+import { Lock, RefreshCw, CheckCircle2, PowerOff } from "lucide-react";
+import type { AssetStatus, Locale, WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
 import { daysUntil } from "@/lib/dates";
 import { getDictionary, format } from "@/lib/i18n/dictionaries";
 
@@ -41,6 +41,17 @@ export function PriorityBadge({ priority, locale }: { priority: WorkOrderPriorit
   return (
     <span className={`${baseClass} ${PRIORITY_STYLES[p] ?? PRIORITY_STYLES.medium}`}>
       {dict.priorities[p] ?? priority}
+    </span>
+  );
+}
+
+export function AssetStatusBadge({ status, locale }: { status: AssetStatus; locale: Locale }) {
+  const dict = getDictionary(locale);
+  if (status !== "inactive") return null;
+  return (
+    <span className={`${baseClass} bg-canvas-soft text-ink-muted`}>
+      <PowerOff className="size-3" strokeWidth={2.5} />
+      {dict.assetDetail.statusInactive}
     </span>
   );
 }

@@ -40,6 +40,46 @@ export function getMonthGrid(year: number, month: number): Date[] {
   return days;
 }
 
+const LONG_MONTH_NAMES: Record<"es" | "en", string[]> = {
+  es: [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ],
+  en: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ],
+};
+
+// "Julio 1, 2024" — deliberately "Month Day, Year" in both languages
+// rather than Spanish's usual "1 de julio de 2024", to match the rest of
+// the app's date displays. Parses the ISO string directly (no Date/
+// timezone conversion) so a stored "2024-07-01" never shifts a day.
+export function formatLongDate(dateStr: string, locale: "es" | "en"): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return `${LONG_MONTH_NAMES[locale][month - 1]} ${day}, ${year}`;
+}
+
 export function advanceDate(dateStr: string, unit: "days" | "weeks" | "months" | "years", value: number): string {
   const date = new Date(`${dateStr}T00:00:00Z`);
   if (unit === "days") date.setUTCDate(date.getUTCDate() + value);

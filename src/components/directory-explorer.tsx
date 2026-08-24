@@ -11,8 +11,9 @@ import { PersonPanel } from "@/components/person-panel";
 import { InvitePanel } from "@/components/invite-panel";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
+import { formatLongDate } from "@/lib/dates";
 import { buttonSecondary, card, input, mutedText, sectionHeading } from "@/lib/ui";
-import type { VendorTrade, UserRole, NotificationEventType } from "@/lib/types/database";
+import type { VendorTrade, UserRole, NotificationEventType, Locale } from "@/lib/types/database";
 
 export type VendorContact = {
   id: string;
@@ -55,6 +56,7 @@ export function DirectoryExplorer({
   currentUserId,
   isOwner,
   dict,
+  locale,
   notifEvents,
   prefLookup,
   staffDetailsLookup,
@@ -65,6 +67,7 @@ export function DirectoryExplorer({
   currentUserId: string;
   isOwner: boolean;
   dict: Dictionary;
+  locale: Locale;
   notifEvents: NotifEvent[];
   prefLookup: Record<string, boolean>;
   staffDetailsLookup: Record<string, StaffDetails>;
@@ -274,6 +277,7 @@ export function DirectoryExplorer({
                         person={person}
                         isSelf={person.id === currentUserId}
                         dict={dict}
+                        locale={locale}
                         hireDate={staffDetailsLookup[person.id]?.hire_date ?? null}
                         onSelect={() => setPersonPanel(person)}
                       />
@@ -307,6 +311,7 @@ export function DirectoryExplorer({
           isSelf={personPanel.id === currentUserId}
           isOwner={isOwner}
           dict={dict}
+          locale={locale}
           events={notifEvents}
           prefLookup={prefLookup}
           staffDetails={
@@ -479,12 +484,14 @@ function PersonCard({
   person,
   isSelf,
   dict,
+  locale,
   hireDate,
   onSelect,
 }: {
   person: PersonRow;
   isSelf: boolean;
   dict: Dictionary;
+  locale: Locale;
   hireDate: string | null;
   onSelect: () => void;
 }) {
@@ -498,7 +505,9 @@ function PersonCard({
             {isSelf && <span className={`ml-1.5 text-sm font-normal ${mutedText}`}>{dict.directory.you}</span>}
           </p>
           {person.role === "staff" && hireDate && (
-            <p className="text-xs text-ink-faint">{format(dict.directory.sinceLabel, { date: hireDate })}</p>
+            <p className="text-xs text-ink-faint">
+              {format(dict.directory.sinceLabel, { date: formatLongDate(hireDate, locale) })}
+            </p>
           )}
         </div>
         <ChevronRight className="size-4 shrink-0 text-ink-faint" />

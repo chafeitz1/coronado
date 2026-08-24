@@ -37,16 +37,26 @@ export function SidePanel({
     <div className="fixed inset-0 z-50 flex justify-end">
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-black/30" />
       <div className="relative flex h-full w-full max-w-md flex-col bg-canvas shadow-[var(--shadow-elevated)]">
-        <div className="flex shrink-0 items-center justify-end border-b border-hairline px-5 py-4">
-          {title && <h2 className="mr-auto text-base font-semibold text-ink">{title}</h2>}
+        {title ? (
+          <div className="flex shrink-0 items-center justify-between border-b border-hairline px-5 py-4">
+            <h2 className="text-base font-semibold text-ink">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+            className="absolute right-3 top-3 z-10 rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
           >
             <X className="size-5" />
           </button>
-        </div>
+        )}
         <div className="flex-1 overflow-y-auto p-5">{children}</div>
       </div>
     </div>

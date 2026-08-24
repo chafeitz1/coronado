@@ -1,10 +1,9 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
-import { Phone, Send, Camera, FileText, Upload, X } from "lucide-react";
+import { Phone, Send, Camera, FileText, Upload, X, Pencil } from "lucide-react";
 import { SidePanel } from "@/components/ui/side-panel";
 import { Field } from "@/components/ui/field";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { PrefToggle } from "@/components/pref-toggle";
 import { Avatar } from "@/components/ui/avatar";
@@ -18,8 +17,10 @@ import {
   getStaffDocumentUrl,
 } from "@/app/actions/admin";
 import { telHref, whatsAppHref } from "@/lib/phone";
-import { buttonSecondary, input, sectionHeading } from "@/lib/ui";
-import { type Dictionary } from "@/lib/i18n/dictionaries";
+import { formatLongDate } from "@/lib/dates";
+import { buttonGhost, buttonSecondary, input, sectionHeading } from "@/lib/ui";
+import { format, type Dictionary } from "@/lib/i18n/dictionaries";
+import type { Locale } from "@/lib/types/database";
 import type { PersonRow, NotifEvent, SalaryEntry, StaffDetails } from "@/components/directory-explorer";
 
 export function PersonPanel({
@@ -27,6 +28,7 @@ export function PersonPanel({
   isSelf,
   isOwner,
   dict,
+  locale,
   events,
   prefLookup,
   staffDetails,
@@ -37,6 +39,7 @@ export function PersonPanel({
   isSelf: boolean;
   isOwner: boolean;
   dict: Dictionary;
+  locale: Locale;
   events: NotifEvent[];
   prefLookup: Record<string, boolean>;
   staffDetails: StaffDetails;
@@ -63,6 +66,30 @@ export function PersonPanel({
   );
   const avatarInputRef = useRef<HTMLFormElement>(null);
   const avatarFileRef = useRef<HTMLInputElement>(null);
+
+  const [editingDates, setEditingDates] = useState(false);
+  const [datesPending, startDates] = useTransition();
+
+  function handleSaveDates(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    startDates(async () => {
+      await updateStaffDates(person.id, formData);
+      setEditingDates(false);
+    });
+  }
+
+  const [addingSalary, setAddingSalary] = useState(false);
+  const [salaryPending, startSalary] = useTransition();
+
+  function handleAddSalary(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    startSalary(async () => {
+      await addSalaryChange(person.id, formData);
+      setAddingSalary(false);
+    });
+  }
 
   return (
     <SidePanel open onClose={onClose}>
@@ -144,102 +171,149 @@ export function PersonPanel({
         )}
 
         {canManageStaff && (
-          <>
-            <div className="space-y-1.5 border-t border-hairline pt-4">
-              <h3 className={sectionHeading}>{dict.directory.hireDateLabel}</h3>
-              <form action={updateStaffDates.bind(null, person.id)} className="flex flex-wrap items-end gap-2">
-                <Field label={dict.directory.hireDateLabel}>
-                  <input type="date" name="hire_date" defaultValue={staffDetails.hire_date ?? ""} className={input} />
-                </Field>
-                <Field label={dict.directory.birthDateLabel}>
-                  <input
-                    type="date"
-                    name="birth_date"
-                    defaultValue={staffDetails.birth_date ?? ""}
-                    className={input}
-                  />
-                </Field>
-                <SubmitButton className={buttonSecondary} pendingLabel={dict.vendorForm.submitPending}>
-                  {dict.vendorForm.submit}
-                </SubmitButton>
+          <div className="space-y-4 border-t border-hairline pt-4">
+            <h3 className={sectionHeading}>{dict.directory.employmentLabel}</h3>
+
+            {editingDates ? (
+              <form onSubmit={handleSaveDates} className="space-y-2 rounded-lg border border-hairline p-3.5">
+                <div className="flex flex-wrap gap-2">
+                  <Field label={dict.directory.hireDateLabel}>
+                    <input type="date" name="hire_date" defaultValue={staffDetails.hire_date ?? ""} className={input} />
+                  </Field>
+                  <Field label={dict.directory.birthDateLabel}>
+                    <input
+                      type="date"
+                      name="birth_date"
+                      defaultValue={staffDetails.birth_date ?? ""}
+                      className={input}
+                    />
+                  </Field>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button type="submit" disabled={datesPending} className={buttonSecondary}>
+                    {datesPending ? dict.vendorForm.submitPending : dict.vendorForm.submitEdit}
+                  </button>
+                  <button type="button" onClick={() => setEditingDates(false)} className={buttonGhost}>
+                    {dict.vendorForm.cancel}
+                  </button>
+                </div>
               </form>
-            </div>
+            ) : (
+              <div className="flex items-center justify-between rounded-lg border border-hairline bg-canvas-soft p-3.5 text-sm">
+                <div className="space-y-0.5">
+                  <p className="text-ink-secondary">
+                    {staffDetails.hire_date
+                      ? format(dict.directory.sinceLabel, { date: formatLongDate(staffDetails.hire_date, locale) })
+                      : dict.directory.hireDateLabel}
+                  </p>
+                  {staffDetails.birth_date && (
+                    <p className="text-ink-faint">
+                      {dict.directory.birthDateLabel}: {formatLongDate(staffDetails.birth_date, locale)}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingDates(true)}
+                  aria-label={dict.vendorDetail.edit}
+                  className={buttonGhost}
+                >
+                  <Pencil className="size-3.5" />
+                </button>
+              </div>
+            )}
 
             <div className="space-y-2">
-              <h3 className={sectionHeading}>{dict.directory.salaryHistoryLabel}</h3>
+              <h4 className="text-sm font-medium text-ink">{dict.directory.salaryHistoryLabel}</h4>
               {salaryHistory.length > 0 ? (
                 <ul className="space-y-1 text-sm text-ink-secondary">
                   {salaryHistory.map((entry, i) => (
                     <li key={entry.effective_date + i} className="flex items-center justify-between">
                       <span className={i === 0 ? "font-medium text-ink" : undefined}>${entry.salary.toFixed(2)}</span>
-                      <span className="text-ink-faint">{entry.effective_date}</span>
+                      <span className="text-ink-faint">{formatLongDate(entry.effective_date, locale)}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
                 <p className="text-sm text-ink-faint">{dict.directory.noSalaryHistory}</p>
               )}
-              <form action={addSalaryChange.bind(null, person.id)} className="flex flex-wrap items-end gap-2 pt-1">
-                <Field label={dict.directory.salaryLabel}>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    name="salary"
-                    required
-                    placeholder={dict.directory.salaryPlaceholder}
-                    className={input}
-                  />
-                </Field>
-                <Field label={dict.directory.effectiveDateLabel}>
-                  <input type="date" name="effective_date" className={input} />
-                </Field>
-                <SubmitButton className={buttonSecondary} pendingLabel={dict.vendorForm.submitPending}>
-                  {dict.directory.addSalaryChange}
-                </SubmitButton>
-              </form>
+
+              {addingSalary ? (
+                <form onSubmit={handleAddSalary} className="space-y-2 rounded-lg border border-hairline p-3.5">
+                  <div className="flex flex-wrap gap-2">
+                    <Field label={dict.directory.salaryLabel}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        name="salary"
+                        required
+                        placeholder={dict.directory.salaryPlaceholder}
+                        className={input}
+                      />
+                    </Field>
+                    <Field label={dict.directory.effectiveDateLabel}>
+                      <input type="date" name="effective_date" className={input} />
+                    </Field>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button type="submit" disabled={salaryPending} className={buttonSecondary}>
+                      {salaryPending ? dict.vendorForm.submitPending : dict.directory.addSalaryChange}
+                    </button>
+                    <button type="button" onClick={() => setAddingSalary(false)} className={buttonGhost}>
+                      {dict.vendorForm.cancel}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <button type="button" onClick={() => setAddingSalary(true)} className={buttonGhost}>
+                  + {dict.directory.addButton}
+                </button>
+              )}
             </div>
 
             <StaffDocumentSection userId={person.id} idDocumentPath={staffDetails.id_document_path} dict={dict} />
+          </div>
+        )}
 
-            <div className="space-y-2">
-              <h3 className={sectionHeading}>{dict.directory.notifications}</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs text-ink-faint">
-                      <th className="pb-2 font-normal">{dict.directory.eventHeader}</th>
-                      <th className="pb-2 font-normal">{dict.directory.pushHeader}</th>
-                      <th className="pb-2 font-normal">{dict.directory.emailHeader}</th>
+        {canManageStaff && (
+          <div className="space-y-2">
+            <h3 className={sectionHeading}>{dict.directory.notifications}</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-ink-faint">
+                    <th className="pb-2 font-normal">{dict.directory.eventHeader}</th>
+                    <th className="pb-2 font-normal">{dict.directory.pushHeader}</th>
+                    <th className="pb-2 font-normal">{dict.directory.emailHeader}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline">
+                  {events.map((event) => (
+                    <tr key={event.key}>
+                      <td className="py-2 text-ink-secondary">{event.label}</td>
+                      <td className="py-2">
+                        <PrefToggle
+                          userId={person.id}
+                          eventType={event.key}
+                          channel="push"
+                          defaultEnabled={prefLookup[`${person.id}:${event.key}:push`] ?? true}
+                        />
+                      </td>
+                      <td className="py-2">
+                        <PrefToggle
+                          userId={person.id}
+                          eventType={event.key}
+                          channel="email"
+                          defaultEnabled={prefLookup[`${person.id}:${event.key}:email`] ?? true}
+                        />
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-hairline">
-                    {events.map((event) => (
-                      <tr key={event.key}>
-                        <td className="py-2 text-ink-secondary">{event.label}</td>
-                        <td className="py-2">
-                          <PrefToggle
-                            userId={person.id}
-                            eventType={event.key}
-                            channel="push"
-                            defaultEnabled={prefLookup[`${person.id}:${event.key}:push`] ?? true}
-                          />
-                        </td>
-                        <td className="py-2">
-                          <PrefToggle
-                            userId={person.id}
-                            eventType={event.key}
-                            channel="email"
-                            defaultEnabled={prefLookup[`${person.id}:${event.key}:email`] ?? true}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </>
+          </div>
         )}
       </div>
     </SidePanel>
@@ -284,7 +358,7 @@ function StaffDocumentSection({
 
   return (
     <div className="space-y-2">
-      <h3 className={sectionHeading}>{dict.directory.idDocumentLabel}</h3>
+      <h4 className="text-sm font-medium text-ink">{dict.directory.idDocumentLabel}</h4>
       <form ref={formRef} action={uploadAction}>
         <input
           ref={fileRef}

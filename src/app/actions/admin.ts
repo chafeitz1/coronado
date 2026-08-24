@@ -72,15 +72,134 @@ export async function sendInvite(userId: string): Promise<{ error?: string }> {
   return {};
 }
 
-export async function updateStaffHireDate(userId: string, formData: FormData) {
+export async function updateStaffDates(userId: string, formData: FormData) {
   await requireOwner();
   const supabase = await createClient();
 
   const hireDate = String(formData.get("hire_date") ?? "").trim() || null;
+  const birthDate = String(formData.get("birth_date") ?? "").trim() || null;
 
-  await supabase.from("staff_details").upsert({ user_id: userId, hire_date: hireDate }, { onConflict: "user_id" });
+  await supabase
+    .from("staff_details")
+    .upsert({ user_id: userId, hire_date: hireDate, birth_date: birthDate }, { onConflict: "user_id" });
 
   revalidatePath("/directory");
+}
+
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+export async function uploadPersonAvatar(
+  userId: string,
+  _prevState: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string }> {
+  await requireOwner();
+
+  const file = formData.get("avatar");
+  if (!(file instanceof File) || file.size === 0) return { error: "Elige una foto primero." };
+  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) return { error: "Solo se permiten fotos JPG, PNG o WEBP." };
+  if (file.size > MAX_AVATAR_BYTES) return { error: "La foto no puede pesar más de 5MB." };
+
+  const supabase = await createClient();
+  const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = `${userId}/avatar.${extension}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (uploadError) return { error: uploadError.message };
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(path);
+  const avatarUrl = `${publicUrl}?v=${Date.now()}`;
+
+  const { error: updateError } = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", userId);
+  if (updateError) return { error: updateError.message };
+
+  revalidatePath("/directory");
+  return {};
+}
+
+const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
+export async function uploadStaffDocument(
+  userId: string,
+  _prevState: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string }> {
+  await requireOwner();
+
+  const file = formData.get("document");
+  if (!(file instanceof File) || file.size === 0) return { error: "Elige un archivo primero." };
+  if (!ALLOWED_DOCUMENT_TYPES.includes(file.type)) {
+    return { error: "Solo se permiten fotos JPG, PNG, WEBP o un PDF." };
+  }
+  if (file.size > MAX_DOCUMENT_BYTES) return { error: "El archivo no puede pesar más de 10MB." };
+
+  const supabase = await createClient();
+  const path = `${userId}/${Date.now()}-${file.name}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("staff-documents")
+    .upload(path, file, { contentType: file.type });
+  if (uploadError) return { error: uploadError.message };
+
+  const { data: existing } = await supabase
+    .from("staff_details")
+    .select("id_document_path")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing?.id_document_path && existing.id_document_path !== path) {
+    await supabase.storage.from("staff-documents").remove([existing.id_document_path]);
+  }
+
+  await supabase
+    .from("staff_details")
+    .upsert({ user_id: userId, id_document_path: path }, { onConflict: "user_id" });
+
+  revalidatePath("/directory");
+  return {};
+}
+
+export async function deleteStaffDocument(userId: string): Promise<{ error?: string }> {
+  await requireOwner();
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("staff_details")
+    .select("id_document_path")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing?.id_document_path) {
+    await supabase.storage.from("staff-documents").remove([existing.id_document_path]);
+  }
+
+  await supabase.from("staff_details").update({ id_document_path: null }).eq("user_id", userId);
+
+  revalidatePath("/directory");
+  return {};
+}
+
+export async function getStaffDocumentUrl(userId: string): Promise<{ url?: string; error?: string }> {
+  await requireOwner();
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("staff_details")
+    .select("id_document_path")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!existing?.id_document_path) return { error: "No hay documento cargado." };
+
+  const { data, error } = await supabase.storage
+    .from("staff-documents")
+    .createSignedUrl(existing.id_document_path, 60);
+  if (error) return { error: error.message };
+
+  return { url: data.signedUrl };
 }
 
 export async function addSalaryChange(userId: string, formData: FormData) {

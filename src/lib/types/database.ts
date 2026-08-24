@@ -160,6 +160,8 @@ export interface Database {
         Row: {
           user_id: string;
           hire_date: string | null;
+          birth_date: string | null;
+          id_document_path: string | null;
           updated_at: string;
         };
         Insert: Omit<Database["public"]["Tables"]["staff_details"]["Row"], "updated_at">;

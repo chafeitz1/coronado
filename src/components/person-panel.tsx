@@ -1,18 +1,26 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Phone, Send } from "lucide-react";
+import { useActionState, useRef, useState, useTransition } from "react";
+import { Phone, Send, Camera, FileText, Upload, X } from "lucide-react";
 import { SidePanel } from "@/components/ui/side-panel";
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { PrefToggle } from "@/components/pref-toggle";
 import { Avatar } from "@/components/ui/avatar";
-import { updateStaffHireDate, addSalaryChange, sendInvite } from "@/app/actions/admin";
+import {
+  updateStaffDates,
+  addSalaryChange,
+  sendInvite,
+  uploadPersonAvatar,
+  uploadStaffDocument,
+  deleteStaffDocument,
+  getStaffDocumentUrl,
+} from "@/app/actions/admin";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { buttonSecondary, input, sectionHeading } from "@/lib/ui";
 import { type Dictionary } from "@/lib/i18n/dictionaries";
-import type { PersonRow, NotifEvent, SalaryEntry } from "@/components/directory-explorer";
+import type { PersonRow, NotifEvent, SalaryEntry, StaffDetails } from "@/components/directory-explorer";
 
 export function PersonPanel({
   person,
@@ -21,7 +29,7 @@ export function PersonPanel({
   dict,
   events,
   prefLookup,
-  hireDate,
+  staffDetails,
   salaryHistory,
   onClose,
 }: {
@@ -31,7 +39,7 @@ export function PersonPanel({
   dict: Dictionary;
   events: NotifEvent[];
   prefLookup: Record<string, boolean>;
-  hireDate: string | null;
+  staffDetails: StaffDetails;
   salaryHistory: SalaryEntry[];
   onClose: () => void;
 }) {
@@ -49,17 +57,46 @@ export function PersonPanel({
     });
   }
 
+  const [avatarState, avatarAction, avatarPending] = useActionState(
+    uploadPersonAvatar.bind(null, person.id),
+    null
+  );
+  const avatarInputRef = useRef<HTMLFormElement>(null);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+
+  const title = isSelf ? `${person.full_name} ${dict.directory.you}` : person.full_name;
+
   return (
-    <SidePanel open onClose={onClose} title={person.full_name}>
+    <SidePanel open onClose={onClose} title={title}>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} size="md" />
-          <div className="min-w-0">
-            <p className="text-lg font-semibold text-ink">
-              {person.full_name}
-              {isSelf && <span className="ml-1.5 text-sm font-normal text-ink-faint">{dict.directory.you}</span>}
-            </p>
-          </div>
+        <div>
+          {isOwner ? (
+            <form ref={avatarInputRef} action={avatarAction}>
+              <input
+                ref={avatarFileRef}
+                type="file"
+                name="avatar"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={() => avatarInputRef.current?.requestSubmit()}
+              />
+              <button
+                type="button"
+                onClick={() => avatarFileRef.current?.click()}
+                disabled={avatarPending}
+                aria-label={dict.directory.changePhoto}
+                className="group relative flex size-11 shrink-0 items-center justify-center rounded-full disabled:pointer-events-none"
+              >
+                <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} size="md" />
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white">
+                  <Camera className="size-4" />
+                </span>
+              </button>
+            </form>
+          ) : (
+            <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} size="md" />
+          )}
+          {avatarState?.error && <p className="mt-1.5 text-sm text-status-overdue-fg">{avatarState.error}</p>}
         </div>
 
         {person.phone && (
@@ -106,8 +143,18 @@ export function PersonPanel({
           <>
             <div className="space-y-1.5 border-t border-hairline pt-4">
               <h3 className={sectionHeading}>{dict.directory.hireDateLabel}</h3>
-              <form action={updateStaffHireDate.bind(null, person.id)} className="flex flex-wrap items-end gap-2">
-                <input type="date" name="hire_date" defaultValue={hireDate ?? ""} className={input} />
+              <form action={updateStaffDates.bind(null, person.id)} className="flex flex-wrap items-end gap-2">
+                <Field label={dict.directory.hireDateLabel}>
+                  <input type="date" name="hire_date" defaultValue={staffDetails.hire_date ?? ""} className={input} />
+                </Field>
+                <Field label={dict.directory.birthDateLabel}>
+                  <input
+                    type="date"
+                    name="birth_date"
+                    defaultValue={staffDetails.birth_date ?? ""}
+                    className={input}
+                  />
+                </Field>
                 <SubmitButton className={buttonSecondary} pendingLabel={dict.vendorForm.submitPending}>
                   {dict.vendorForm.submit}
                 </SubmitButton>
@@ -148,6 +195,8 @@ export function PersonPanel({
                 </SubmitButton>
               </form>
             </div>
+
+            <StaffDocumentSection userId={person.id} idDocumentPath={staffDetails.id_document_path} dict={dict} />
 
             <div className="space-y-2">
               <h3 className={sectionHeading}>{dict.directory.notifications}</h3>
@@ -190,5 +239,102 @@ export function PersonPanel({
         )}
       </div>
     </SidePanel>
+  );
+}
+
+function StaffDocumentSection({
+  userId,
+  idDocumentPath,
+  dict,
+}: {
+  userId: string;
+  idDocumentPath: string | null;
+  dict: Dictionary;
+}) {
+  const [uploadState, uploadAction, uploadPending] = useActionState(
+    uploadStaffDocument.bind(null, userId),
+    null
+  );
+  const formRef = useRef<HTMLFormElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [viewPending, startView] = useTransition();
+  const [viewError, setViewError] = useState<string | null>(null);
+  const [deletePending, startDelete] = useTransition();
+
+  function handleView() {
+    setViewError(null);
+    startView(async () => {
+      const result = await getStaffDocumentUrl(userId);
+      if (result.error) setViewError(result.error);
+      else if (result.url) window.open(result.url, "_blank", "noopener,noreferrer");
+    });
+  }
+
+  function handleDelete() {
+    if (!window.confirm(dict.directory.deleteDocument + "?")) return;
+    startDelete(async () => {
+      await deleteStaffDocument(userId);
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      <h3 className={sectionHeading}>{dict.directory.idDocumentLabel}</h3>
+      <form ref={formRef} action={uploadAction}>
+        <input
+          ref={fileRef}
+          type="file"
+          name="document"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          className="hidden"
+          onChange={() => formRef.current?.requestSubmit()}
+        />
+      </form>
+
+      {idDocumentPath ? (
+        <div className="flex items-center gap-2 rounded-lg border border-hairline bg-canvas-soft p-3">
+          <FileText className="size-4 shrink-0 text-ink-faint" />
+          <span className="flex-1 truncate text-sm text-ink-secondary">{idDocumentPath.split("/").pop()}</span>
+          <button
+            type="button"
+            onClick={handleView}
+            disabled={viewPending}
+            className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+          >
+            {dict.directory.viewDocument}
+          </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploadPending}
+            className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+          >
+            {dict.directory.replaceDocument}
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deletePending}
+            aria-label={dict.directory.deleteDocument}
+            className="text-ink-faint hover:text-status-overdue-fg disabled:opacity-50"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploadPending}
+          className={`w-full ${buttonSecondary} disabled:pointer-events-none disabled:opacity-50`}
+        >
+          <Upload className="size-3.5" />
+          {uploadPending ? dict.vendorForm.submitPending : dict.directory.uploadDocument}
+        </button>
+      )}
+      {uploadState?.error && <p className="text-sm text-status-overdue-fg">{uploadState.error}</p>}
+      {viewError && <p className="text-sm text-status-overdue-fg">{viewError}</p>}
+    </div>
   );
 }

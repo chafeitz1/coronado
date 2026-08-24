@@ -43,6 +43,8 @@ export type NotifEvent = { key: NotificationEventType; label: string };
 
 export type SalaryEntry = { salary: number; effective_date: string };
 
+export type StaffDetails = { hire_date: string | null; birth_date: string | null; id_document_path: string | null };
+
 type DirectoryType = "all" | "vendors" | "people";
 
 const actionButton = `flex-1 ${buttonSecondary}`;
@@ -55,7 +57,7 @@ export function DirectoryExplorer({
   dict,
   notifEvents,
   prefLookup,
-  hireDateLookup,
+  staffDetailsLookup,
   salaryHistoryLookup,
 }: {
   vendors: VendorRow[];
@@ -65,7 +67,7 @@ export function DirectoryExplorer({
   dict: Dictionary;
   notifEvents: NotifEvent[];
   prefLookup: Record<string, boolean>;
-  hireDateLookup: Record<string, string | null>;
+  staffDetailsLookup: Record<string, StaffDetails>;
   salaryHistoryLookup: Record<string, SalaryEntry[]>;
 }) {
   const [search, setSearch] = useState("");
@@ -272,6 +274,7 @@ export function DirectoryExplorer({
                         person={person}
                         isSelf={person.id === currentUserId}
                         dict={dict}
+                        hireDate={staffDetailsLookup[person.id]?.hire_date ?? null}
                         onSelect={() => setPersonPanel(person)}
                       />
                     ))}
@@ -306,7 +309,9 @@ export function DirectoryExplorer({
           dict={dict}
           events={notifEvents}
           prefLookup={prefLookup}
-          hireDate={hireDateLookup[personPanel.id] ?? null}
+          staffDetails={
+            staffDetailsLookup[personPanel.id] ?? { hire_date: null, birth_date: null, id_document_path: null }
+          }
           salaryHistory={salaryHistoryLookup[personPanel.id] ?? []}
           onClose={() => setPersonPanel(null)}
         />
@@ -474,11 +479,13 @@ function PersonCard({
   person,
   isSelf,
   dict,
+  hireDate,
   onSelect,
 }: {
   person: PersonRow;
   isSelf: boolean;
   dict: Dictionary;
+  hireDate: string | null;
   onSelect: () => void;
 }) {
   return (
@@ -490,6 +497,9 @@ function PersonCard({
             {person.full_name}
             {isSelf && <span className={`ml-1.5 text-sm font-normal ${mutedText}`}>{dict.directory.you}</span>}
           </p>
+          {person.role === "staff" && hireDate && (
+            <p className="text-xs text-ink-faint">{format(dict.directory.sinceLabel, { date: hireDate })}</p>
+          )}
         </div>
         <ChevronRight className="size-4 shrink-0 text-ink-faint" />
       </button>

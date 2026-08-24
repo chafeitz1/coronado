@@ -23,10 +23,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { VendorPanel, type VendorPanelMode } from "@/components/vendor-panel";
 import { inviteMember } from "@/app/actions/admin";
 import { telHref, whatsAppHref } from "@/lib/phone";
-import { getTradeLabels } from "@/lib/vendor-trades";
 import { type Dictionary } from "@/lib/i18n/dictionaries";
 import { buttonSecondary, card, input, mutedText, sectionHeading } from "@/lib/ui";
-import type { Locale, VendorTrade, UserRole, NotificationEventType } from "@/lib/types/database";
+import type { VendorTrade, UserRole, NotificationEventType } from "@/lib/types/database";
 
 export type VendorRow = {
   id: string;
@@ -59,7 +58,6 @@ export function DirectoryExplorer({
   currentUserId,
   isOwner,
   dict,
-  locale,
   notifEvents,
   prefLookup,
 }: {
@@ -68,11 +66,9 @@ export function DirectoryExplorer({
   currentUserId: string;
   isOwner: boolean;
   dict: Dictionary;
-  locale: Locale;
   notifEvents: NotifEvent[];
   prefLookup: Record<string, boolean>;
 }) {
-  const tradeLabels = getTradeLabels(locale);
   const [search, setSearch] = useState("");
   const [type, setType] = useState<DirectoryType>("all");
   const [activeTrade, setActiveTrade] = useState<VendorTrade | null>(null);
@@ -112,8 +108,13 @@ export function DirectoryExplorer({
   const tradeCounts = useMemo(() => {
     const counts = new Map<VendorTrade, number>();
     for (const v of emergencyFilteredVendors) for (const t of v.trades) counts.set(t, (counts.get(t) ?? 0) + 1);
-    return [...counts.entries()].sort((a, b) => tradeLabels[a[0]].localeCompare(tradeLabels[b[0]]));
-  }, [emergencyFilteredVendors, tradeLabels]);
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [emergencyFilteredVendors]);
+
+  const existingTrades = useMemo(
+    () => [...new Set(vendors.flatMap((v) => v.trades))].sort((a, b) => a.localeCompare(b)),
+    [vendors]
+  );
 
   const filteredVendors = useMemo(() => {
     if (type === "people") return [];
@@ -211,7 +212,7 @@ export function DirectoryExplorer({
               {tradeCounts.map(([trade, count]) => (
                 <Pill
                   key={trade}
-                  label={`${tradeLabels[trade]} · ${count}`}
+                  label={`${trade} · ${count}`}
                   active={activeTrade === trade}
                   onClick={() => setActiveTrade(activeTrade === trade ? null : trade)}
                   small
@@ -226,7 +227,6 @@ export function DirectoryExplorer({
                 <VendorCard
                   key={vendor.id}
                   vendor={vendor}
-                  tradeLabels={tradeLabels}
                   dict={dict}
                   onSelect={() => setPanel({ mode: "view", vendor })}
                 />
@@ -316,9 +316,8 @@ export function DirectoryExplorer({
           mode={panel.mode}
           vendor={panel.vendor}
           dict={dict}
-          locale={locale}
           isOwner={isOwner}
-          tradeLabels={tradeLabels}
+          existingTrades={existingTrades}
           onClose={() => setPanel(null)}
         />
       )}
@@ -328,12 +327,10 @@ export function DirectoryExplorer({
 
 function VendorCard({
   vendor,
-  tradeLabels,
   dict,
   onSelect,
 }: {
   vendor: VendorRow;
-  tradeLabels: Record<VendorTrade, string>;
   dict: Dictionary;
   onSelect: () => void;
 }) {
@@ -354,7 +351,7 @@ function VendorCard({
             {vendor.trades.length > 0 ? (
               vendor.trades.map((t) => (
                 <span key={t} className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
-                  {tradeLabels[t]}
+                  {t}
                 </span>
               ))
             ) : (

@@ -15,22 +15,10 @@ export type NotificationEventType =
   | "overdue"
   | "note_flagged";
 export type NotificationChannel = "push" | "email";
-export type VendorTrade =
-  | "plumbing"
-  | "electrical"
-  | "hvac"
-  | "gardening"
-  | "pool"
-  | "cleaning"
-  | "carpentry"
-  | "painting"
-  | "locksmith"
-  | "pest_control"
-  | "roofing"
-  | "appliances"
-  | "security"
-  | "internet"
-  | "general";
+// Free-form tags the owner types in, not a fixed list — the exact words
+// people already recognize a vendor by ("Bomba Agua Tanque Reserva",
+// "Mulita", "Vecino"...) matter more here than a tidy fixed taxonomy.
+export type VendorTrade = string;
 
 export interface Database {
   public: {

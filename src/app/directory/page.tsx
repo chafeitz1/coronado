@@ -53,7 +53,6 @@ export default async function DirectoryPage() {
         currentUserId={profile.id}
         isOwner={isOwner}
         dict={dict}
-        locale={profile.locale}
         notifEvents={notifEvents}
         prefLookup={prefLookup}
       />

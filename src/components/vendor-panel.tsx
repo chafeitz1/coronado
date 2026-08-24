@@ -9,7 +9,7 @@ import { createVendor, updateVendor, deleteVendor } from "@/app/actions/vendors"
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { buttonSecondary, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
-import type { Locale, VendorTrade } from "@/lib/types/database";
+import type { VendorTrade } from "@/lib/types/database";
 import type { VendorRow } from "@/components/directory-explorer";
 
 export type VendorPanelMode = "create" | "view" | "edit";
@@ -18,17 +18,15 @@ export function VendorPanel({
   mode: initialMode,
   vendor,
   dict,
-  locale,
   isOwner,
-  tradeLabels,
+  existingTrades,
   onClose,
 }: {
   mode: VendorPanelMode;
   vendor: VendorRow | null;
   dict: Dictionary;
-  locale: Locale;
   isOwner: boolean;
-  tradeLabels: Record<VendorTrade, string>;
+  existingTrades: VendorTrade[];
   onClose: () => void;
 }) {
   const [mode, setMode] = useState<VendorPanelMode>(initialMode);
@@ -69,7 +67,7 @@ export function VendorPanel({
           action={createAction}
           submitLabel={dict.vendorForm.submit}
           dict={dict}
-          locale={locale}
+          existingTrades={existingTrades}
           error={createState && !createState.ok ? createState.error : undefined}
           onCancel={onClose}
         />
@@ -80,7 +78,7 @@ export function VendorPanel({
           action={updateAction}
           submitLabel={dict.vendorForm.submitEdit}
           dict={dict}
-          locale={locale}
+          existingTrades={existingTrades}
           defaultValues={vendor}
           error={updateState && !updateState.ok ? updateState.error : undefined}
           onCancel={() => setMode("view")}
@@ -103,7 +101,7 @@ export function VendorPanel({
                 )}
                 {vendor.trades.map((t) => (
                   <span key={t} className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
-                    {tradeLabels[t]}
+                    {t}
                   </span>
                 ))}
                 {vendor.trades.length === 0 && !vendor.is_emergency && (

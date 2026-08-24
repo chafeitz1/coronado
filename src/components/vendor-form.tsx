@@ -1,15 +1,15 @@
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { TagInput } from "@/components/ui/tag-input";
 import { buttonPrimary, buttonSecondary, input, label as labelClass } from "@/lib/ui";
-import { getTradeOptions } from "@/lib/vendor-trades";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import type { Locale, VendorTrade } from "@/lib/types/database";
+import type { VendorTrade } from "@/lib/types/database";
 
 export function VendorForm({
   action,
   submitLabel,
   dict,
-  locale,
+  existingTrades,
   defaultValues,
   error,
   onCancel,
@@ -17,7 +17,7 @@ export function VendorForm({
   action: (formData: FormData) => void;
   submitLabel: string;
   dict: Dictionary;
-  locale: Locale;
+  existingTrades: VendorTrade[];
   defaultValues?: {
     name: string;
     contact_name: string | null;
@@ -30,8 +30,6 @@ export function VendorForm({
   error?: string;
   onCancel?: () => void;
 }) {
-  const tradeOptions = getTradeOptions(locale);
-
   return (
     <form action={action} className="space-y-4">
       <Field label={dict.vendorForm.nameLabel}>
@@ -48,23 +46,12 @@ export function VendorForm({
 
       <div className="space-y-1.5">
         <label className={labelClass}>{dict.vendorForm.specialtiesLabel}</label>
-        <div className="flex flex-wrap gap-2">
-          {tradeOptions.map((opt) => (
-            <label
-              key={opt.value}
-              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3 py-1.5 text-sm text-ink-secondary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary-soft has-[:checked]:text-primary"
-            >
-              <input
-                type="checkbox"
-                name="trades"
-                value={opt.value}
-                defaultChecked={defaultValues?.trades.includes(opt.value)}
-                className="sr-only"
-              />
-              {opt.label}
-            </label>
-          ))}
-        </div>
+        <TagInput
+          name="trades"
+          defaultValue={defaultValues?.trades}
+          suggestions={existingTrades}
+          placeholder={dict.vendorForm.specialtiesPlaceholder}
+        />
       </div>
 
       <Field label={dict.vendorForm.phoneLabel}>

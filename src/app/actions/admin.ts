@@ -72,16 +72,31 @@ export async function sendInvite(userId: string): Promise<{ error?: string }> {
   return {};
 }
 
-export async function updateStaffDates(userId: string, formData: FormData) {
+export async function updateStaffHireDate(userId: string, formData: FormData) {
   await requireOwner();
   const supabase = await createClient();
 
   const hireDate = String(formData.get("hire_date") ?? "").trim() || null;
+
+  await supabase.from("staff_details").upsert({ user_id: userId, hire_date: hireDate }, { onConflict: "user_id" });
+
+  revalidatePath("/directory");
+}
+
+// Phone lives on profiles, birth date on staff_details — one form covers
+// both since they're edited together in the panel's contact block, email
+// stays read-only there (it's the account's login identity).
+export async function updateStaffContact(userId: string, formData: FormData) {
+  await requireOwner();
+  const supabase = await createClient();
+
+  const phone = String(formData.get("phone") ?? "").trim() || null;
   const birthDate = String(formData.get("birth_date") ?? "").trim() || null;
 
-  await supabase
-    .from("staff_details")
-    .upsert({ user_id: userId, hire_date: hireDate, birth_date: birthDate }, { onConflict: "user_id" });
+  await Promise.all([
+    supabase.from("profiles").update({ phone }).eq("id", userId),
+    supabase.from("staff_details").upsert({ user_id: userId, birth_date: birthDate }, { onConflict: "user_id" }),
+  ]);
 
   revalidatePath("/directory");
 }

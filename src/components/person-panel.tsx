@@ -8,7 +8,8 @@ import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { PrefToggle } from "@/components/pref-toggle";
 import { Avatar } from "@/components/ui/avatar";
 import {
-  updateStaffDates,
+  updateStaffHireDate,
+  updateStaffContact,
   addSalaryChange,
   sendInvite,
   uploadPersonAvatar,
@@ -74,8 +75,20 @@ export function PersonPanel({
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     startDates(async () => {
-      await updateStaffDates(person.id, formData);
+      await updateStaffHireDate(person.id, formData);
       setEditingDates(false);
+    });
+  }
+
+  const [editingContact, setEditingContact] = useState(false);
+  const [contactPending, startContact] = useTransition();
+
+  function handleSaveContact(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    startContact(async () => {
+      await updateStaffContact(person.id, formData);
+      setEditingContact(false);
     });
   }
 
@@ -130,22 +143,66 @@ export function PersonPanel({
           </div>
         </div>
 
-        {(person.phone || person.email || (canManageStaff && staffDetails.birth_date)) && (
-          <div className="space-y-2 rounded-lg border border-hairline bg-canvas-soft p-3.5 text-sm text-ink-secondary">
-            {person.phone && (
-              <p className="flex items-center gap-2.5">
-                <Phone className="size-4 shrink-0 text-ink-faint" /> {person.phone}
-              </p>
-            )}
-            {person.email && (
-              <p className="flex items-center gap-2.5">
-                <Mail className="size-4 shrink-0 text-ink-faint" /> {person.email}
-              </p>
-            )}
-            {canManageStaff && staffDetails.birth_date && (
-              <p className="flex items-center gap-2.5">
-                <Cake className="size-4 shrink-0 text-ink-faint" /> {formatLongDate(staffDetails.birth_date, locale)}
-              </p>
+        {(person.phone || person.email || canManageStaff) && (
+          <div className="rounded-lg border border-hairline bg-canvas-soft p-3.5 text-sm text-ink-secondary">
+            {editingContact ? (
+              <form onSubmit={handleSaveContact} className="space-y-2">
+                {person.email && (
+                  <p className="flex items-center gap-2.5 text-ink-faint">
+                    <Mail className="size-4 shrink-0" /> {person.email}
+                  </p>
+                )}
+                <Field label={dict.directory.phoneLabel}>
+                  <input type="tel" name="phone" defaultValue={person.phone ?? ""} className={input} />
+                </Field>
+                <Field label={dict.directory.birthDateLabel}>
+                  <input
+                    type="date"
+                    name="birth_date"
+                    defaultValue={staffDetails.birth_date ?? ""}
+                    className={input}
+                  />
+                </Field>
+                <div className="flex gap-2 pt-1">
+                  <button type="submit" disabled={contactPending} className={buttonSecondary}>
+                    {contactPending ? dict.vendorForm.submitPending : dict.vendorForm.submitEdit}
+                  </button>
+                  <button type="button" onClick={() => setEditingContact(false)} className={buttonGhost}>
+                    {dict.vendorForm.cancel}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-2">
+                  {person.phone && (
+                    <p className="flex items-center gap-2.5">
+                      <Phone className="size-4 shrink-0 text-ink-faint" /> {person.phone}
+                    </p>
+                  )}
+                  {person.email && (
+                    <p className="flex items-center gap-2.5">
+                      <Mail className="size-4 shrink-0 text-ink-faint" /> {person.email}
+                    </p>
+                  )}
+                  {canManageStaff && staffDetails.birth_date && (
+                    <p className="flex items-center gap-2.5">
+                      <Cake className="size-4 shrink-0 text-ink-faint" />{" "}
+                      {formatLongDate(staffDetails.birth_date, locale)}
+                    </p>
+                  )}
+                </div>
+                {canManageStaff && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingContact(true)}
+                    aria-label={dict.vendorDetail.edit}
+                    className={buttonGhost}
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -188,19 +245,9 @@ export function PersonPanel({
 
             {editingDates ? (
               <form onSubmit={handleSaveDates} className="space-y-2 rounded-lg border border-hairline p-3.5">
-                <div className="flex flex-wrap gap-2">
-                  <Field label={dict.directory.hireDateLabel}>
-                    <input type="date" name="hire_date" defaultValue={staffDetails.hire_date ?? ""} className={input} />
-                  </Field>
-                  <Field label={dict.directory.birthDateLabel}>
-                    <input
-                      type="date"
-                      name="birth_date"
-                      defaultValue={staffDetails.birth_date ?? ""}
-                      className={input}
-                    />
-                  </Field>
-                </div>
+                <Field label={dict.directory.hireDateLabel}>
+                  <input type="date" name="hire_date" defaultValue={staffDetails.hire_date ?? ""} className={input} />
+                </Field>
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={datesPending} className={buttonSecondary}>
                     {datesPending ? dict.vendorForm.submitPending : dict.vendorForm.submitEdit}

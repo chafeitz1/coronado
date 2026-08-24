@@ -26,20 +26,27 @@ export default async function DirectoryPage() {
   }));
 
   let prefLookup: Record<string, boolean> = {};
-  let staffDetailsLookup: Record<string, { hire_date: string | null; salary: number | null }> = {};
+  let hireDateLookup: Record<string, string | null> = {};
+  let salaryHistoryLookup: Record<string, { salary: number; effective_date: string }[]> = {};
 
   if (isOwner) {
-    const [{ data: prefs }, { data: staffDetails }] = await Promise.all([
+    const [{ data: prefs }, { data: staffDetails }, { data: salaryHistory }] = await Promise.all([
       supabase.from("notification_preferences").select("user_id, event_type, channel, enabled"),
-      supabase.from("staff_details").select("user_id, hire_date, salary"),
+      supabase.from("staff_details").select("user_id, hire_date"),
+      supabase
+        .from("staff_salary_history")
+        .select("user_id, salary, effective_date")
+        .order("effective_date", { ascending: false }),
     ]);
 
     prefLookup = Object.fromEntries(
       (prefs ?? []).map((p) => [`${p.user_id}:${p.event_type}:${p.channel}`, p.enabled])
     );
-    staffDetailsLookup = Object.fromEntries(
-      (staffDetails ?? []).map((s) => [s.user_id, { hire_date: s.hire_date, salary: s.salary }])
-    );
+    hireDateLookup = Object.fromEntries((staffDetails ?? []).map((s) => [s.user_id, s.hire_date]));
+    salaryHistoryLookup = {};
+    for (const s of salaryHistory ?? []) {
+      (salaryHistoryLookup[s.user_id] ??= []).push({ salary: s.salary, effective_date: s.effective_date });
+    }
   }
 
   const notifEvents: { key: NotificationEventType; label: string }[] = [
@@ -66,7 +73,8 @@ export default async function DirectoryPage() {
         dict={dict}
         notifEvents={notifEvents}
         prefLookup={prefLookup}
-        staffDetailsLookup={staffDetailsLookup}
+        hireDateLookup={hireDateLookup}
+        salaryHistoryLookup={salaryHistoryLookup}
       />
     </div>
   );

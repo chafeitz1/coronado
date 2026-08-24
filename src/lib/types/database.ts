@@ -160,11 +160,21 @@ export interface Database {
         Row: {
           user_id: string;
           hire_date: string | null;
-          salary: number | null;
           updated_at: string;
         };
         Insert: Omit<Database["public"]["Tables"]["staff_details"]["Row"], "updated_at">;
         Update: Partial<Database["public"]["Tables"]["staff_details"]["Insert"]>;
+      };
+      staff_salary_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          salary: number;
+          effective_date: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["staff_salary_history"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["staff_salary_history"]["Insert"]>;
       };
       push_subscriptions: {
         Row: {

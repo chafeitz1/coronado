@@ -24,17 +24,27 @@ export async function inviteMember(formData: FormData) {
   revalidatePath("/directory");
 }
 
-export async function updateStaffDetails(userId: string, formData: FormData) {
+export async function updateStaffHireDate(userId: string, formData: FormData) {
   await requireOwner();
   const supabase = await createClient();
 
   const hireDate = String(formData.get("hire_date") ?? "").trim() || null;
-  const salaryRaw = String(formData.get("salary") ?? "").trim();
-  const salary = salaryRaw ? Number(salaryRaw) : null;
 
-  await supabase
-    .from("staff_details")
-    .upsert({ user_id: userId, hire_date: hireDate, salary }, { onConflict: "user_id" });
+  await supabase.from("staff_details").upsert({ user_id: userId, hire_date: hireDate }, { onConflict: "user_id" });
+
+  revalidatePath("/directory");
+}
+
+export async function addSalaryChange(userId: string, formData: FormData) {
+  await requireOwner();
+  const supabase = await createClient();
+
+  const salaryRaw = String(formData.get("salary") ?? "").trim();
+  const salary = Number(salaryRaw);
+  if (!salaryRaw || Number.isNaN(salary)) return;
+  const effectiveDate = String(formData.get("effective_date") ?? "").trim() || new Date().toISOString().slice(0, 10);
+
+  await supabase.from("staff_salary_history").insert({ user_id: userId, salary, effective_date: effectiveDate });
 
   revalidatePath("/directory");
 }

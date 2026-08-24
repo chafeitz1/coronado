@@ -279,6 +279,10 @@ const es = {
     hireDateLabel: "Fecha de inicio",
     salaryLabel: "Sueldo mensual (USD)",
     salaryPlaceholder: "0.00",
+    salaryHistoryLabel: "Historial de sueldo",
+    noSalaryHistory: "Sin cambios de sueldo registrados",
+    effectiveDateLabel: "Fecha efectiva",
+    addSalaryChange: "Registrar cambio",
   },
   profile: {
     title: "Mi perfil",
@@ -616,6 +620,10 @@ const en: Dictionary = {
     hireDateLabel: "Hire date",
     salaryLabel: "Monthly salary (USD)",
     salaryPlaceholder: "0.00",
+    salaryHistoryLabel: "Salary history",
+    noSalaryHistory: "No salary changes on file",
+    effectiveDateLabel: "Effective date",
+    addSalaryChange: "Record change",
   },
   profile: {
     title: "My profile",

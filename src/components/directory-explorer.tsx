@@ -21,7 +21,7 @@ import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { PrefToggle } from "@/components/pref-toggle";
 import { Avatar } from "@/components/ui/avatar";
 import { VendorPanel, type VendorPanelMode } from "@/components/vendor-panel";
-import { inviteMember, updateStaffDetails } from "@/app/actions/admin";
+import { inviteMember, updateStaffHireDate, addSalaryChange } from "@/app/actions/admin";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { buttonSecondary, card, input, mutedText, sectionHeading } from "@/lib/ui";
@@ -54,7 +54,7 @@ type PersonRow = {
 
 type NotifEvent = { key: NotificationEventType; label: string };
 
-type StaffDetails = { hire_date: string | null; salary: number | null };
+type SalaryEntry = { salary: number; effective_date: string };
 
 type DirectoryType = "all" | "vendors" | "people";
 
@@ -68,7 +68,8 @@ export function DirectoryExplorer({
   dict,
   notifEvents,
   prefLookup,
-  staffDetailsLookup,
+  hireDateLookup,
+  salaryHistoryLookup,
 }: {
   vendors: VendorRow[];
   people: PersonRow[];
@@ -77,7 +78,8 @@ export function DirectoryExplorer({
   dict: Dictionary;
   notifEvents: NotifEvent[];
   prefLookup: Record<string, boolean>;
-  staffDetailsLookup: Record<string, StaffDetails>;
+  hireDateLookup: Record<string, string | null>;
+  salaryHistoryLookup: Record<string, SalaryEntry[]>;
 }) {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<DirectoryType>("all");
@@ -314,7 +316,8 @@ export function DirectoryExplorer({
                         dict={dict}
                         events={notifEvents}
                         prefLookup={prefLookup}
-                        staffDetails={staffDetailsLookup[person.id] ?? { hire_date: null, salary: null }}
+                        hireDate={hireDateLookup[person.id] ?? null}
+                        salaryHistory={salaryHistoryLookup[person.id] ?? []}
                       />
                     ))}
                   </div>
@@ -443,7 +446,8 @@ function PersonCard({
   dict,
   events,
   prefLookup,
-  staffDetails,
+  hireDate,
+  salaryHistory,
 }: {
   person: PersonRow;
   isSelf: boolean;
@@ -451,7 +455,8 @@ function PersonCard({
   dict: Dictionary;
   events: NotifEvent[];
   prefLookup: Record<string, boolean>;
-  staffDetails: StaffDetails;
+  hireDate: string | null;
+  salaryHistory: SalaryEntry[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const canExpand = isOwner && person.role === "staff" && !isSelf;
@@ -496,29 +501,54 @@ function PersonCard({
       )}
 
       {canExpand && expanded && (
-        <div className="mt-3 space-y-3 border-t border-hairline pt-3">
-          <form action={updateStaffDetails.bind(null, person.id)} className="flex flex-wrap items-end gap-2">
+        <div className="mt-3 space-y-4 border-t border-hairline pt-3">
+          <form action={updateStaffHireDate.bind(null, person.id)} className="flex flex-wrap items-end gap-2">
             <Field label={dict.directory.hireDateLabel}>
-              <input type="date" name="hire_date" defaultValue={staffDetails.hire_date ?? ""} className={input} />
+              <input type="date" name="hire_date" defaultValue={hireDate ?? ""} className={input} />
             </Field>
-            <Field label={dict.directory.salaryLabel}>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                name="salary"
-                placeholder={dict.directory.salaryPlaceholder}
-                defaultValue={staffDetails.salary ?? ""}
-                className={input}
-              />
-            </Field>
-            <SubmitButton
-              className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-medium text-on-primary transition-colors hover:bg-primary-active disabled:pointer-events-none disabled:opacity-50"
-              pendingLabel={dict.vendorForm.submitPending}
-            >
+            <SubmitButton className={buttonSecondary} pendingLabel={dict.vendorForm.submitPending}>
               {dict.vendorForm.submit}
             </SubmitButton>
           </form>
+
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+              {dict.directory.salaryHistoryLabel}
+            </h4>
+            {salaryHistory.length > 0 ? (
+              <ul className="space-y-1 text-sm text-ink-secondary">
+                {salaryHistory.map((entry, i) => (
+                  <li key={entry.effective_date + i} className="flex items-center justify-between">
+                    <span className={i === 0 ? "font-medium text-ink" : undefined}>
+                      ${entry.salary.toFixed(2)}
+                    </span>
+                    <span className="text-ink-faint">{entry.effective_date}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-ink-faint">{dict.directory.noSalaryHistory}</p>
+            )}
+            <form action={addSalaryChange.bind(null, person.id)} className="flex flex-wrap items-end gap-2 pt-1">
+              <Field label={dict.directory.salaryLabel}>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  name="salary"
+                  required
+                  placeholder={dict.directory.salaryPlaceholder}
+                  className={input}
+                />
+              </Field>
+              <Field label={dict.directory.effectiveDateLabel}>
+                <input type="date" name="effective_date" className={input} />
+              </Field>
+              <SubmitButton className={buttonSecondary} pendingLabel={dict.vendorForm.submitPending}>
+                {dict.directory.addSalaryChange}
+              </SubmitButton>
+            </form>
+          </div>
 
           <div className="overflow-x-auto">
           <table className="w-full text-sm">

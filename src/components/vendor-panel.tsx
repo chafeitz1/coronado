@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
-import { Pencil, Trash2, Phone, Mail, User as UserIcon, Building2, Siren } from "lucide-react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import Image from "next/image";
+import { Pencil, Trash2, Phone, Mail, User as UserIcon, Building2, Siren, Camera } from "lucide-react";
 import { SidePanel } from "@/components/ui/side-panel";
 import { VendorForm } from "@/components/vendor-form";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
-import { createVendor, updateVendor, deleteVendor } from "@/app/actions/vendors";
+import { createVendor, updateVendor, deleteVendor, uploadVendorAvatar } from "@/app/actions/vendors";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { buttonSecondary, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
@@ -13,6 +14,38 @@ import type { VendorTrade } from "@/lib/types/database";
 import type { VendorRow } from "@/components/directory-explorer";
 
 export type VendorPanelMode = "create" | "view" | "edit";
+
+const VENDOR_AVATAR_SIZES = {
+  sm: { wrap: "size-11", icon: "size-5", px: 44 },
+  lg: { wrap: "size-14", icon: "size-6", px: 56 },
+} as const;
+
+export function VendorAvatar({
+  avatarUrl,
+  size = "sm",
+}: {
+  avatarUrl: string | null;
+  size?: keyof typeof VENDOR_AVATAR_SIZES;
+}) {
+  const { wrap, icon, px } = VENDOR_AVATAR_SIZES[size];
+  if (avatarUrl) {
+    return (
+      <Image
+        src={avatarUrl}
+        alt=""
+        width={px}
+        height={px}
+        className={`shrink-0 rounded-full object-cover ${wrap}`}
+        unoptimized
+      />
+    );
+  }
+  return (
+    <span className={`flex shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary ${wrap}`}>
+      <Building2 className={icon} strokeWidth={2} />
+    </span>
+  );
+}
 
 export function VendorPanel({
   mode: initialMode,
@@ -38,6 +71,13 @@ export function VendorPanel({
     vendor ? updateVendor.bind(null, vendor.id) : createVendor,
     null
   );
+
+  const [avatarState, avatarAction, avatarPending] = useActionState(
+    uploadVendorAvatar.bind(null, vendor?.id ?? ""),
+    null
+  );
+  const avatarFormRef = useRef<HTMLFormElement>(null);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (createState?.ok) onClose();
@@ -97,11 +137,35 @@ export function VendorPanel({
       {mode === "view" && vendor && (
         <div className="space-y-6">
           <div className="flex items-center gap-3">
-            <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <Building2 className="size-6" strokeWidth={2} />
-            </span>
+            {isOwner ? (
+              <form ref={avatarFormRef} action={avatarAction}>
+                <input
+                  ref={avatarFileRef}
+                  type="file"
+                  name="avatar"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={() => avatarFormRef.current?.requestSubmit()}
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarFileRef.current?.click()}
+                  disabled={avatarPending}
+                  aria-label={dict.directory.changePhoto}
+                  className="group relative flex size-14 shrink-0 items-center justify-center rounded-full disabled:pointer-events-none"
+                >
+                  <VendorAvatar avatarUrl={vendor.avatar_url} size="lg" />
+                  <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white">
+                    <Camera className="size-4" />
+                  </span>
+                </button>
+              </form>
+            ) : (
+              <VendorAvatar avatarUrl={vendor.avatar_url} size="lg" />
+            )}
             <div className="min-w-0">
               <p className="text-lg font-semibold text-ink">{vendor.name}</p>
+              {avatarState?.error && <p className="text-sm text-status-overdue-fg">{avatarState.error}</p>}
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {vendor.is_emergency && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-status-overdue-fg px-2.5 py-0.5 text-xs font-semibold text-white">

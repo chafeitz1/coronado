@@ -29,6 +29,7 @@ export interface Database {
           full_name: string;
           role: UserRole;
           phone: string | null;
+          email: string | null;
           avatar_url: string | null;
           locale: Locale;
           created_at: string;
@@ -38,6 +39,7 @@ export interface Database {
           full_name: string;
           role: UserRole;
           phone?: string | null;
+          email?: string | null;
           avatar_url?: string | null;
           locale?: Locale;
         };
@@ -45,6 +47,7 @@ export interface Database {
           full_name: string;
           role: UserRole;
           phone: string | null;
+          email: string | null;
           avatar_url: string | null;
           locale: Locale;
         }>;
@@ -56,10 +59,13 @@ export interface Database {
           trades: VendorTrade[];
           notes: string | null;
           is_emergency: boolean;
+          avatar_url: string | null;
           created_by: string;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["vendors"]["Row"], "id" | "created_at">;
+        Insert: Omit<Database["public"]["Tables"]["vendors"]["Row"], "id" | "created_at" | "avatar_url"> & {
+          avatar_url?: string | null;
+        };
         Update: Partial<Database["public"]["Tables"]["vendors"]["Insert"]>;
       };
       vendor_contacts: {

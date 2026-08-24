@@ -14,10 +14,12 @@ export default async function DirectoryPage() {
   const [{ data: vendorRows }, { data: people }] = await Promise.all([
     supabase
       .from("vendors")
-      .select("id, name, trades, notes, is_emergency, vendor_contacts(id, contact_name, role_label, phone, email, position)")
+      .select(
+        "id, name, trades, notes, is_emergency, avatar_url, vendor_contacts(id, contact_name, role_label, phone, email, position)"
+      )
       .order("name")
       .order("position", { referencedTable: "vendor_contacts" }),
-    supabase.from("profiles").select("id, full_name, role, phone, avatar_url").order("full_name"),
+    supabase.from("profiles").select("id, full_name, role, phone, email, avatar_url").order("full_name"),
   ]);
 
   const vendors = (vendorRows ?? []).map(({ vendor_contacts, ...vendor }) => ({

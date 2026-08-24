@@ -106,3 +106,39 @@ export async function deleteVendor(vendorId: string): Promise<{ error?: string }
   revalidatePath("/directory");
   return {};
 }
+
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+export async function uploadVendorAvatar(
+  vendorId: string,
+  _prevState: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string }> {
+  await requireOwner();
+
+  const file = formData.get("avatar");
+  if (!(file instanceof File) || file.size === 0) return { error: "Elige una foto primero." };
+  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) return { error: "Solo se permiten fotos JPG, PNG o WEBP." };
+  if (file.size > MAX_AVATAR_BYTES) return { error: "La foto no puede pesar más de 5MB." };
+
+  const supabase = await createClient();
+  const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = `vendor-${vendorId}/avatar.${extension}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (uploadError) return { error: uploadError.message };
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(path);
+  const avatarUrl = `${publicUrl}?v=${Date.now()}`;
+
+  const { error: updateError } = await supabase.from("vendors").update({ avatar_url: avatarUrl }).eq("id", vendorId);
+  if (updateError) return { error: updateError.message };
+
+  revalidatePath("/directory");
+  return {};
+}

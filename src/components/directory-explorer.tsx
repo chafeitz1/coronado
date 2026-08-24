@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Building2, Users, User, Phone, Mail, Siren, ChevronRight, Plus, UserPlus } from "lucide-react";
+import { Search, Building2, Users, User, Phone, Mail, Siren, ChevronRight, Plus, UserPlus, Calendar } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Avatar } from "@/components/ui/avatar";
-import { VendorPanel, type VendorPanelMode } from "@/components/vendor-panel";
+import { VendorPanel, VendorAvatar, type VendorPanelMode } from "@/components/vendor-panel";
 import { PersonPanel } from "@/components/person-panel";
 import { InvitePanel } from "@/components/invite-panel";
 import { telHref, whatsAppHref } from "@/lib/phone";
@@ -29,6 +29,7 @@ export type VendorRow = {
   trades: VendorTrade[];
   notes: string | null;
   is_emergency: boolean;
+  avatar_url: string | null;
   contacts: VendorContact[];
 };
 
@@ -37,6 +38,7 @@ export type PersonRow = {
   full_name: string;
   role: UserRole;
   phone: string | null;
+  email: string | null;
   avatar_url: string | null;
 };
 
@@ -399,9 +401,7 @@ function VendorCard({
   return (
     <div className={`flex h-full flex-col p-4 ${card}`}>
       <button type="button" onClick={onSelect} className="flex w-full items-start gap-3 text-left">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
-          <Building2 className="size-5" strokeWidth={2} />
-        </span>
+        <VendorAvatar avatarUrl={vendor.avatar_url} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-ink">{vendor.name}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -505,7 +505,8 @@ function PersonCard({
             {isSelf && <span className={`ml-1.5 text-sm font-normal ${mutedText}`}>{dict.directory.you}</span>}
           </p>
           {person.role === "staff" && hireDate && (
-            <p className="text-xs text-ink-faint">
+            <p className="flex items-center gap-1 text-xs text-ink-faint">
+              <Calendar className="size-3 shrink-0" />
               {format(dict.directory.sinceLabel, { date: formatLongDate(hireDate, locale) })}
             </p>
           )}

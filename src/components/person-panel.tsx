@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
-import { Phone, Send, Camera, FileText, Upload, X, Pencil } from "lucide-react";
+import { Phone, Mail, Cake, Send, Camera, FileText, Upload, X, Pencil } from "lucide-react";
 import { SidePanel } from "@/components/ui/side-panel";
 import { Field } from "@/components/ui/field";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
@@ -130,11 +130,23 @@ export function PersonPanel({
           </div>
         </div>
 
-        {person.phone && (
+        {(person.phone || person.email || (canManageStaff && staffDetails.birth_date)) && (
           <div className="space-y-2 rounded-lg border border-hairline bg-canvas-soft p-3.5 text-sm text-ink-secondary">
-            <p className="flex items-center gap-2.5">
-              <Phone className="size-4 shrink-0 text-ink-faint" /> {person.phone}
-            </p>
+            {person.phone && (
+              <p className="flex items-center gap-2.5">
+                <Phone className="size-4 shrink-0 text-ink-faint" /> {person.phone}
+              </p>
+            )}
+            {person.email && (
+              <p className="flex items-center gap-2.5">
+                <Mail className="size-4 shrink-0 text-ink-faint" /> {person.email}
+              </p>
+            )}
+            {canManageStaff && staffDetails.birth_date && (
+              <p className="flex items-center gap-2.5">
+                <Cake className="size-4 shrink-0 text-ink-faint" /> {formatLongDate(staffDetails.birth_date, locale)}
+              </p>
+            )}
           </div>
         )}
 
@@ -200,18 +212,11 @@ export function PersonPanel({
               </form>
             ) : (
               <div className="flex items-center justify-between rounded-lg border border-hairline bg-canvas-soft p-3.5 text-sm">
-                <div className="space-y-0.5">
-                  <p className="text-ink-secondary">
-                    {staffDetails.hire_date
-                      ? format(dict.directory.sinceLabel, { date: formatLongDate(staffDetails.hire_date, locale) })
-                      : dict.directory.hireDateLabel}
-                  </p>
-                  {staffDetails.birth_date && (
-                    <p className="text-ink-faint">
-                      {dict.directory.birthDateLabel}: {formatLongDate(staffDetails.birth_date, locale)}
-                    </p>
-                  )}
-                </div>
+                <p className="text-ink-secondary">
+                  {staffDetails.hire_date
+                    ? format(dict.directory.sinceLabel, { date: formatLongDate(staffDetails.hire_date, locale) })
+                    : dict.directory.hireDateLabel}
+                </p>
                 <button
                   type="button"
                   onClick={() => setEditingDates(true)}

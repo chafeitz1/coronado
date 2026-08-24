@@ -215,8 +215,14 @@ export function DirectoryExplorer({
           </div>
 
           {tradeCounts.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <Pill label={dict.directory.filterAll} active={!activeTrade} onClick={() => setActiveTrade(null)} small />
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
+              <Pill
+                label={dict.directory.filterAll}
+                active={!activeTrade}
+                onClick={() => setActiveTrade(null)}
+                small
+                noShrink
+              />
               {tradeCounts.map(([trade, count]) => (
                 <Pill
                   key={trade}
@@ -224,6 +230,7 @@ export function DirectoryExplorer({
                   active={activeTrade === trade}
                   onClick={() => setActiveTrade(activeTrade === trade ? null : trade)}
                   small
+                  noShrink
                 />
               ))}
             </div>
@@ -489,17 +496,19 @@ function Pill({
   active,
   onClick,
   small,
+  noShrink,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
   small?: boolean;
+  noShrink?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border font-medium transition-colors ${
+      className={`rounded-full border font-medium transition-colors ${noShrink ? "shrink-0 whitespace-nowrap" : ""} ${
         small ? "px-3 py-1 text-xs" : "px-3.5 py-1.5 text-sm"
       } ${
         active

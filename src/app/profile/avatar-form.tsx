@@ -4,7 +4,6 @@ import { useActionState, useRef, useState } from "react";
 import { Camera } from "lucide-react";
 import { uploadAvatar } from "@/app/actions/profile";
 import { Avatar } from "@/components/ui/avatar";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonSecondary } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
@@ -17,7 +16,7 @@ export function AvatarForm({
   avatarUrl: string | null;
   dict: Dictionary;
 }) {
-  const [state, action] = useActionState(uploadAvatar, undefined);
+  const [state, action, isPending] = useActionState(uploadAvatar, undefined);
   const [preview, setPreview] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,19 +31,22 @@ export function AvatarForm({
           name="avatar"
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          required
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) setPreview(URL.createObjectURL(file));
+            if (!file) return;
+            setPreview(URL.createObjectURL(file));
+            formRef.current?.requestSubmit();
           }}
         />
-        <button type="button" onClick={() => inputRef.current?.click()} className={buttonSecondary}>
-          <Camera className="size-4" /> {dict.avatarForm.choosePhoto}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={isPending}
+          className={`${buttonSecondary} disabled:pointer-events-none disabled:opacity-50`}
+        >
+          <Camera className="size-4" /> {isPending ? dict.avatarForm.uploadPending : dict.avatarForm.choosePhoto}
         </button>
-        <SubmitButton className={buttonSecondary} pendingLabel={dict.avatarForm.uploadPending}>
-          {dict.avatarForm.uploadPhoto}
-        </SubmitButton>
         {state?.error && <p className="text-sm text-status-overdue-fg">{state.error}</p>}
       </div>
     </form>

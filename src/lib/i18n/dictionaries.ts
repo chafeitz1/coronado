@@ -314,7 +314,6 @@ const es = {
   },
   avatarForm: {
     choosePhoto: "Elegir foto",
-    uploadPhoto: "Subir foto",
     uploadPending: "Subiendo...",
     errorMissing: "Elige una foto primero.",
     errorType: "Solo se permiten fotos JPG, PNG o WEBP.",
@@ -653,7 +652,6 @@ const en: Dictionary = {
   },
   avatarForm: {
     choosePhoto: "Choose photo",
-    uploadPhoto: "Upload photo",
     uploadPending: "Uploading...",
     errorMissing: "Choose a photo first.",
     errorType: "Only JPG, PNG or WEBP photos are allowed.",

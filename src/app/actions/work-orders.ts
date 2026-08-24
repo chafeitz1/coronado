@@ -7,19 +7,26 @@ import { requireUser } from "@/lib/auth";
 import { notifyUser } from "@/lib/notifications/send";
 import { advanceDate, isoDateOffset } from "@/lib/dates";
 import { uploadAttachment } from "@/lib/attachments-server";
-import type { IntervalUnit, WorkOrderPriority } from "@/lib/types/database";
+import type { Database, IntervalUnit, WorkOrderPriority } from "@/lib/types/database";
+
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 async function getOwnerId(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase.from("profiles").select("id").eq("role", "owner").limit(1).single();
   return data?.id ?? null;
 }
 
-export async function createWorkOrder(formData: FormData) {
-  const profile = await requireUser();
-  const supabase = await createClient();
-
+// Shared by the standalone /work-orders/new form and the in-panel
+// "Nueva tarea de mantenimiento" shortcut on an asset's page — same
+// fields, same validation, just different post-creation behavior
+// (redirect to the task vs. stay put and close the panel).
+async function insertWorkOrder(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  profile: Profile,
+  formData: FormData
+) {
   const title = String(formData.get("title") ?? "").trim();
-  if (!title) return;
+  if (!title) throw new Error("El título es obligatorio.");
 
   const description = String(formData.get("description") ?? "").trim() || null;
   const priority = (String(formData.get("priority") ?? "medium") as WorkOrderPriority);
@@ -74,9 +81,40 @@ export async function createWorkOrder(formData: FormData) {
     });
   }
 
+  return workOrder;
+}
+
+export async function createWorkOrder(formData: FormData) {
+  const profile = await requireUser();
+  const supabase = await createClient();
+  const workOrder = await insertWorkOrder(supabase, profile, formData);
+
   revalidatePath("/");
   revalidatePath("/work-orders", "layout");
   redirect(`/work-orders/${workOrder.id}`);
+}
+
+export type MaintenanceTaskState = { ok: true } | { ok: false; error: string } | null;
+
+export async function createMaintenanceTask(
+  assetId: string,
+  _prevState: MaintenanceTaskState,
+  formData: FormData
+): Promise<MaintenanceTaskState> {
+  const profile = await requireUser();
+  const supabase = await createClient();
+  formData.set("asset_id", assetId);
+
+  try {
+    await insertWorkOrder(supabase, profile, formData);
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "No se pudo crear la tarea." };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/assets", "layout");
+  revalidatePath("/work-orders", "layout");
+  return { ok: true };
 }
 
 export async function updateWorkOrderStatus(workOrderId: string, status: string) {

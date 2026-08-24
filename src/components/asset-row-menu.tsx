@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { MoreVertical, Pencil, Power, Trash2 } from "lucide-react";
 import { deleteAsset, updateAssetStatus } from "@/app/actions/assets";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
@@ -15,11 +14,13 @@ export function AssetRowMenu({
   assetName,
   status = "active",
   dict,
+  onEdit,
 }: {
   assetId: string;
   assetName: string;
   status?: AssetStatus;
   dict: Dictionary;
+  onEdit: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -45,13 +46,16 @@ export function AssetRowMenu({
       </button>
       {open && (
         <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-lg border border-hairline bg-surface py-1 shadow-[var(--shadow-soft)]">
-          <Link
-            href={`/assets/${assetId}/edit`}
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-ink-secondary hover:bg-surface-hover"
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onEdit();
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
           >
             <Pencil className="size-3.5" /> {dict.assetDetail.edit}
-          </Link>
+          </button>
           <form
             action={updateAssetStatus.bind(null, assetId, status === "active" ? "inactive" : "active")}
             onSubmit={() => setOpen(false)}
@@ -64,7 +68,11 @@ export function AssetRowMenu({
               {status === "active" ? dict.assetDetail.markInactive : dict.assetDetail.markActive}
             </SubmitButton>
           </form>
-          <form action={deleteAsset.bind(null, assetId)}>
+          <form
+            action={async () => {
+              await deleteAsset(assetId);
+            }}
+          >
             <ConfirmSubmitButton
               confirmMessage={format(dict.assetDetail.deleteConfirm, { name: assetName })}
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-status-overdue-fg hover:bg-status-overdue-bg"

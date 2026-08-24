@@ -58,7 +58,7 @@ export async function uploadAssetAttachment(
   return { success: true };
 }
 
-export async function deleteAttachment(attachmentId: string, storagePath: string, assetId: string) {
+export async function deleteAttachment(attachmentId: string, storagePath: string) {
   await requireUser();
   const supabase = await createClient();
 
@@ -66,6 +66,5 @@ export async function deleteAttachment(attachmentId: string, storagePath: string
   const { error } = await supabase.from("attachments").delete().eq("id", attachmentId);
   if (error) throw new Error(error.message);
 
-  revalidatePath(`/assets/${assetId}`);
   revalidatePath("/assets", "layout");
 }

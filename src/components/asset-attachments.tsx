@@ -38,10 +38,7 @@ export function AssetAttachments({
             <div key={a.id} className="group relative aspect-square overflow-hidden rounded-lg border border-hairline">
               <Image src={a.publicUrl} alt={a.fileName} fill unoptimized className="object-cover" />
               {a.canDelete && (
-                <form
-                  action={deleteAttachment.bind(null, a.id, a.storagePath, assetId)}
-                  className="absolute right-1 top-1"
-                >
+                <form action={deleteAttachment.bind(null, a.id, a.storagePath)} className="absolute right-1 top-1">
                   <ConfirmSubmitButton
                     confirmMessage={dict.assetDetail.deletePhotoConfirm}
                     className="flex size-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"

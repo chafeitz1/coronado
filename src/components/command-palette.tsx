@@ -74,7 +74,7 @@ export function CommandPalette({ locale }: { locale: Locale }) {
         ...data.assets.map((a: { id: string; name: string }) => ({
           id: a.id,
           label: a.name,
-          href: `/assets`,
+          href: `/assets?asset=${a.id}`,
           icon: Wrench,
           group: dict.commandPalette.groupAssets,
         })),

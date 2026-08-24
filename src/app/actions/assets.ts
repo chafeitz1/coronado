@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/auth";
 import { uploadAttachment } from "@/lib/attachments-server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { AssetStatus } from "@/lib/types/database";
+
+export type AssetActionState = { ok: true } | { ok: false; error: string } | null;
 
 function readAssetFields(formData: FormData) {
   return {
@@ -22,12 +24,16 @@ function readAssetFields(formData: FormData) {
   };
 }
 
-export async function createAsset(formData: FormData) {
+export async function createAsset(
+  _prevState: AssetActionState,
+  formData: FormData
+): Promise<AssetActionState> {
   const profile = await requireOwner();
+  const dict = getDictionary(profile.locale);
   const supabase = await createClient();
 
   const fields = readAssetFields(formData);
-  if (!fields.name) return;
+  if (!fields.name) return { ok: false, error: dict.assetForm.nameRequired };
 
   const { data: asset, error } = await supabase
     .from("assets")
@@ -35,7 +41,7 @@ export async function createAsset(formData: FormData) {
     .select("id")
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) return { ok: false, error: error.message };
 
   const photo = formData.get("photo");
   if (photo instanceof File && photo.size > 0) {
@@ -43,19 +49,23 @@ export async function createAsset(formData: FormData) {
   }
 
   revalidatePath("/assets", "layout");
-  redirect(`/assets/${asset.id}?created=1`);
+  return { ok: true };
 }
 
-export async function updateAsset(assetId: string, formData: FormData) {
+export async function updateAsset(
+  assetId: string,
+  _prevState: AssetActionState,
+  formData: FormData
+): Promise<AssetActionState> {
   const profile = await requireOwner();
+  const dict = getDictionary(profile.locale);
   const supabase = await createClient();
 
   const fields = readAssetFields(formData);
-  if (!fields.name) return;
+  if (!fields.name) return { ok: false, error: dict.assetForm.nameRequired };
 
   const { error } = await supabase.from("assets").update(fields).eq("id", assetId);
-
-  if (error) throw new Error(error.message);
+  if (error) return { ok: false, error: error.message };
 
   const photo = formData.get("photo");
   if (photo instanceof File && photo.size > 0) {
@@ -63,18 +73,18 @@ export async function updateAsset(assetId: string, formData: FormData) {
   }
 
   revalidatePath("/assets", "layout");
-  redirect(`/assets/${assetId}?updated=1`);
+  return { ok: true };
 }
 
-export async function deleteAsset(assetId: string) {
+export async function deleteAsset(assetId: string): Promise<{ error?: string }> {
   await requireOwner();
   const supabase = await createClient();
 
   const { error } = await supabase.from("assets").delete().eq("id", assetId);
-  if (error) throw new Error(error.message);
+  if (error) return { error: error.message };
 
   revalidatePath("/assets", "layout");
-  redirect("/assets?deleted=1");
+  return {};
 }
 
 // Marking an asset inactive (damaged, disposed, sold...) instead of
@@ -88,5 +98,4 @@ export async function updateAssetStatus(assetId: string, status: AssetStatus) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/assets", "layout");
-  revalidatePath(`/assets/${assetId}`);
 }

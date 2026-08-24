@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { Wrench } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -9,16 +8,10 @@ import { AssetStatusBadge } from "@/components/ui/badge";
 import { AssetRowMenu } from "@/components/asset-row-menu";
 import { listCard, mutedText } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import type { AssetStatus, Locale } from "@/lib/types/database";
+import type { Locale } from "@/lib/types/database";
+import type { AssetSummary } from "@/components/asset-types";
 
-export type AssetSummary = {
-  id: string;
-  name: string;
-  category: string | null;
-  location: string | null;
-  status: AssetStatus;
-  coverUrl?: string;
-};
+export type { AssetSummary };
 
 // Client-side tabs so switching Activos/Inactivos/Todos doesn't reload
 // the whole panel-view list — matches the work-orders tab pattern.
@@ -27,11 +20,15 @@ export function AssetsList({
   isOwner,
   dict,
   locale,
+  onSelect,
+  onEdit,
 }: {
   assets: AssetSummary[];
   isOwner: boolean;
   dict: Dictionary;
   locale: Locale;
+  onSelect: (assetId: string) => void;
+  onEdit: (assetId: string) => void;
 }) {
   const [tab, setTab] = useState<"active" | "inactive" | "all">("active");
 
@@ -56,7 +53,11 @@ export function AssetsList({
           {filtered.map((asset) => (
             <li key={asset.id}>
               <div className="flex items-center gap-1 pl-4 pr-2 transition-colors hover:bg-surface-hover">
-                <Link href={`/assets/${asset.id}`} className="flex min-w-0 flex-1 items-center gap-3 py-3">
+                <button
+                  type="button"
+                  onClick={() => onSelect(asset.id)}
+                  className="flex min-w-0 flex-1 items-center gap-3 py-3 text-left"
+                >
                   <AssetThumb url={asset.coverUrl} />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-1.5 truncate text-sm font-medium text-ink">
@@ -67,9 +68,15 @@ export function AssetsList({
                       {[asset.category, asset.location].filter(Boolean).join(" · ") || dict.assets.noCategory}
                     </p>
                   </div>
-                </Link>
+                </button>
                 {isOwner && (
-                  <AssetRowMenu assetId={asset.id} assetName={asset.name} status={asset.status} dict={dict} />
+                  <AssetRowMenu
+                    assetId={asset.id}
+                    assetName={asset.name}
+                    status={asset.status}
+                    dict={dict}
+                    onEdit={() => onEdit(asset.id)}
+                  />
                 )}
               </div>
             </li>

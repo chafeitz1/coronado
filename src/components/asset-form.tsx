@@ -1,6 +1,6 @@
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { buttonPrimary, card, input, label as labelClass } from "@/lib/ui";
+import { buttonPrimary, buttonSecondary, input, label as labelClass } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 export function AssetForm({
@@ -9,6 +9,8 @@ export function AssetForm({
   vendors,
   dict,
   defaultValues,
+  error,
+  onCancel,
 }: {
   action: (formData: FormData) => void;
   submitLabel: string;
@@ -26,9 +28,11 @@ export function AssetForm({
     warranty_expires: string | null;
     notes: string | null;
   };
+  error?: string;
+  onCancel?: () => void;
 }) {
   return (
-    <form action={action} className={`space-y-4 p-5 ${card}`}>
+    <form action={action} className="space-y-4">
       <Field label={dict.assetForm.nameLabel}>
         <input name="name" required defaultValue={defaultValues?.name} className={input} />
       </Field>
@@ -108,9 +112,18 @@ export function AssetForm({
         <textarea name="notes" rows={3} defaultValue={defaultValues?.notes ?? ""} className={input} />
       </Field>
 
-      <SubmitButton className={buttonPrimary} pendingLabel={dict.assetForm.submitPending}>
-        {submitLabel}
-      </SubmitButton>
+      {error && <p className="text-sm text-status-overdue-fg">{error}</p>}
+
+      <div className="flex gap-2 pt-1">
+        <SubmitButton className={`flex-1 ${buttonPrimary}`} pendingLabel={dict.assetForm.submitPending}>
+          {submitLabel}
+        </SubmitButton>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className={buttonSecondary}>
+            {dict.assetForm.cancel}
+          </button>
+        )}
+      </div>
     </form>
   );
 }

@@ -181,6 +181,8 @@ const es = {
     warrantyLabel: "Garantía vence",
     notesLabel: "Notas",
     submitPending: "Guardando...",
+    cancel: "Cancelar",
+    nameRequired: "El nombre es obligatorio.",
   },
   assetDetail: {
     editAsset: "Editar activo",
@@ -544,6 +546,8 @@ const en: Dictionary = {
     warrantyLabel: "Warranty expires",
     notesLabel: "Notes",
     submitPending: "Saving...",
+    cancel: "Cancel",
+    nameRequired: "Name is required.",
   },
   assetDetail: {
     editAsset: "Edit asset",

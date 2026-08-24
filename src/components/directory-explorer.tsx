@@ -2,26 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Search,
-  Building2,
-  Users,
-  User,
-  Phone,
-  Mail,
-  Siren,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Search, Building2, Users, User, Phone, Mail, Siren, ChevronRight } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
-import { PrefToggle } from "@/components/pref-toggle";
 import { Avatar } from "@/components/ui/avatar";
 import { VendorPanel, type VendorPanelMode } from "@/components/vendor-panel";
-import { inviteMember, updateStaffHireDate, addSalaryChange } from "@/app/actions/admin";
+import { PersonPanel } from "@/components/person-panel";
+import { inviteMember } from "@/app/actions/admin";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { buttonSecondary, card, input, mutedText, sectionHeading } from "@/lib/ui";
@@ -44,7 +33,7 @@ export type VendorRow = {
   contacts: VendorContact[];
 };
 
-type PersonRow = {
+export type PersonRow = {
   id: string;
   full_name: string;
   role: UserRole;
@@ -52,9 +41,9 @@ type PersonRow = {
   avatar_url: string | null;
 };
 
-type NotifEvent = { key: NotificationEventType; label: string };
+export type NotifEvent = { key: NotificationEventType; label: string };
 
-type SalaryEntry = { salary: number; effective_date: string };
+export type SalaryEntry = { salary: number; effective_date: string };
 
 type DirectoryType = "all" | "vendors" | "people";
 
@@ -98,6 +87,7 @@ export function DirectoryExplorer({
     if (!match) return null;
     return { mode: searchParams.get("edit") === "1" ? "edit" : "view", vendor: match };
   });
+  const [personPanel, setPersonPanel] = useState<PersonRow | null>(null);
 
   const q = search.trim().toLowerCase();
 
@@ -312,12 +302,8 @@ export function DirectoryExplorer({
                         key={person.id}
                         person={person}
                         isSelf={person.id === currentUserId}
-                        isOwner={isOwner}
                         dict={dict}
-                        events={notifEvents}
-                        prefLookup={prefLookup}
-                        hireDate={hireDateLookup[person.id] ?? null}
-                        salaryHistory={salaryHistoryLookup[person.id] ?? []}
+                        onSelect={() => setPersonPanel(person)}
                       />
                     ))}
                   </div>
@@ -339,6 +325,21 @@ export function DirectoryExplorer({
           isOwner={isOwner}
           existingTrades={existingTrades}
           onClose={() => setPanel(null)}
+        />
+      )}
+
+      {personPanel && (
+        <PersonPanel
+          key={personPanel.id}
+          person={personPanel}
+          isSelf={personPanel.id === currentUserId}
+          isOwner={isOwner}
+          dict={dict}
+          events={notifEvents}
+          prefLookup={prefLookup}
+          hireDate={hireDateLookup[personPanel.id] ?? null}
+          salaryHistory={salaryHistoryLookup[personPanel.id] ?? []}
+          onClose={() => setPersonPanel(null)}
         />
       )}
     </div>
@@ -442,28 +443,17 @@ function VendorCard({
 function PersonCard({
   person,
   isSelf,
-  isOwner,
   dict,
-  events,
-  prefLookup,
-  hireDate,
-  salaryHistory,
+  onSelect,
 }: {
   person: PersonRow;
   isSelf: boolean;
-  isOwner: boolean;
   dict: Dictionary;
-  events: NotifEvent[];
-  prefLookup: Record<string, boolean>;
-  hireDate: string | null;
-  salaryHistory: SalaryEntry[];
+  onSelect: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const canExpand = isOwner && person.role === "staff" && !isSelf;
-
   return (
     <div className={`flex h-full flex-col p-4 ${card}`}>
-      <div className="flex items-start gap-3">
+      <button type="button" onClick={onSelect} className="flex w-full items-center gap-3 text-left">
         <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} size="md" />
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-ink">
@@ -471,17 +461,8 @@ function PersonCard({
             {isSelf && <span className={`ml-1.5 text-sm font-normal ${mutedText}`}>{dict.directory.you}</span>}
           </p>
         </div>
-        {canExpand && (
-          <button
-            type="button"
-            onClick={() => setExpanded((e) => !e)}
-            className="flex size-8 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-hover hover:text-primary"
-            aria-label={dict.directory.notifications}
-          >
-            {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-          </button>
-        )}
-      </div>
+        <ChevronRight className="size-4 shrink-0 text-ink-faint" />
+      </button>
 
       {person.phone && (
         <p className="mt-3 flex items-center gap-2 text-sm text-ink-secondary">
@@ -497,93 +478,6 @@ function PersonCard({
           <a href={whatsAppHref(person.phone)} target="_blank" rel="noopener noreferrer" className={actionButton}>
             <WhatsAppIcon className="size-3.5" /> {dict.vendorDetail.whatsapp}
           </a>
-        </div>
-      )}
-
-      {canExpand && expanded && (
-        <div className="mt-3 space-y-4 border-t border-hairline pt-3">
-          <form action={updateStaffHireDate.bind(null, person.id)} className="flex flex-wrap items-end gap-2">
-            <Field label={dict.directory.hireDateLabel}>
-              <input type="date" name="hire_date" defaultValue={hireDate ?? ""} className={input} />
-            </Field>
-            <SubmitButton className={buttonSecondary} pendingLabel={dict.vendorForm.submitPending}>
-              {dict.vendorForm.submit}
-            </SubmitButton>
-          </form>
-
-          <div className="space-y-2">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-              {dict.directory.salaryHistoryLabel}
-            </h4>
-            {salaryHistory.length > 0 ? (
-              <ul className="space-y-1 text-sm text-ink-secondary">
-                {salaryHistory.map((entry, i) => (
-                  <li key={entry.effective_date + i} className="flex items-center justify-between">
-                    <span className={i === 0 ? "font-medium text-ink" : undefined}>
-                      ${entry.salary.toFixed(2)}
-                    </span>
-                    <span className="text-ink-faint">{entry.effective_date}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-ink-faint">{dict.directory.noSalaryHistory}</p>
-            )}
-            <form action={addSalaryChange.bind(null, person.id)} className="flex flex-wrap items-end gap-2 pt-1">
-              <Field label={dict.directory.salaryLabel}>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  name="salary"
-                  required
-                  placeholder={dict.directory.salaryPlaceholder}
-                  className={input}
-                />
-              </Field>
-              <Field label={dict.directory.effectiveDateLabel}>
-                <input type="date" name="effective_date" className={input} />
-              </Field>
-              <SubmitButton className={buttonSecondary} pendingLabel={dict.vendorForm.submitPending}>
-                {dict.directory.addSalaryChange}
-              </SubmitButton>
-            </form>
-          </div>
-
-          <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-ink-faint">
-                <th className="pb-2 font-normal">{dict.directory.eventHeader}</th>
-                <th className="pb-2 font-normal">{dict.directory.pushHeader}</th>
-                <th className="pb-2 font-normal">{dict.directory.emailHeader}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-hairline">
-              {events.map((event) => (
-                <tr key={event.key}>
-                  <td className="py-2 text-ink-secondary">{event.label}</td>
-                  <td className="py-2">
-                    <PrefToggle
-                      userId={person.id}
-                      eventType={event.key}
-                      channel="push"
-                      defaultEnabled={prefLookup[`${person.id}:${event.key}:push`] ?? true}
-                    />
-                  </td>
-                  <td className="py-2">
-                    <PrefToggle
-                      userId={person.id}
-                      eventType={event.key}
-                      channel="email"
-                      defaultEnabled={prefLookup[`${person.id}:${event.key}:email`] ?? true}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
         </div>
       )}
     </div>

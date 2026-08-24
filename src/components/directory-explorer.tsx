@@ -4,13 +4,11 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Building2, Users, User, Phone, Mail, Siren, ChevronRight } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Field } from "@/components/ui/field";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Avatar } from "@/components/ui/avatar";
 import { VendorPanel, type VendorPanelMode } from "@/components/vendor-panel";
 import { PersonPanel } from "@/components/person-panel";
-import { inviteMember } from "@/app/actions/admin";
+import { InvitePanel } from "@/components/invite-panel";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { buttonSecondary, card, input, mutedText, sectionHeading } from "@/lib/ui";
@@ -134,7 +132,7 @@ export function DirectoryExplorer({
     if (type === "vendors") return [];
     const groups: { role: UserRole; label: string; members: PersonRow[] }[] = [
       { role: "owner", label: dict.roles.owner, members: [] },
-      { role: "family", label: dict.roles.family, members: [] },
+      { role: "resident", label: dict.roles.resident, members: [] },
       { role: "staff", label: dict.roles.staff, members: [] },
     ];
     for (const p of searchedPeople) {
@@ -265,45 +263,13 @@ export function DirectoryExplorer({
             {isOwner && (
               <button
                 type="button"
-                onClick={() => setInviteOpen((o) => !o)}
+                onClick={() => setInviteOpen(true)}
                 className="text-xs font-medium text-primary hover:underline"
               >
                 + {dict.directory.inviteButton}
               </button>
             )}
           </div>
-
-          {isOwner && inviteOpen && (
-            <form action={inviteMember} className={`flex flex-wrap items-end gap-3 p-4 ${card}`}>
-              <Field label={dict.directory.nameLabel}>
-                <input name="full_name" required className={input} />
-              </Field>
-              <Field label={dict.directory.emailLabel}>
-                <input type="email" name="email" required className={input} />
-              </Field>
-              <Field label={dict.directory.roleLabel}>
-                <select name="role" defaultValue="staff" className={input}>
-                  <option value="staff">{dict.directory.staffOption}</option>
-                  <option value="family">{dict.directory.familyOption}</option>
-                </select>
-              </Field>
-              <label className="flex items-center gap-2 pb-2 text-sm text-ink-secondary">
-                <input
-                  type="checkbox"
-                  name="send_invite"
-                  defaultChecked
-                  className="size-4 rounded border-hairline accent-primary"
-                />
-                {dict.directory.sendInviteNow}
-              </label>
-              <SubmitButton
-                className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-medium text-on-primary transition-colors hover:bg-primary-active disabled:pointer-events-none disabled:opacity-50"
-                pendingLabel={dict.directory.sendInvitePending}
-              >
-                {dict.directory.sendInvite}
-              </SubmitButton>
-            </form>
-          )}
 
           {peopleByRole.length > 0 ? (
             <div className="space-y-4">
@@ -358,6 +324,8 @@ export function DirectoryExplorer({
           onClose={() => setPersonPanel(null)}
         />
       )}
+
+      {isOwner && inviteOpen && <InvitePanel dict={dict} onClose={() => setInviteOpen(false)} />}
     </div>
   );
 }

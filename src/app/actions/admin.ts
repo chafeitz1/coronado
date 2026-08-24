@@ -7,34 +7,49 @@ import { createClient } from "@/lib/supabase/server";
 import { sendInviteEmail } from "@/lib/notifications/send";
 import type { NotificationChannel, NotificationEventType, UserRole } from "@/lib/types/database";
 
-export async function inviteMember(formData: FormData) {
+export type InviteActionState = { ok: true } | { ok: false; error: string } | null;
+
+export async function inviteMember(
+  _prevState: InviteActionState,
+  formData: FormData
+): Promise<InviteActionState> {
   await requireOwner();
 
   const email = String(formData.get("email") ?? "").trim();
   const fullName = String(formData.get("full_name") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim() || null;
   const role = String(formData.get("role") ?? "staff") as UserRole;
   const sendNow = formData.get("send_invite") === "on";
-  if (!email || !fullName) return;
+  if (!email || !fullName) return { ok: false, error: "Nombre y email son obligatorios." };
 
   const admin = createAdminClient();
+  let userId: string | undefined;
 
   if (sendNow) {
-    const { error } = await admin.auth.admin.inviteUserByEmail(email, {
+    const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { full_name: fullName, role },
     });
-    if (error) throw new Error(error.message);
+    if (error) return { ok: false, error: error.message };
+    userId = data.user?.id;
   } else {
     // Create the account without sending Supabase's built-in invite email —
     // the owner sends it later (once, or resends) via sendInvite below.
-    const { error } = await admin.auth.admin.createUser({
+    const { data, error } = await admin.auth.admin.createUser({
       email,
       email_confirm: false,
       user_metadata: { full_name: fullName, role },
     });
-    if (error) throw new Error(error.message);
+    if (error) return { ok: false, error: error.message };
+    userId = data.user?.id;
+  }
+
+  if (phone && userId) {
+    const supabase = await createClient();
+    await supabase.from("profiles").update({ phone }).eq("id", userId);
   }
 
   revalidatePath("/directory");
+  return { ok: true };
 }
 
 export async function sendInvite(userId: string): Promise<{ error?: string }> {

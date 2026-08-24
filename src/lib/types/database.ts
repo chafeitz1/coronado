@@ -2,7 +2,7 @@
 // Once the project is linked to a real Supabase instance, regenerate with:
 //   npx supabase gen types typescript --project-id <id> > src/lib/types/database.ts
 
-export type UserRole = "owner" | "family" | "staff";
+export type UserRole = "owner" | "resident" | "staff";
 export type Locale = "es" | "en";
 export type WorkOrderStatus = "open" | "in_progress" | "done";
 export type WorkOrderPriority = "low" | "medium" | "high";

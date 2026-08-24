@@ -25,10 +25,11 @@ export async function createWorkOrder(formData: FormData) {
   const priority = (String(formData.get("priority") ?? "medium") as WorkOrderPriority);
   const assetId = String(formData.get("asset_id") ?? "") || null;
   const dueDate = String(formData.get("due_date") ?? "") || null;
-  // Family can only create one-time orders unassigned to staff; owner can
-  // assign directly on creation. Recurrence is owner-only too — the form
-  // never shows the fields to family, and this re-checks server-side
-  // regardless of what a crafted request sends (RLS backs this up too).
+  // Residents can only create one-time orders unassigned to staff; owner
+  // can assign directly on creation. Recurrence is owner-only too — the
+  // form never shows the fields to residents, and this re-checks
+  // server-side regardless of what a crafted request sends (RLS backs
+  // this up too).
   const assignedTo =
     profile.role === "owner" ? String(formData.get("assigned_to") ?? "") || null : null;
   const recurrenceValue =

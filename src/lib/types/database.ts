@@ -20,6 +20,12 @@ export type NotificationChannel = "push" | "email";
 // people already recognize a vendor by ("Bomba Agua Tanque Reserva",
 // "Mulita", "Vecino"...) matter more here than a tidy fixed taxonomy.
 export type VendorTrade = string;
+// expenses.category/subcategory are plain text in the DB (see 0019) so new
+// categories never need a migration — these unions are just what the
+// current screens know how to render. "planilla" is the only category with
+// a UI today.
+export type ExpenseCategory = "planilla";
+export type PayrollSubcategory = "quincena" | "decimo" | "vacacion" | "adelanto" | "liquidacion";
 
 export interface Database {
   public: {
@@ -187,6 +193,25 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["staff_salary_history"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["staff_salary_history"]["Insert"]>;
+      };
+      expenses: {
+        Row: {
+          id: string;
+          date: string;
+          category: string;
+          subcategory: string | null;
+          amount: number;
+          expected_amount: number | null;
+          person_id: string | null;
+          vendor_id: string | null;
+          asset_id: string | null;
+          payment_method: string | null;
+          notes: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["expenses"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["expenses"]["Insert"]>;
       };
       push_subscriptions: {
         Row: {

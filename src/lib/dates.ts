@@ -80,6 +80,12 @@ export function formatLongDate(dateStr: string, locale: "es" | "en"): string {
   return `${LONG_MONTH_NAMES[locale][month - 1]} ${day}, ${year}`;
 }
 
+// "Julio 2024" — for grouping a list of dated entries by month.
+export function formatMonthYear(yearMonth: string, locale: "es" | "en"): string {
+  const [year, month] = yearMonth.split("-").map(Number);
+  return `${LONG_MONTH_NAMES[locale][month - 1]} ${year}`;
+}
+
 export function advanceDate(dateStr: string, unit: "days" | "weeks" | "months" | "years", value: number): string {
   const date = new Date(`${dateStr}T00:00:00Z`);
   if (unit === "days") date.setUTCDate(date.getUTCDate() + value);

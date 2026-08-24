@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ClipboardList, Wrench, BookUser, Search, ChevronRight, LogOut } from "lucide-react";
+import { Home, ClipboardList, Wrench, BookUser, DollarSign, Search, ChevronRight, LogOut } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { CommandPalette, OPEN_COMMAND_PALETTE_EVENT } from "@/components/command-palette";
@@ -15,6 +15,7 @@ const ICONS = {
   tasks: ClipboardList,
   assets: Wrench,
   directory: BookUser,
+  finance: DollarSign,
 };
 
 export type SidebarLink = {

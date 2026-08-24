@@ -21,6 +21,10 @@ export async function Sidebar() {
     { href: "/directory", label: dict.sidebar.directory, icon: "directory" },
   ];
 
+  if (profile.role === "owner") {
+    workLinks.push({ href: "/finance/payroll", label: dict.sidebar.finance, icon: "finance" });
+  }
+
   return (
     <SidebarClient
       profile={{ fullName: profile.full_name, role: profile.role, avatarUrl: profile.avatar_url }}

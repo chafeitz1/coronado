@@ -83,20 +83,32 @@ export async function updateStaffHireDate(userId: string, formData: FormData) {
   revalidatePath("/directory");
 }
 
-// Phone lives on profiles, birth date on staff_details — one form covers
-// both since they're edited together in the panel's contact block, email
-// stays read-only there (it's the account's login identity).
-export async function updateStaffContact(userId: string, formData: FormData) {
+const ROLES: UserRole[] = ["owner", "resident", "staff"];
+
+// Name, phone, and role live on profiles; birth date is staff_details —
+// one form covers all of it since they're edited together in the panel's
+// contact block. Email stays read-only there (it's the account's login
+// identity). birth_date is only present in the submitted form when the
+// person is currently staff, so it's only touched then.
+export async function updatePersonInfo(userId: string, formData: FormData) {
   await requireOwner();
   const supabase = await createClient();
 
+  const fullName = String(formData.get("full_name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim() || null;
-  const birthDate = String(formData.get("birth_date") ?? "").trim() || null;
+  const roleRaw = String(formData.get("role") ?? "");
+  const role = ROLES.includes(roleRaw as UserRole) ? (roleRaw as UserRole) : undefined;
+  const birthDateField = formData.get("birth_date");
 
-  await Promise.all([
-    supabase.from("profiles").update({ phone }).eq("id", userId),
-    supabase.from("staff_details").upsert({ user_id: userId, birth_date: birthDate }, { onConflict: "user_id" }),
-  ]);
+  const updates: { full_name?: string; phone: string | null; role?: UserRole } = { phone };
+  if (fullName) updates.full_name = fullName;
+  if (role) updates.role = role;
+
+  await supabase.from("profiles").update(updates).eq("id", userId);
+  if (birthDateField !== null) {
+    const birthDate = String(birthDateField).trim() || null;
+    await supabase.from("staff_details").upsert({ user_id: userId, birth_date: birthDate }, { onConflict: "user_id" });
+  }
 
   revalidatePath("/directory");
 }

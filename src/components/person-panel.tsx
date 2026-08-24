@@ -9,7 +9,7 @@ import { PrefToggle } from "@/components/pref-toggle";
 import { Avatar } from "@/components/ui/avatar";
 import {
   updateStaffHireDate,
-  updateStaffContact,
+  updatePersonInfo,
   addSalaryChange,
   sendInvite,
   uploadPersonAvatar,
@@ -87,7 +87,7 @@ export function PersonPanel({
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     startContact(async () => {
-      await updateStaffContact(person.id, formData);
+      await updatePersonInfo(person.id, formData);
       setEditingContact(false);
     });
   }
@@ -143,7 +143,7 @@ export function PersonPanel({
           </div>
         </div>
 
-        {(person.phone || person.email || canManageStaff) && (
+        {(person.phone || person.email || canManage) && (
           <div className="rounded-lg border border-hairline bg-canvas-soft p-3.5 text-sm text-ink-secondary">
             {editingContact ? (
               <form onSubmit={handleSaveContact} className="space-y-2">
@@ -152,17 +152,29 @@ export function PersonPanel({
                     <Mail className="size-4 shrink-0" /> {person.email}
                   </p>
                 )}
+                <Field label={dict.directory.nameLabel}>
+                  <input name="full_name" defaultValue={person.full_name} required className={input} />
+                </Field>
                 <Field label={dict.directory.phoneLabel}>
                   <input type="tel" name="phone" defaultValue={person.phone ?? ""} className={input} />
                 </Field>
-                <Field label={dict.directory.birthDateLabel}>
-                  <input
-                    type="date"
-                    name="birth_date"
-                    defaultValue={staffDetails.birth_date ?? ""}
-                    className={input}
-                  />
+                <Field label={dict.directory.roleLabel}>
+                  <select name="role" defaultValue={person.role} className={input}>
+                    <option value="staff">{dict.directory.staffOption}</option>
+                    <option value="resident">{dict.directory.residentOption}</option>
+                    <option value="owner">{dict.directory.ownerOption}</option>
+                  </select>
                 </Field>
+                {canManageStaff && (
+                  <Field label={dict.directory.birthDateLabel}>
+                    <input
+                      type="date"
+                      name="birth_date"
+                      defaultValue={staffDetails.birth_date ?? ""}
+                      className={input}
+                    />
+                  </Field>
+                )}
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={contactPending} className={buttonSecondary}>
                     {contactPending ? dict.vendorForm.submitPending : dict.vendorForm.submitEdit}
@@ -192,7 +204,7 @@ export function PersonPanel({
                     </p>
                   )}
                 </div>
-                {canManageStaff && (
+                {canManage && (
                   <button
                     type="button"
                     onClick={() => setEditingContact(true)}

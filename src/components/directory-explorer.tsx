@@ -92,7 +92,12 @@ export function DirectoryExplorer({
     if (!match) return null;
     return { mode: searchParams.get("edit") === "1" ? "edit" : "view", vendor: match };
   });
-  const [personPanel, setPersonPanel] = useState<PersonRow | null>(null);
+  // Stores just the id, not the row itself — the row is looked up fresh
+  // from `people` on every render so an edit (avatar, phone, role...)
+  // shows up in the open panel immediately after the server revalidates,
+  // instead of the panel being stuck on the snapshot from when it opened.
+  const [personPanelId, setPersonPanelId] = useState<string | null>(null);
+  const personPanel = personPanelId ? (people.find((p) => p.id === personPanelId) ?? null) : null;
 
   const q = search.trim().toLowerCase();
 
@@ -281,7 +286,7 @@ export function DirectoryExplorer({
                         dict={dict}
                         locale={locale}
                         hireDate={staffDetailsLookup[person.id]?.hire_date ?? null}
-                        onSelect={() => setPersonPanel(person)}
+                        onSelect={() => setPersonPanelId(person.id)}
                       />
                     ))}
                   </div>
@@ -320,7 +325,7 @@ export function DirectoryExplorer({
             staffDetailsLookup[personPanel.id] ?? { hire_date: null, birth_date: null, id_document_path: null }
           }
           salaryHistory={salaryHistoryLookup[personPanel.id] ?? []}
-          onClose={() => setPersonPanel(null)}
+          onClose={() => setPersonPanelId(null)}
         />
       )}
 

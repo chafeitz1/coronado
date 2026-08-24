@@ -156,6 +156,16 @@ export interface Database {
         Insert: Omit<Database["public"]["Tables"]["notification_preferences"]["Row"], "id">;
         Update: Partial<Database["public"]["Tables"]["notification_preferences"]["Insert"]>;
       };
+      staff_details: {
+        Row: {
+          user_id: string;
+          hire_date: string | null;
+          salary: number | null;
+          updated_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["staff_details"]["Row"], "updated_at">;
+        Update: Partial<Database["public"]["Tables"]["staff_details"]["Insert"]>;
+      };
       push_subscriptions: {
         Row: {
           id: string;

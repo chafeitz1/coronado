@@ -276,6 +276,9 @@ const es = {
     eventStatusChanged: "Cambio de estado",
     eventDueSoon: "Por vencer",
     eventOverdue: "Vencida",
+    hireDateLabel: "Fecha de inicio",
+    salaryLabel: "Sueldo mensual (USD)",
+    salaryPlaceholder: "0.00",
   },
   profile: {
     title: "Mi perfil",
@@ -610,6 +613,9 @@ const en: Dictionary = {
     eventStatusChanged: "Status changed",
     eventDueSoon: "Due soon",
     eventOverdue: "Overdue",
+    hireDateLabel: "Hire date",
+    salaryLabel: "Monthly salary (USD)",
+    salaryPlaceholder: "0.00",
   },
   profile: {
     title: "My profile",

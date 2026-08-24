@@ -24,6 +24,21 @@ export async function inviteMember(formData: FormData) {
   revalidatePath("/directory");
 }
 
+export async function updateStaffDetails(userId: string, formData: FormData) {
+  await requireOwner();
+  const supabase = await createClient();
+
+  const hireDate = String(formData.get("hire_date") ?? "").trim() || null;
+  const salaryRaw = String(formData.get("salary") ?? "").trim();
+  const salary = salaryRaw ? Number(salaryRaw) : null;
+
+  await supabase
+    .from("staff_details")
+    .upsert({ user_id: userId, hire_date: hireDate, salary }, { onConflict: "user_id" });
+
+  revalidatePath("/directory");
+}
+
 export async function setNotificationPreference(
   userId: string,
   eventType: NotificationEventType,

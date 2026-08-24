@@ -21,7 +21,7 @@ import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { PrefToggle } from "@/components/pref-toggle";
 import { Avatar } from "@/components/ui/avatar";
 import { VendorPanel, type VendorPanelMode } from "@/components/vendor-panel";
-import { inviteMember } from "@/app/actions/admin";
+import { inviteMember, updateStaffDetails } from "@/app/actions/admin";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { buttonSecondary, card, input, mutedText, sectionHeading } from "@/lib/ui";
@@ -54,6 +54,8 @@ type PersonRow = {
 
 type NotifEvent = { key: NotificationEventType; label: string };
 
+type StaffDetails = { hire_date: string | null; salary: number | null };
+
 type DirectoryType = "all" | "vendors" | "people";
 
 const actionButton = `flex-1 ${buttonSecondary}`;
@@ -66,6 +68,7 @@ export function DirectoryExplorer({
   dict,
   notifEvents,
   prefLookup,
+  staffDetailsLookup,
 }: {
   vendors: VendorRow[];
   people: PersonRow[];
@@ -74,6 +77,7 @@ export function DirectoryExplorer({
   dict: Dictionary;
   notifEvents: NotifEvent[];
   prefLookup: Record<string, boolean>;
+  staffDetailsLookup: Record<string, StaffDetails>;
 }) {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<DirectoryType>("all");
@@ -310,6 +314,7 @@ export function DirectoryExplorer({
                         dict={dict}
                         events={notifEvents}
                         prefLookup={prefLookup}
+                        staffDetails={staffDetailsLookup[person.id] ?? { hire_date: null, salary: null }}
                       />
                     ))}
                   </div>
@@ -438,6 +443,7 @@ function PersonCard({
   dict,
   events,
   prefLookup,
+  staffDetails,
 }: {
   person: PersonRow;
   isSelf: boolean;
@@ -445,6 +451,7 @@ function PersonCard({
   dict: Dictionary;
   events: NotifEvent[];
   prefLookup: Record<string, boolean>;
+  staffDetails: StaffDetails;
 }) {
   const [expanded, setExpanded] = useState(false);
   const canExpand = isOwner && person.role === "staff" && !isSelf;
@@ -489,7 +496,31 @@ function PersonCard({
       )}
 
       {canExpand && expanded && (
-        <div className="mt-3 overflow-x-auto border-t border-hairline pt-3">
+        <div className="mt-3 space-y-3 border-t border-hairline pt-3">
+          <form action={updateStaffDetails.bind(null, person.id)} className="flex flex-wrap items-end gap-2">
+            <Field label={dict.directory.hireDateLabel}>
+              <input type="date" name="hire_date" defaultValue={staffDetails.hire_date ?? ""} className={input} />
+            </Field>
+            <Field label={dict.directory.salaryLabel}>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                name="salary"
+                placeholder={dict.directory.salaryPlaceholder}
+                defaultValue={staffDetails.salary ?? ""}
+                className={input}
+              />
+            </Field>
+            <SubmitButton
+              className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-medium text-on-primary transition-colors hover:bg-primary-active disabled:pointer-events-none disabled:opacity-50"
+              pendingLabel={dict.vendorForm.submitPending}
+            >
+              {dict.vendorForm.submit}
+            </SubmitButton>
+          </form>
+
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-ink-faint">
@@ -522,6 +553,7 @@ function PersonCard({
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

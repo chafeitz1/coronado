@@ -26,14 +26,19 @@ export default async function DirectoryPage() {
   }));
 
   let prefLookup: Record<string, boolean> = {};
+  let staffDetailsLookup: Record<string, { hire_date: string | null; salary: number | null }> = {};
 
   if (isOwner) {
-    const { data: prefs } = await supabase
-      .from("notification_preferences")
-      .select("user_id, event_type, channel, enabled");
+    const [{ data: prefs }, { data: staffDetails }] = await Promise.all([
+      supabase.from("notification_preferences").select("user_id, event_type, channel, enabled"),
+      supabase.from("staff_details").select("user_id, hire_date, salary"),
+    ]);
 
     prefLookup = Object.fromEntries(
       (prefs ?? []).map((p) => [`${p.user_id}:${p.event_type}:${p.channel}`, p.enabled])
+    );
+    staffDetailsLookup = Object.fromEntries(
+      (staffDetails ?? []).map((s) => [s.user_id, { hire_date: s.hire_date, salary: s.salary }])
     );
   }
 
@@ -61,6 +66,7 @@ export default async function DirectoryPage() {
         dict={dict}
         notifEvents={notifEvents}
         prefLookup={prefLookup}
+        staffDetailsLookup={staffDetailsLookup}
       />
     </div>
   );

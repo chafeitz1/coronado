@@ -167,6 +167,7 @@ const es = {
     filterInactive: "Inactivos",
     filterAllStatus: "Todos",
     lastMaintenanceLabel: "Último mantenimiento: {date}",
+    nextMaintenanceLabel: "Próximo mantenimiento: {date}",
   },
   assetForm: {
     submit: "Guardar",
@@ -562,6 +563,7 @@ const en: Dictionary = {
     filterInactive: "Inactive",
     filterAllStatus: "All",
     lastMaintenanceLabel: "Last maintenance: {date}",
+    nextMaintenanceLabel: "Next maintenance: {date}",
   },
   assetForm: {
     submit: "Save",

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { History, Wrench } from "lucide-react";
+import { CalendarClock, History, Repeat, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AssetStatusBadge } from "@/components/ui/badge";
 import { AssetRowMenu } from "@/components/asset-row-menu";
@@ -70,13 +70,30 @@ export function AssetsList({
                   <p className={`${mutedText} truncate`}>
                     {[asset.category, asset.location].filter(Boolean).join(" · ") || dict.assets.noCategory}
                   </p>
-                  {asset.lastMaintenanceDate && (
-                    <p className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-faint">
-                      <History className="size-3.5 shrink-0" strokeWidth={2} />
-                      {format(dict.assets.lastMaintenanceLabel, {
-                        date: formatLongDate(asset.lastMaintenanceDate.slice(0, 10), locale),
+                  {/* Next maintenance is more actionable than last, so it
+                      takes priority when both are known — falls back to
+                      last only for assets with no upcoming task. */}
+                  {asset.nextMaintenanceDate ? (
+                    <p
+                      className={`mt-1.5 flex items-center gap-1.5 text-xs ${
+                        asset.nextMaintenanceOverdue ? "font-medium text-status-overdue-fg" : "text-ink-faint"
+                      }`}
+                    >
+                      <CalendarClock className="size-3.5 shrink-0" strokeWidth={2} />
+                      {format(dict.assets.nextMaintenanceLabel, {
+                        date: formatLongDate(asset.nextMaintenanceDate.slice(0, 10), locale),
                       })}
+                      {asset.nextMaintenanceRecurring && <Repeat className="size-3 shrink-0" strokeWidth={2} />}
                     </p>
+                  ) : (
+                    asset.lastMaintenanceDate && (
+                      <p className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-faint">
+                        <History className="size-3.5 shrink-0" strokeWidth={2} />
+                        {format(dict.assets.lastMaintenanceLabel, {
+                          date: formatLongDate(asset.lastMaintenanceDate.slice(0, 10), locale),
+                        })}
+                      </p>
+                    )
                   )}
                 </div>
               </button>

@@ -151,7 +151,10 @@ export function AssetPanel({
 
       {mode === "view" && asset && (
         <div className="space-y-6">
-          <div className="flex items-center gap-3">
+          {/* pr-8 keeps the edit/delete icons clear of SidePanel's own
+              floating close "X", which sits absolutely at top-right when
+              there's no panel title (view mode never sets one). */}
+          <div className="flex items-center gap-3 pr-8">
             <AssetThumb url={asset.attachments[0]?.publicUrl} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">

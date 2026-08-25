@@ -44,18 +44,25 @@ export function AssetsExplorer({
 
   const panelAsset = panelState?.assetId ? (assets.find((a) => a.id === panelState.assetId) ?? null) : null;
 
-  const assetSummaries: AssetSummary[] = assets.map((a) => ({
-    id: a.id,
-    name: a.name,
-    category: a.category,
-    location: a.location,
-    status: a.status,
-    coverUrl: a.attachments[0]?.publicUrl,
-    // history[0] can be a skipped item (still sorted to the top by
-    // completed_at) — "last maintenance" should only ever mean the last
-    // time work actually happened.
-    lastMaintenanceDate: a.history.find((wo) => wo.status === "done")?.completed_at ?? null,
-  }));
+  const assetSummaries: AssetSummary[] = assets.map((a) => {
+    // upcoming is already sorted ascending by due_date (see assets/page.tsx)
+    const nextUpcoming = a.upcoming[0] ?? null;
+    return {
+      id: a.id,
+      name: a.name,
+      category: a.category,
+      location: a.location,
+      status: a.status,
+      coverUrl: a.attachments[0]?.publicUrl,
+      // history[0] can be a skipped item (still sorted to the top by
+      // completed_at) — "last maintenance" should only ever mean the last
+      // time work actually happened.
+      lastMaintenanceDate: a.history.find((wo) => wo.status === "done")?.completed_at ?? null,
+      nextMaintenanceDate: nextUpcoming?.due_date ?? null,
+      nextMaintenanceOverdue: !!(nextUpcoming?.due_date && daysUntil(nextUpcoming.due_date) < 0),
+      nextMaintenanceRecurring: !!nextUpcoming?.recurrence_interval_value,
+    };
+  });
 
   const warrantyAlerts = useMemo(
     () =>

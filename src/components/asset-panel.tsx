@@ -23,7 +23,7 @@ import { StatusBadge, WarrantyBadge, AssetStatusBadge } from "@/components/ui/ba
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { createAsset, updateAsset, deleteAsset, updateAssetStatus } from "@/app/actions/assets";
-import { buttonUtility, listCard, listRow, mutedText, sectionHeading } from "@/lib/ui";
+import { buttonGhost, buttonUtility, listCard, listRow, mutedText, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { AssetStatus, Locale } from "@/lib/types/database";
 import type { AssetDetailData } from "@/components/asset-types";
@@ -179,7 +179,7 @@ export function AssetPanel({
                 <button type="button" onClick={() => setMode("edit")} className={buttonUtility}>
                   <Pencil className="size-3.5" /> {dict.assetDetail.edit}
                 </button>
-                <button type="button" onClick={handleToggleStatus} disabled={statusPending} className={buttonUtility}>
+                <button type="button" onClick={handleToggleStatus} disabled={statusPending} className={buttonGhost}>
                   <Power className="size-3.5" />
                   {asset.status === "active" ? dict.assetDetail.markInactive : dict.assetDetail.markActive}
                 </button>
@@ -271,7 +271,7 @@ export function AssetPanel({
                   <CalendarClock className="size-3.5" /> {dict.assetDetail.upcomingTitle}
                 </span>
               </h3>
-              <button type="button" onClick={() => setShowNewTask(true)} className={buttonUtility}>
+              <button type="button" onClick={() => setShowNewTask(true)} className={buttonGhost}>
                 <Plus className="size-3.5" /> {dict.assetDetail.newMaintenanceTask}
               </button>
             </div>

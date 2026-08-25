@@ -87,7 +87,13 @@ export function WorkOrderStatusChip({
               <button
                 key={s}
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  // Stopping propagation on the dropdown container isn't
+                  // enough to stop a Link ancestor's own navigation — this
+                  // button needs its own preventDefault too, same as the
+                  // toggle button above.
+                  e.preventDefault();
+                  e.stopPropagation();
                   setOpen(false);
                   startTransition(() => {
                     updateWorkOrderStatus(workOrderId, s);

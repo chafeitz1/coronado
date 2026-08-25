@@ -43,6 +43,16 @@ export function AssetsExplorer({
 
   const panelAsset = panelState?.assetId ? (assets.find((a) => a.id === panelState.assetId) ?? null) : null;
 
+  const unitLabels: Record<string, string> = useMemo(
+    () => ({
+      days: dict.assetDetail.unitDays,
+      weeks: dict.assetDetail.unitWeeks,
+      months: dict.assetDetail.unitMonths,
+      years: dict.assetDetail.unitYears,
+    }),
+    [dict]
+  );
+
   const assetSummaries: AssetSummary[] = assets.map((a) => {
     // upcoming is already sorted ascending by due_date (see assets/page.tsx)
     const nextUpcoming = a.upcoming[0] ?? null;
@@ -53,23 +63,18 @@ export function AssetsExplorer({
       location: a.location,
       status: a.status,
       coverUrl: a.attachments[0]?.publicUrl,
-      // history[0] can be a skipped item (still sorted to the top by
-      // completed_at) — "last maintenance" should only ever mean the last
-      // time work actually happened.
-      lastMaintenanceDate: a.history.find((wo) => wo.status === "done")?.completed_at ?? null,
       nextMaintenanceDate: nextUpcoming?.due_date ?? null,
       nextMaintenanceOverdue: !!(nextUpcoming?.due_date && daysUntil(nextUpcoming.due_date) < 0),
-      nextMaintenanceRecurring: !!nextUpcoming?.recurrence_interval_value,
+      nextMaintenanceRecurrenceText: nextUpcoming?.recurrence_interval_value
+        ? format(dict.assetDetail.recurrence, {
+            value: nextUpcoming.recurrence_interval_value,
+            unit: unitLabels[nextUpcoming.recurrence_interval_unit ?? ""] ?? nextUpcoming.recurrence_interval_unit ?? "",
+          })
+        : null,
     };
   });
 
   const maintenanceDue = useMemo(() => {
-    const unitLabels: Record<string, string> = {
-      days: dict.assetDetail.unitDays,
-      weeks: dict.assetDetail.unitWeeks,
-      months: dict.assetDetail.unitMonths,
-      years: dict.assetDetail.unitYears,
-    };
     return assets
       .filter((a) => a.status === "active")
       .flatMap((a) =>
@@ -91,7 +96,7 @@ export function AssetsExplorer({
           }))
       )
       .sort((a, b) => a.days - b.days);
-  }, [assets, dict]);
+  }, [assets, dict, unitLabels]);
 
   return (
     <div className="space-y-6">

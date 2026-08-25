@@ -154,7 +154,6 @@ const es = {
     newAsset: "Nuevo activo",
     maintenanceDueTitle: "Próximos mantenimientos",
     allAssetsTitle: "Todos los activos",
-    noCategory: "Sin categoría",
     empty: "No hay activos registrados.",
     createdBanner: "Activo guardado.",
     deletedBanner: "Activo borrado.",
@@ -163,7 +162,6 @@ const es = {
     filterActive: "Activos",
     filterInactive: "Inactivos",
     filterAllStatus: "Todos",
-    lastMaintenanceLabel: "Último mantenimiento: {date}",
     nextMaintenanceLabel: "Próximo mantenimiento: {date}",
   },
   assetForm: {
@@ -547,7 +545,6 @@ const en: Dictionary = {
     newAsset: "New asset",
     maintenanceDueTitle: "Upcoming maintenance",
     allAssetsTitle: "All assets",
-    noCategory: "No category",
     empty: "No assets registered.",
     createdBanner: "Asset saved.",
     deletedBanner: "Asset deleted.",
@@ -556,7 +553,6 @@ const en: Dictionary = {
     filterActive: "Active",
     filterInactive: "Inactive",
     filterAllStatus: "All",
-    lastMaintenanceLabel: "Last maintenance: {date}",
     nextMaintenanceLabel: "Next maintenance: {date}",
   },
   assetForm: {

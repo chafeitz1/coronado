@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { CalendarClock, History, Repeat, Wrench } from "lucide-react";
+import { CalendarClock, Repeat, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AssetStatusBadge } from "@/components/ui/badge";
 import { AssetRowMenu } from "@/components/asset-row-menu";
-import { card, mutedText } from "@/lib/ui";
+import { card } from "@/lib/ui";
 import { formatLongDate } from "@/lib/dates";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
@@ -67,13 +67,12 @@ export function AssetsList({
                     <span className="truncate">{asset.name}</span>
                     <AssetStatusBadge status={asset.status} locale={locale} />
                   </p>
-                  <p className={`${mutedText} truncate`}>
-                    {[asset.category, asset.location].filter(Boolean).join(" · ") || dict.assets.noCategory}
-                  </p>
-                  {/* Next maintenance is more actionable than last, so it
-                      takes priority when both are known — falls back to
-                      last only for assets with no upcoming task. */}
-                  {asset.nextMaintenanceDate ? (
+                  {asset.location && (
+                    <span className="mt-1.5 inline-flex rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
+                      {asset.location}
+                    </span>
+                  )}
+                  {asset.nextMaintenanceDate && (
                     <p
                       className={`mt-1.5 flex items-center gap-1.5 text-xs ${
                         asset.nextMaintenanceOverdue ? "font-medium text-status-overdue-fg" : "text-ink-faint"
@@ -83,17 +82,13 @@ export function AssetsList({
                       {format(dict.assets.nextMaintenanceLabel, {
                         date: formatLongDate(asset.nextMaintenanceDate.slice(0, 10), locale),
                       })}
-                      {asset.nextMaintenanceRecurring && <Repeat className="size-3 shrink-0" strokeWidth={2} />}
                     </p>
-                  ) : (
-                    asset.lastMaintenanceDate && (
-                      <p className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-faint">
-                        <History className="size-3.5 shrink-0" strokeWidth={2} />
-                        {format(dict.assets.lastMaintenanceLabel, {
-                          date: formatLongDate(asset.lastMaintenanceDate.slice(0, 10), locale),
-                        })}
-                      </p>
-                    )
+                  )}
+                  {asset.nextMaintenanceRecurrenceText && (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-faint">
+                      <Repeat className="size-3 shrink-0" strokeWidth={2} />
+                      {asset.nextMaintenanceRecurrenceText}
+                    </p>
                   )}
                 </div>
               </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Lock, ChevronDown, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Lock, ChevronDown, RefreshCw, CheckCircle2, SkipForward } from "lucide-react";
 import { updateWorkOrderStatus } from "@/app/actions/work-orders";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { WorkOrderStatus } from "@/lib/types/database";
@@ -10,15 +10,17 @@ const ICONS: Record<WorkOrderStatus, typeof Lock> = {
   open: Lock,
   in_progress: RefreshCw,
   done: CheckCircle2,
+  skipped: SkipForward,
 };
 
 const STYLES: Record<WorkOrderStatus, string> = {
   open: "bg-status-open-bg text-status-open-fg",
   in_progress: "bg-status-progress-bg text-status-progress-fg",
   done: "bg-status-done-bg text-status-done-fg",
+  skipped: "bg-canvas-soft text-ink-muted",
 };
 
-const ORDER: WorkOrderStatus[] = ["open", "in_progress", "done"];
+const ORDER: WorkOrderStatus[] = ["open", "in_progress", "done", "skipped"];
 
 // Inline status chip you can change right from a list/table row, without
 // opening the work order — mirrors MaintainX's "🔒 Open ⌄" row control.

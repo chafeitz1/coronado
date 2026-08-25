@@ -51,7 +51,10 @@ export function AssetsExplorer({
     location: a.location,
     status: a.status,
     coverUrl: a.attachments[0]?.publicUrl,
-    lastMaintenanceDate: a.history[0]?.completed_at ?? null,
+    // history[0] can be a skipped item (still sorted to the top by
+    // completed_at) — "last maintenance" should only ever mean the last
+    // time work actually happened.
+    lastMaintenanceDate: a.history.find((wo) => wo.status === "done")?.completed_at ?? null,
   }));
 
   const warrantyAlerts = useMemo(

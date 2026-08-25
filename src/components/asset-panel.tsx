@@ -20,6 +20,7 @@ import { AssetForm } from "@/components/asset-form";
 import { AssetAttachments } from "@/components/asset-attachments";
 import { NewMaintenanceTaskPanel } from "@/components/new-maintenance-task-panel";
 import { StatusBadge, WarrantyBadge, AssetStatusBadge } from "@/components/ui/badge";
+import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { createAsset, updateAsset, deleteAsset, updateAssetStatus } from "@/app/actions/assets";
 import { buttonUtility, listCard, listRow, mutedText, sectionHeading } from "@/lib/ui";
@@ -97,6 +98,27 @@ export function AssetPanel({
     years: dict.assetDetail.unitYears,
   };
 
+  // How often this asset needs maintenance is a property of the asset,
+  // not of any single upcoming task — so it's shown once in the header
+  // (deduped across upcoming recurring tasks) instead of repeated on
+  // every row in the list below.
+  const recurrenceLabels: string[] = [];
+  if (asset) {
+    const seen = new Set<string>();
+    for (const wo of asset.upcoming) {
+      if (!wo.recurrence_interval_value || !wo.recurrence_interval_unit) continue;
+      const key = `${wo.recurrence_interval_value}-${wo.recurrence_interval_unit}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      recurrenceLabels.push(
+        format(dict.assetDetail.recurrence, {
+          value: wo.recurrence_interval_value,
+          unit: unitLabels[wo.recurrence_interval_unit] ?? wo.recurrence_interval_unit,
+        })
+      );
+    }
+  }
+
   // View mode shows the asset's photo + name in the body instead — no
   // need to repeat it in the panel header too.
   const title = mode === "create" ? dict.assets.newAsset : mode === "edit" ? dict.assetDetail.editAsset : undefined;
@@ -135,7 +157,19 @@ export function AssetPanel({
                 <span className="truncate">{asset.name}</span>
                 <AssetStatusBadge status={asset.status} locale={locale} />
               </p>
-              {asset.warranty_expires && <WarrantyBadge warrantyExpires={asset.warranty_expires} locale={locale} />}
+              {(asset.warranty_expires || recurrenceLabels.length > 0) && (
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  {asset.warranty_expires && <WarrantyBadge warrantyExpires={asset.warranty_expires} locale={locale} />}
+                  {recurrenceLabels.map((label) => (
+                    <span
+                      key={label}
+                      className="inline-flex items-center gap-1 rounded-full bg-canvas-soft px-2.5 py-1 text-xs font-medium text-ink-muted"
+                    >
+                      <Repeat className="size-3" strokeWidth={2} /> {label}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -250,26 +284,20 @@ export function AssetPanel({
                         <ClipboardList className="size-4" strokeWidth={2} />
                       </span>
                       <div className="min-w-40 flex-1">
-                        <p className="truncate font-medium text-ink">{wo.title}</p>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                          <span className={mutedText}>
-                            {wo.due_date
-                              ? format(dict.assetDetail.dueDate, { date: wo.due_date })
-                              : dict.assetDetail.noDueDate}
-                            {wo.vendorName && ` · ${wo.vendorName}`}
-                          </span>
+                        <p className="flex items-center gap-1.5 truncate font-medium text-ink">
+                          {wo.title}
                           {wo.recurrence_interval_value && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-canvas-soft px-2 py-0.5 text-[11px] font-medium text-ink-muted">
-                              <Repeat className="size-3" strokeWidth={2} />
-                              {format(dict.assetDetail.recurrence, {
-                                value: wo.recurrence_interval_value,
-                                unit: unitLabels[wo.recurrence_interval_unit ?? ""] ?? wo.recurrence_interval_unit ?? "",
-                              })}
-                            </span>
+                            <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
                           )}
-                        </div>
+                        </p>
+                        <p className={mutedText}>
+                          {wo.due_date
+                            ? format(dict.assetDetail.dueDate, { date: wo.due_date })
+                            : dict.assetDetail.noDueDate}
+                          {wo.vendorName && ` · ${wo.vendorName}`}
+                        </p>
                       </div>
-                      <StatusBadge status={wo.status} locale={locale} />
+                      <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={isOwner} dict={dict} />
                     </Link>
                   </li>
                 ))}

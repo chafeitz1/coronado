@@ -4,7 +4,14 @@
 
 export type UserRole = "owner" | "resident" | "staff";
 export type Locale = "es" | "en";
-export type WorkOrderStatus = "open" | "in_progress" | "done";
+export type WorkOrderStatus = "open" | "in_progress" | "done" | "skipped";
+
+// "skipped" and "done" both close out a work order (it stops counting as
+// pending/overdue and moves to an asset's history) — the difference is
+// just whether the maintenance actually happened.
+export function isWorkOrderClosed(status: string): boolean {
+  return status === "done" || status === "skipped";
+}
 export type AssetStatus = "active" | "inactive";
 export type WorkOrderPriority = "low" | "medium" | "high";
 export type WorkOrderSource = "manual" | "pm";

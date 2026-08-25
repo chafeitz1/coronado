@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { AssetsExplorer } from "@/components/assets-explorer";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { isWorkOrderClosed } from "@/lib/types/database";
 import type { AssetDetailData, AssetAttachmentItem, AssetWorkOrder } from "@/components/asset-types";
 
 function single<T>(value: T | T[] | null): T | null {
@@ -88,7 +89,7 @@ export default async function AssetsPage() {
       recurrence_interval_unit: wo.recurrence_interval_unit,
       vendorName: single(wo.vendor)?.name ?? null,
     };
-    const target = entry.status === "done" ? historyByAsset : upcomingByAsset;
+    const target = isWorkOrderClosed(entry.status) ? historyByAsset : upcomingByAsset;
     const list = target.get(wo.asset_id) ?? [];
     list.push(entry);
     target.set(wo.asset_id, list);

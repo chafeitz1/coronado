@@ -1,4 +1,4 @@
-import { Lock, RefreshCw, CheckCircle2, PowerOff } from "lucide-react";
+import { Lock, RefreshCw, CheckCircle2, PowerOff, SkipForward } from "lucide-react";
 import type { AssetStatus, Locale, WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
 import { daysUntil } from "@/lib/dates";
 import { getDictionary, format } from "@/lib/i18n/dictionaries";
@@ -9,12 +9,14 @@ const STATUS_STYLES: Record<WorkOrderStatus, string> = {
   open: "bg-status-open-bg text-status-open-fg",
   in_progress: "bg-status-progress-bg text-status-progress-fg",
   done: "bg-status-done-bg text-status-done-fg",
+  skipped: "bg-canvas-soft text-ink-muted",
 };
 
 const STATUS_ICONS: Record<WorkOrderStatus, typeof Lock> = {
   open: Lock,
   in_progress: RefreshCw,
   done: CheckCircle2,
+  skipped: SkipForward,
 };
 
 const PRIORITY_STYLES: Record<WorkOrderPriority, string> = {

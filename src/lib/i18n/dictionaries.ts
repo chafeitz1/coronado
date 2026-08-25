@@ -59,6 +59,7 @@ const es = {
     open: "Abierta",
     in_progress: "En proceso",
     done: "Hecha",
+    skipped: "Salteada",
   },
   priorities: {
     low: "Baja",
@@ -165,7 +166,7 @@ const es = {
     filterActive: "Activos",
     filterInactive: "Inactivos",
     filterAllStatus: "Todos",
-    lastMaintenanceLabel: "Último: {date}",
+    lastMaintenanceLabel: "Último mantenimiento: {date}",
   },
   assetForm: {
     submit: "Guardar",
@@ -453,6 +454,7 @@ const en: Dictionary = {
     open: "Open",
     in_progress: "In progress",
     done: "Done",
+    skipped: "Skipped",
   },
   priorities: {
     low: "Low",
@@ -559,7 +561,7 @@ const en: Dictionary = {
     filterActive: "Active",
     filterInactive: "Inactive",
     filterAllStatus: "All",
-    lastMaintenanceLabel: "Last: {date}",
+    lastMaintenanceLabel: "Last maintenance: {date}",
   },
   assetForm: {
     submit: "Save",

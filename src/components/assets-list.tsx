@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Wrench } from "lucide-react";
+import { History, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AssetStatusBadge } from "@/components/ui/badge";
 import { AssetRowMenu } from "@/components/asset-row-menu";
@@ -70,7 +70,8 @@ export function AssetsList({
                     </p>
                   </div>
                   {asset.lastMaintenanceDate && (
-                    <span className="hidden shrink-0 text-xs text-ink-faint sm:block">
+                    <span className="hidden shrink-0 items-center gap-1.5 text-xs text-ink-faint sm:flex">
+                      <History className="size-3.5" strokeWidth={2} />
                       {format(dict.assets.lastMaintenanceLabel, {
                         date: formatLongDate(asset.lastMaintenanceDate.slice(0, 10), locale),
                       })}

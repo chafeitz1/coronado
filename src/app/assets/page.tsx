@@ -1,7 +1,8 @@
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { AssetsExplorer } from "@/components/assets-explorer";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getDictionary, format } from "@/lib/i18n/dictionaries";
+import { mutedText, pageHeading } from "@/lib/ui";
 import { isWorkOrderClosed } from "@/lib/types/database";
 import type { AssetDetailData, AssetAttachmentItem, AssetWorkOrder } from "@/components/asset-types";
 
@@ -121,13 +122,20 @@ export default async function AssetsPage() {
   }));
 
   return (
-    <AssetsExplorer
-      assets={assets}
-      vendors={vendors ?? []}
-      staff={staff ?? []}
-      isOwner={isOwner}
-      dict={dict}
-      locale={profile.locale}
-    />
+    <div className="space-y-6">
+      <div>
+        <h1 className={pageHeading}>{dict.assets.title}</h1>
+        <p className={mutedText}>{format(dict.assets.subtitleCount, { count: assets.length })}</p>
+      </div>
+
+      <AssetsExplorer
+        assets={assets}
+        vendors={vendors ?? []}
+        staff={staff ?? []}
+        isOwner={isOwner}
+        dict={dict}
+        locale={profile.locale}
+      />
+    </div>
   );
 }

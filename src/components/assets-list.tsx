@@ -23,6 +23,7 @@ export function AssetsList({
   locale,
   onSelect,
   onEdit,
+  emptyMessage,
 }: {
   assets: AssetSummary[];
   isOwner: boolean;
@@ -30,6 +31,7 @@ export function AssetsList({
   locale: Locale;
   onSelect: (assetId: string) => void;
   onEdit: (assetId: string) => void;
+  emptyMessage?: string;
 }) {
   const [tab, setTab] = useState<"active" | "inactive" | "all">("active");
 
@@ -67,9 +69,9 @@ export function AssetsList({
                     <span className="truncate">{asset.name}</span>
                     <AssetStatusBadge status={asset.status} locale={locale} />
                   </p>
-                  {asset.location && (
+                  {asset.category && (
                     <span className="mt-1.5 inline-flex rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
-                      {asset.location}
+                      {asset.category}
                     </span>
                   )}
                   {asset.nextMaintenanceDate && (
@@ -105,7 +107,7 @@ export function AssetsList({
           ))}
         </div>
       ) : (
-        <EmptyState icon={Wrench} message={dict.assets.empty} />
+        <EmptyState icon={Wrench} message={emptyMessage ?? dict.assets.empty} />
       )}
     </div>
   );

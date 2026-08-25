@@ -3,11 +3,11 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Plus, CalendarClock, Repeat, Wrench } from "lucide-react";
+import { Search, Plus, CalendarClock, Repeat, Wrench } from "lucide-react";
 import { AssetsList } from "@/components/assets-list";
 import { AssetPanel, type AssetPanelMode } from "@/components/asset-panel";
 import { OverdueBadge } from "@/components/ui/badge";
-import { buttonPrimary, card, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
+import { card, input, mutedText, sectionHeading } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
@@ -40,8 +40,28 @@ export function AssetsExplorer({
     const assetId = searchParams.get("asset");
     return assetId ? { mode: "view", assetId } : null;
   });
+  const [search, setSearch] = useState("");
 
   const panelAsset = panelState?.assetId ? (assets.find((a) => a.id === panelState.assetId) ?? null) : null;
+
+  const q = search.trim().toLowerCase();
+  // Search only narrows the browsable list below — the "Upcoming
+  // maintenance" attention section above stays as-is regardless of query,
+  // same way the directory's search doesn't touch anything outside its
+  // own list.
+  const searchedAssets = useMemo(
+    () =>
+      assets.filter(
+        (a) =>
+          !q ||
+          a.name.toLowerCase().includes(q) ||
+          a.category?.toLowerCase().includes(q) ||
+          a.location?.toLowerCase().includes(q) ||
+          a.brand?.toLowerCase().includes(q) ||
+          a.model?.toLowerCase().includes(q)
+      ),
+    [assets, q]
+  );
 
   const unitLabels: Record<string, string> = useMemo(
     () => ({
@@ -53,7 +73,7 @@ export function AssetsExplorer({
     [dict]
   );
 
-  const assetSummaries: AssetSummary[] = assets.map((a) => {
+  const assetSummaries: AssetSummary[] = searchedAssets.map((a) => {
     // upcoming is already sorted ascending by due_date (see assets/page.tsx)
     const nextUpcoming = a.upcoming[0] ?? null;
     return {
@@ -100,15 +120,26 @@ export function AssetsExplorer({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className={pageHeading}>{dict.assets.title}</h1>
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={dict.assets.searchPlaceholder}
+            className={`${input} pl-9`}
+          />
+        </div>
         {isOwner && (
           <button
             type="button"
             onClick={() => setPanelState({ mode: "create", assetId: null })}
-            className={buttonPrimary}
+            aria-label={dict.assets.newAsset}
+            title={dict.assets.newAsset}
+            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-active"
           >
-            <Plus className="size-4" /> {dict.assets.newAsset}
+            <Plus className="size-5" />
           </button>
         )}
       </div>
@@ -165,6 +196,7 @@ export function AssetsExplorer({
           locale={locale}
           onSelect={(assetId) => setPanelState({ mode: "view", assetId })}
           onEdit={(assetId) => setPanelState({ mode: "edit", assetId })}
+          emptyMessage={q ? dict.assets.emptySearch : undefined}
         />
       </section>
 

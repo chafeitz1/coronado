@@ -250,23 +250,24 @@ export function AssetPanel({
                         <ClipboardList className="size-4" strokeWidth={2} />
                       </span>
                       <div className="min-w-40 flex-1">
-                        <p className="flex items-center gap-1.5 truncate font-medium text-ink">
-                          {wo.title}
+                        <p className="truncate font-medium text-ink">{wo.title}</p>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                          <span className={mutedText}>
+                            {wo.due_date
+                              ? format(dict.assetDetail.dueDate, { date: wo.due_date })
+                              : dict.assetDetail.noDueDate}
+                            {wo.vendorName && ` · ${wo.vendorName}`}
+                          </span>
                           {wo.recurrence_interval_value && (
-                            <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
+                            <span className="inline-flex items-center gap-1 rounded-full bg-canvas-soft px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+                              <Repeat className="size-3" strokeWidth={2} />
+                              {format(dict.assetDetail.recurrence, {
+                                value: wo.recurrence_interval_value,
+                                unit: unitLabels[wo.recurrence_interval_unit ?? ""] ?? wo.recurrence_interval_unit ?? "",
+                              })}
+                            </span>
                           )}
-                        </p>
-                        <p className={mutedText}>
-                          {wo.due_date
-                            ? format(dict.assetDetail.dueDate, { date: wo.due_date })
-                            : dict.assetDetail.noDueDate}
-                          {wo.recurrence_interval_value &&
-                            ` · ${format(dict.assetDetail.recurrence, {
-                              value: wo.recurrence_interval_value,
-                              unit: unitLabels[wo.recurrence_interval_unit ?? ""] ?? wo.recurrence_interval_unit ?? "",
-                            })}`}
-                          {wo.vendorName && ` · ${wo.vendorName}`}
-                        </p>
+                        </div>
                       </div>
                       <StatusBadge status={wo.status} locale={locale} />
                     </Link>

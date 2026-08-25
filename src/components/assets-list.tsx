@@ -7,7 +7,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { AssetStatusBadge } from "@/components/ui/badge";
 import { AssetRowMenu } from "@/components/asset-row-menu";
 import { listCard, mutedText } from "@/lib/ui";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { formatLongDate } from "@/lib/dates";
+import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
 import type { AssetSummary } from "@/components/asset-types";
 
@@ -68,6 +69,13 @@ export function AssetsList({
                       {[asset.category, asset.location].filter(Boolean).join(" · ") || dict.assets.noCategory}
                     </p>
                   </div>
+                  {asset.lastMaintenanceDate && (
+                    <span className="hidden shrink-0 text-xs text-ink-faint sm:block">
+                      {format(dict.assets.lastMaintenanceLabel, {
+                        date: formatLongDate(asset.lastMaintenanceDate.slice(0, 10), locale),
+                      })}
+                    </span>
+                  )}
                 </button>
                 {isOwner && (
                   <AssetRowMenu

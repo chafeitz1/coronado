@@ -69,6 +69,7 @@ const es = {
     overdue: "Vencida",
     warrantyExpired: "Garantía vencida",
     warrantyExpiresIn: "Garantía vence en {days} días",
+    dueIn: "Vence en {days} días",
   },
   workOrders: {
     title: "Tareas",
@@ -153,6 +154,7 @@ const es = {
     title: "Activos",
     newAsset: "Nuevo activo",
     warrantyAlertsTitle: "Garantías por vencer",
+    maintenanceDueTitle: "Próximos mantenimientos",
     allAssetsTitle: "Todos los activos",
     noCategory: "Sin categoría",
     empty: "No hay activos registrados.",
@@ -163,6 +165,7 @@ const es = {
     filterActive: "Activos",
     filterInactive: "Inactivos",
     filterAllStatus: "Todos",
+    lastMaintenanceLabel: "Último: {date}",
   },
   assetForm: {
     submit: "Guardar",
@@ -460,6 +463,7 @@ const en: Dictionary = {
     overdue: "Overdue",
     warrantyExpired: "Warranty expired",
     warrantyExpiresIn: "Warranty expires in {days} days",
+    dueIn: "Due in {days} days",
   },
   workOrders: {
     title: "Tasks",
@@ -544,6 +548,7 @@ const en: Dictionary = {
     title: "Assets",
     newAsset: "New asset",
     warrantyAlertsTitle: "Warranties expiring soon",
+    maintenanceDueTitle: "Upcoming maintenance",
     allAssetsTitle: "All assets",
     noCategory: "No category",
     empty: "No assets registered.",
@@ -554,6 +559,7 @@ const en: Dictionary = {
     filterActive: "Active",
     filterInactive: "Inactive",
     filterAllStatus: "All",
+    lastMaintenanceLabel: "Last: {date}",
   },
   assetForm: {
     submit: "Save",

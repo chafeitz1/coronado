@@ -7,6 +7,7 @@ export type AssetSummary = {
   location: string | null;
   status: AssetStatus;
   coverUrl?: string;
+  lastMaintenanceDate: string | null;
 };
 
 export type AssetAttachmentItem = {

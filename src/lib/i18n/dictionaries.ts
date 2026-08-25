@@ -68,8 +68,6 @@ const es = {
   },
   badges: {
     overdue: "Vencida",
-    warrantyExpired: "Garantía vencida",
-    warrantyExpiresIn: "Garantía vence en {days} días",
     dueIn: "Vence en {days} días",
   },
   workOrders: {
@@ -154,7 +152,6 @@ const es = {
   assets: {
     title: "Activos",
     newAsset: "Nuevo activo",
-    warrantyAlertsTitle: "Garantías por vencer",
     maintenanceDueTitle: "Próximos mantenimientos",
     allAssetsTitle: "Todos los activos",
     noCategory: "Sin categoría",
@@ -464,8 +461,6 @@ const en: Dictionary = {
   },
   badges: {
     overdue: "Overdue",
-    warrantyExpired: "Warranty expired",
-    warrantyExpiresIn: "Warranty expires in {days} days",
     dueIn: "Due in {days} days",
   },
   workOrders: {
@@ -550,7 +545,6 @@ const en: Dictionary = {
   assets: {
     title: "Assets",
     newAsset: "New asset",
-    warrantyAlertsTitle: "Warranties expiring soon",
     maintenanceDueTitle: "Upcoming maintenance",
     allAssetsTitle: "All assets",
     noCategory: "No category",

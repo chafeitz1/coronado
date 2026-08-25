@@ -20,7 +20,7 @@ import { SidePanel } from "@/components/ui/side-panel";
 import { AssetForm } from "@/components/asset-form";
 import { AssetAttachments } from "@/components/asset-attachments";
 import { NewMaintenanceTaskPanel } from "@/components/new-maintenance-task-panel";
-import { StatusBadge, WarrantyBadge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { createAsset, updateAsset, deleteAsset, updateAssetStatus } from "@/app/actions/assets";
@@ -189,7 +189,6 @@ export function AssetPanel({
                   onToggle={handleToggleStatus}
                   dict={dict}
                 />
-                {asset.warranty_expires && <WarrantyBadge warrantyExpires={asset.warranty_expires} locale={locale} />}
                 {recurrenceLabels.map((label) => (
                   <span
                     key={label}

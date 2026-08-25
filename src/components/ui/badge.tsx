@@ -1,7 +1,6 @@
 import { Lock, RefreshCw, CheckCircle2, PowerOff, SkipForward } from "lucide-react";
 import type { AssetStatus, Locale, WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
-import { daysUntil } from "@/lib/dates";
-import { getDictionary, format } from "@/lib/i18n/dictionaries";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 const baseClass = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide";
 
@@ -61,22 +60,4 @@ export function AssetStatusBadge({ status, locale }: { status: AssetStatus; loca
 export function OverdueBadge({ locale }: { locale: Locale }) {
   const dict = getDictionary(locale);
   return <span className={`${baseClass} bg-status-overdue-bg text-status-overdue-fg`}>{dict.badges.overdue}</span>;
-}
-
-const WARRANTY_WARNING_DAYS = 60;
-
-export function WarrantyBadge({ warrantyExpires, locale }: { warrantyExpires: string; locale: Locale }) {
-  const dict = getDictionary(locale);
-  const days = daysUntil(warrantyExpires);
-  if (days < 0) {
-    return <span className={`${baseClass} bg-status-overdue-bg text-status-overdue-fg`}>{dict.badges.warrantyExpired}</span>;
-  }
-  if (days <= WARRANTY_WARNING_DAYS) {
-    return (
-      <span className={`${baseClass} bg-status-progress-bg text-status-progress-fg`}>
-        {format(dict.badges.warrantyExpiresIn, { days })}
-      </span>
-    );
-  }
-  return null;
 }

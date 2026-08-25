@@ -3,17 +3,16 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Plus, ShieldAlert, CalendarClock, Repeat, Wrench } from "lucide-react";
+import { Plus, CalendarClock, Repeat, Wrench } from "lucide-react";
 import { AssetsList } from "@/components/assets-list";
 import { AssetPanel, type AssetPanelMode } from "@/components/asset-panel";
-import { WarrantyBadge, OverdueBadge } from "@/components/ui/badge";
-import { buttonPrimary, card, listCard, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
+import { OverdueBadge } from "@/components/ui/badge";
+import { buttonPrimary, card, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
 import type { AssetSummary, AssetDetailData } from "@/components/asset-types";
 
-const WARRANTY_WARNING_DAYS = 60;
 const MAINTENANCE_DUE_WINDOW_DAYS = 30;
 
 type PanelState = { mode: AssetPanelMode; assetId: string | null } | null;
@@ -63,14 +62,6 @@ export function AssetsExplorer({
       nextMaintenanceRecurring: !!nextUpcoming?.recurrence_interval_value,
     };
   });
-
-  const warrantyAlerts = useMemo(
-    () =>
-      assets
-        .filter((a) => a.status === "active" && a.warranty_expires && daysUntil(a.warranty_expires) <= WARRANTY_WARNING_DAYS)
-        .sort((a, b) => (a.warranty_expires ?? "").localeCompare(b.warranty_expires ?? "")),
-    [assets]
-  );
 
   const maintenanceDue = useMemo(() => {
     const unitLabels: Record<string, string> = {
@@ -160,39 +151,8 @@ export function AssetsExplorer({
         </section>
       )}
 
-      {warrantyAlerts.length > 0 && (
-        <section className="space-y-2">
-          <h2 className={sectionHeading}>
-            <span className="inline-flex items-center gap-1.5">
-              <ShieldAlert className="size-3.5 text-status-overdue-fg" />
-              {dict.assets.warrantyAlertsTitle} <span className="text-ink-faint">· {warrantyAlerts.length}</span>
-            </span>
-          </h2>
-          <ul className={listCard}>
-            {warrantyAlerts.map((asset) => (
-              <li key={asset.id}>
-                <button
-                  type="button"
-                  onClick={() => setPanelState({ mode: "view", assetId: asset.id })}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-hover"
-                >
-                  <AssetThumb url={asset.attachments[0]?.publicUrl} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink">{asset.name}</p>
-                    <p className={`${mutedText} truncate`}>{[asset.category, asset.location].filter(Boolean).join(" · ")}</p>
-                  </div>
-                  <WarrantyBadge warrantyExpires={asset.warranty_expires!} locale={locale} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       <section className="space-y-2">
-        {(warrantyAlerts.length > 0 || maintenanceDue.length > 0) && (
-          <h2 className={sectionHeading}>{dict.assets.allAssetsTitle}</h2>
-        )}
+        {maintenanceDue.length > 0 && <h2 className={sectionHeading}>{dict.assets.allAssetsTitle}</h2>}
         <AssetsList
           assets={assetSummaries}
           isOwner={isOwner}

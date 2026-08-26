@@ -7,6 +7,9 @@ export type AssetSummary = {
   location: string | null;
   status: AssetStatus;
   coverUrl?: string;
+  nextMaintenanceDate: string | null;
+  nextMaintenanceOverdue: boolean;
+  nextMaintenanceRecurrenceText: string | null;
 };
 
 export type AssetAttachmentItem = {

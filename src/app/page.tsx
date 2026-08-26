@@ -6,6 +6,7 @@ import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/ui/badge"
 import { buttonPrimary, card, listCard, listRow, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { isoDateOffset, isoDateTimeOffset } from "@/lib/dates";
 import { getDictionary, format, type Dictionary } from "@/lib/i18n/dictionaries";
+import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Locale } from "@/lib/types/database";
 
 type OrderRow = {
@@ -36,10 +37,10 @@ export default async function HomePage() {
   const in7Days = isoDateOffset(7);
   const weekAgo = isoDateTimeOffset(-7);
 
-  const openOrders = orders.filter((wo) => wo.status !== "done");
-  const overdue = orders.filter((wo) => wo.status !== "done" && wo.due_date && wo.due_date < today);
+  const openOrders = orders.filter((wo) => !isWorkOrderClosed(wo.status));
+  const overdue = orders.filter((wo) => !isWorkOrderClosed(wo.status) && wo.due_date && wo.due_date < today);
   const dueSoon = orders.filter(
-    (wo) => wo.status !== "done" && wo.due_date && wo.due_date >= today && wo.due_date <= in7Days
+    (wo) => !isWorkOrderClosed(wo.status) && wo.due_date && wo.due_date >= today && wo.due_date <= in7Days
   );
   const doneThisWeek = orders.filter((wo) => wo.status === "done" && wo.completed_at && wo.completed_at >= weekAgo);
   const recent = orders.slice(0, 5);

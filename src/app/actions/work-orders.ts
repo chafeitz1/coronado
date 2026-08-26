@@ -7,7 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { notifyUser } from "@/lib/notifications/send";
 import { advanceDate, isoDateOffset } from "@/lib/dates";
 import { uploadAttachment } from "@/lib/attachments-server";
-import type { Database, IntervalUnit, WorkOrderPriority } from "@/lib/types/database";
+import { isWorkOrderClosed, type Database, type IntervalUnit, type WorkOrderPriority } from "@/lib/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -125,7 +125,7 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
     .from("work_orders")
     .update({
       status,
-      completed_at: status === "done" ? new Date().toISOString() : null,
+      completed_at: isWorkOrderClosed(status) ? new Date().toISOString() : null,
     })
     .eq("id", workOrderId)
     .select(
@@ -145,9 +145,11 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
     });
   }
 
-  // Recurring task just got completed — spawn its next occurrence right
-  // here instead of relying on a cron job to notice.
-  if (status === "done" && workOrder.recurrence_interval_value && workOrder.recurrence_interval_unit) {
+  // Recurring task just got closed out (done or deliberately skipped) —
+  // spawn its next occurrence right here instead of relying on a cron job
+  // to notice. A skip still advances the schedule so the maintenance
+  // cadence doesn't stall.
+  if (isWorkOrderClosed(status) && workOrder.recurrence_interval_value && workOrder.recurrence_interval_unit) {
     const nextDueDate = workOrder.due_date
       ? advanceDate(workOrder.due_date, workOrder.recurrence_interval_unit as IntervalUnit, workOrder.recurrence_interval_value)
       : isoDateOffset(0);

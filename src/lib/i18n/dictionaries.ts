@@ -59,6 +59,7 @@ const es = {
     open: "Abierta",
     in_progress: "En proceso",
     done: "Hecha",
+    skipped: "Salteada",
   },
   priorities: {
     low: "Baja",
@@ -67,8 +68,7 @@ const es = {
   },
   badges: {
     overdue: "Vencida",
-    warrantyExpired: "Garantía vencida",
-    warrantyExpiresIn: "Garantía vence en {days} días",
+    dueIn: "Vence en {days} días",
   },
   workOrders: {
     title: "Tareas",
@@ -151,11 +151,13 @@ const es = {
   },
   assets: {
     title: "Activos",
+    subtitleCount: "{count} activos",
     newAsset: "Nuevo activo",
-    warrantyAlertsTitle: "Garantías por vencer",
+    searchPlaceholder: "Buscar por nombre, categoría o ubicación...",
+    maintenanceDueTitle: "Próximos mantenimientos",
     allAssetsTitle: "Todos los activos",
-    noCategory: "Sin categoría",
     empty: "No hay activos registrados.",
+    emptySearch: "Ningún activo coincide con la búsqueda.",
     createdBanner: "Activo guardado.",
     deletedBanner: "Activo borrado.",
     selectPrompt: "Selecciona un activo de la lista para ver sus detalles.",
@@ -163,6 +165,7 @@ const es = {
     filterActive: "Activos",
     filterInactive: "Inactivos",
     filterAllStatus: "Todos",
+    nextMaintenanceLabel: "Próximo mantenimiento: {date}",
   },
   assetForm: {
     submit: "Guardar",
@@ -450,6 +453,7 @@ const en: Dictionary = {
     open: "Open",
     in_progress: "In progress",
     done: "Done",
+    skipped: "Skipped",
   },
   priorities: {
     low: "Low",
@@ -458,8 +462,7 @@ const en: Dictionary = {
   },
   badges: {
     overdue: "Overdue",
-    warrantyExpired: "Warranty expired",
-    warrantyExpiresIn: "Warranty expires in {days} days",
+    dueIn: "Due in {days} days",
   },
   workOrders: {
     title: "Tasks",
@@ -542,11 +545,13 @@ const en: Dictionary = {
   },
   assets: {
     title: "Assets",
+    subtitleCount: "{count} assets",
     newAsset: "New asset",
-    warrantyAlertsTitle: "Warranties expiring soon",
+    searchPlaceholder: "Search by name, category, or location...",
+    maintenanceDueTitle: "Upcoming maintenance",
     allAssetsTitle: "All assets",
-    noCategory: "No category",
     empty: "No assets registered.",
+    emptySearch: "No assets match your search.",
     createdBanner: "Asset saved.",
     deletedBanner: "Asset deleted.",
     selectPrompt: "Select an asset from the list to see its details.",
@@ -554,6 +559,7 @@ const en: Dictionary = {
     filterActive: "Active",
     filterInactive: "Inactive",
     filterAllStatus: "All",
+    nextMaintenanceLabel: "Next maintenance: {date}",
   },
   assetForm: {
     submit: "Save",

@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Wrench } from "lucide-react";
+import { CalendarClock, Repeat, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AssetStatusBadge } from "@/components/ui/badge";
 import { AssetRowMenu } from "@/components/asset-row-menu";
-import { listCard, mutedText } from "@/lib/ui";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { card } from "@/lib/ui";
+import { formatLongDate } from "@/lib/dates";
+import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
 import type { AssetSummary } from "@/components/asset-types";
 
@@ -22,6 +23,7 @@ export function AssetsList({
   locale,
   onSelect,
   onEdit,
+  emptyMessage,
 }: {
   assets: AssetSummary[];
   isOwner: boolean;
@@ -29,6 +31,7 @@ export function AssetsList({
   locale: Locale;
   onSelect: (assetId: string) => void;
   onEdit: (assetId: string) => void;
+  emptyMessage?: string;
 }) {
   const [tab, setTab] = useState<"active" | "inactive" | "all">("active");
 
@@ -49,41 +52,62 @@ export function AssetsList({
       </div>
 
       {filtered.length > 0 ? (
-        <ul className={listCard}>
+        // Card grid (not a thin list) so each asset's photo can actually
+        // be seen — a small avatar-style thumbnail looks lost in a
+        // single-column row.
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((asset) => (
-            <li key={asset.id}>
-              <div className="flex items-center gap-1 pl-4 pr-2 transition-colors hover:bg-surface-hover">
-                <button
-                  type="button"
-                  onClick={() => onSelect(asset.id)}
-                  className="flex min-w-0 flex-1 items-center gap-3 py-3 text-left"
-                >
-                  <AssetThumb url={asset.coverUrl} />
-                  <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-1.5 truncate text-sm font-medium text-ink">
-                      <span className="truncate">{asset.name}</span>
-                      <AssetStatusBadge status={asset.status} locale={locale} />
+            <div key={asset.id} className={`flex items-start gap-2 p-3 ${card}`}>
+              <button
+                type="button"
+                onClick={() => onSelect(asset.id)}
+                className="flex min-w-0 flex-1 items-start gap-3 text-left"
+              >
+                <AssetThumb url={asset.coverUrl} />
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-ink">
+                    <span className="truncate">{asset.name}</span>
+                    <AssetStatusBadge status={asset.status} locale={locale} />
+                  </p>
+                  {asset.category && (
+                    <span className="mt-1.5 inline-flex rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
+                      {asset.category}
+                    </span>
+                  )}
+                  {asset.nextMaintenanceDate && (
+                    <p
+                      className={`mt-1.5 flex items-center gap-1.5 text-xs ${
+                        asset.nextMaintenanceOverdue ? "font-medium text-status-overdue-fg" : "text-ink-faint"
+                      }`}
+                    >
+                      <CalendarClock className="size-3.5 shrink-0" strokeWidth={2} />
+                      {format(dict.assets.nextMaintenanceLabel, {
+                        date: formatLongDate(asset.nextMaintenanceDate.slice(0, 10), locale),
+                      })}
                     </p>
-                    <p className={`${mutedText} truncate`}>
-                      {[asset.category, asset.location].filter(Boolean).join(" · ") || dict.assets.noCategory}
+                  )}
+                  {asset.nextMaintenanceRecurrenceText && (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-faint">
+                      <Repeat className="size-3 shrink-0" strokeWidth={2} />
+                      {asset.nextMaintenanceRecurrenceText}
                     </p>
-                  </div>
-                </button>
-                {isOwner && (
-                  <AssetRowMenu
-                    assetId={asset.id}
-                    assetName={asset.name}
-                    status={asset.status}
-                    dict={dict}
-                    onEdit={() => onEdit(asset.id)}
-                  />
-                )}
-              </div>
-            </li>
+                  )}
+                </div>
+              </button>
+              {isOwner && (
+                <AssetRowMenu
+                  assetId={asset.id}
+                  assetName={asset.name}
+                  status={asset.status}
+                  dict={dict}
+                  onEdit={() => onEdit(asset.id)}
+                />
+              )}
+            </div>
           ))}
-        </ul>
+        </div>
       ) : (
-        <EmptyState icon={Wrench} message={dict.assets.empty} />
+        <EmptyState icon={Wrench} message={emptyMessage ?? dict.assets.empty} />
       )}
     </div>
   );
@@ -92,14 +116,14 @@ export function AssetsList({
 function AssetThumb({ url }: { url?: string }) {
   if (url) {
     return (
-      <span className="relative size-9 shrink-0 overflow-hidden rounded-lg border border-hairline">
+      <span className="relative size-14 shrink-0 overflow-hidden rounded-full border border-hairline">
         <Image src={url} alt="" fill unoptimized className="object-cover" />
       </span>
     );
   }
   return (
-    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
-      <Wrench className="size-4" strokeWidth={2} />
+    <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+      <Wrench className="size-6" strokeWidth={2} />
     </span>
   );
 }

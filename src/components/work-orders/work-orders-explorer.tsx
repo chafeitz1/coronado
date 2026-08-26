@@ -10,6 +10,7 @@ import { WorkOrderTableView } from "./work-order-table-view";
 import { WorkOrderCalendarView } from "./work-order-calendar-view";
 import { isoDateOffset } from "@/lib/dates";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Locale, WorkOrderPriority } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
 
@@ -49,11 +50,11 @@ export function WorkOrdersExplorer({
 
   const filtered = useMemo(() => {
     return orders.filter((wo) => {
-      if (tab === "to_do" && wo.status === "done") return false;
-      if (tab === "done" && wo.status !== "done") return false;
+      if (tab === "to_do" && isWorkOrderClosed(wo.status)) return false;
+      if (tab === "done" && !isWorkOrderClosed(wo.status)) return false;
       if (priority && wo.priority !== priority) return false;
       if (location && wo.asset?.location !== location) return false;
-      if (dueBucket === "overdue" && !(wo.due_date && wo.due_date < today && wo.status !== "done")) return false;
+      if (dueBucket === "overdue" && !(wo.due_date && wo.due_date < today && !isWorkOrderClosed(wo.status))) return false;
       if (dueBucket === "due_soon" && !(wo.due_date && wo.due_date >= today && wo.due_date <= in7Days)) return false;
       if (dueBucket === "none" && wo.due_date) return false;
       return true;

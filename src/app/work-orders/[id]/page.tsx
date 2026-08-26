@@ -94,7 +94,7 @@ export default async function WorkOrderDetailPage({
 
       {canChangeStatus && (
         <div className="flex flex-wrap gap-2">
-          {(["open", "in_progress", "done"] as const)
+          {(["open", "in_progress", "done", "skipped"] as const)
             .filter((status) => status !== workOrder.status)
             .map((status) => (
               <form key={status} action={updateWorkOrderStatus.bind(null, workOrder.id, status)}>

@@ -8,6 +8,7 @@ import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { listCard, mutedText, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
+import { isWorkOrderClosed } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
 
 export function WorkOrderListView({
@@ -48,7 +49,7 @@ export function WorkOrderListView({
       {open && (
         <ul className={listCard}>
           {orders.map((wo) => {
-            const overdue = wo.status !== "done" && !!wo.due_date && wo.due_date < today;
+            const overdue = !isWorkOrderClosed(wo.status) && !!wo.due_date && wo.due_date < today;
             const canEdit = isOwner || wo.assigned_to === currentUserId;
 
             return (

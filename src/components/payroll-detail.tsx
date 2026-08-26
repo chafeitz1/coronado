@@ -42,9 +42,15 @@ export function PayrollDetail({
     liquidacion: dict.payroll.subcategoryLiquidacion,
   };
 
-  const totalExpected = expenses.reduce((sum, e) => sum + (e.expected_amount ?? 0), 0);
   const totalPaid = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const totalPending = totalExpected - totalPaid;
+  // Pending only makes sense over entries that actually recorded an
+  // expected amount — mixing in entries with no expected_amount (treating
+  // it as 0) would produce a nonsense negative "pending" for money that was
+  // simply never tracked against an expectation. Same rule as the person
+  // list's pending badge in layout.tsx.
+  const entriesWithExpected = expenses.filter((e) => e.expected_amount !== null);
+  const totalExpected = entriesWithExpected.reduce((sum, e) => sum + (e.expected_amount ?? 0), 0);
+  const totalPending = totalExpected - entriesWithExpected.reduce((sum, e) => sum + e.amount, 0);
 
   const months = new Map<string, PayrollExpense[]>();
   for (const e of expenses) {

@@ -77,10 +77,14 @@ export async function updateStaffHireDate(userId: string, formData: FormData) {
   const supabase = await createClient();
 
   const hireDate = String(formData.get("hire_date") ?? "").trim() || null;
+  const terminationDate = String(formData.get("termination_date") ?? "").trim() || null;
 
-  await supabase.from("staff_details").upsert({ user_id: userId, hire_date: hireDate }, { onConflict: "user_id" });
+  await supabase
+    .from("staff_details")
+    .upsert({ user_id: userId, hire_date: hireDate, termination_date: terminationDate }, { onConflict: "user_id" });
 
   revalidatePath("/directory");
+  revalidatePath("/finance/payroll", "layout");
 }
 
 const ROLES: UserRole[] = ["owner", "resident", "staff"];

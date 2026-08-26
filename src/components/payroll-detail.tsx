@@ -8,6 +8,13 @@ import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { addExpense, deleteExpense } from "@/app/actions/payroll";
 import { formatCurrency } from "@/lib/money";
 import { formatLongDate, formatMonthYear } from "@/lib/dates";
+import {
+  DECIMO_MONTHLY_RATE,
+  VACATION_MONTHLY_RATE,
+  accrualPeriodStart,
+  computeAccrual,
+  type SalaryEntry,
+} from "@/lib/payroll-accrual";
 import { buttonGhost, buttonSecondary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale, PayrollSubcategory } from "@/lib/types/database";
@@ -26,11 +33,17 @@ const SUBCATEGORIES: PayrollSubcategory[] = ["quincena", "decimo", "vacacion", "
 export function PayrollDetail({
   person,
   expenses,
+  hireDate,
+  terminationDate,
+  salaryHistory,
   dict,
   locale,
 }: {
   person: { id: string; full_name: string; avatar_url: string | null };
   expenses: PayrollExpense[];
+  hireDate: string | null;
+  terminationDate: string | null;
+  salaryHistory: SalaryEntry[];
   dict: Dictionary;
   locale: Locale;
 }) {
@@ -42,15 +55,18 @@ export function PayrollDetail({
     liquidacion: dict.payroll.subcategoryLiquidacion,
   };
 
-  const totalPaid = expenses.reduce((sum, e) => sum + e.amount, 0);
-  // Pending only makes sense over entries that actually recorded an
-  // expected amount — mixing in entries with no expected_amount (treating
-  // it as 0) would produce a nonsense negative "pending" for money that was
-  // simply never tracked against an expectation. Same rule as the person
-  // list's pending badge in layout.tsx.
-  const entriesWithExpected = expenses.filter((e) => e.expected_amount !== null);
-  const totalExpected = entriesWithExpected.reduce((sum, e) => sum + (e.expected_amount ?? 0), 0);
-  const totalPending = totalExpected - entriesWithExpected.reduce((sum, e) => sum + e.amount, 0);
+  // Quincena keeps the esperado/pagado/pendiente shape — décimo and
+  // vacación get their own accrual cards below instead, so mixing their
+  // expected_amount in here would double-count against those.
+  const quincenaEntries = expenses.filter((e) => e.subcategory === "quincena");
+  const quincenaPaid = quincenaEntries.reduce((sum, e) => sum + e.amount, 0);
+  const quincenaWithExpected = quincenaEntries.filter((e) => e.expected_amount !== null);
+  const quincenaExpected = quincenaWithExpected.reduce((sum, e) => sum + (e.expected_amount ?? 0), 0);
+  const quincenaPending = quincenaExpected - quincenaWithExpected.reduce((sum, e) => sum + e.amount, 0);
+
+  const asOf = terminationDate ?? new Date().toISOString().slice(0, 10);
+  const decimoAccrual = getAccrualStat(expenses, "decimo", hireDate, asOf, salaryHistory, DECIMO_MONTHLY_RATE);
+  const vacacionAccrual = getAccrualStat(expenses, "vacacion", hireDate, asOf, salaryHistory, VACATION_MONTHLY_RATE);
 
   const months = new Map<string, PayrollExpense[]>();
   for (const e of expenses) {
@@ -80,14 +96,22 @@ export function PayrollDetail({
         <h1 className={pageHeading}>{person.full_name}</h1>
       </div>
 
-      <div className={`grid grid-cols-3 divide-x divide-hairline ${card}`}>
-        <SummaryStat label={dict.payroll.summaryExpected} value={formatCurrency(totalExpected)} />
-        <SummaryStat label={dict.payroll.summaryPaid} value={formatCurrency(totalPaid)} />
-        <SummaryStat
-          label={dict.payroll.summaryPending}
-          value={formatCurrency(totalPending)}
-          warn={totalPending > 0.004}
-        />
+      <div className="space-y-3">
+        <h2 className={sectionHeading}>{dict.payroll.quincenaTitle}</h2>
+        <div className={`grid grid-cols-3 divide-x divide-hairline ${card}`}>
+          <SummaryStat label={dict.payroll.summaryExpected} value={formatCurrency(quincenaExpected)} />
+          <SummaryStat label={dict.payroll.summaryPaid} value={formatCurrency(quincenaPaid)} />
+          <SummaryStat
+            label={dict.payroll.summaryPending}
+            value={formatCurrency(quincenaPending)}
+            warn={quincenaPending > 0.004}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <AccrualCard title={dict.payroll.decimoTitle} stat={decimoAccrual} dict={dict} locale={locale} />
+        <AccrualCard title={dict.payroll.vacacionTitle} stat={vacacionAccrual} dict={dict} locale={locale} />
       </div>
 
       {addingPayment ? (
@@ -182,6 +206,51 @@ function SummaryStat({ label, value, warn }: { label: string; value: string; war
     <div className="p-4">
       <p className={sectionHeading}>{label}</p>
       <p className={`mt-1 text-lg font-semibold ${warn ? "text-status-overdue-fg" : "text-ink"}`}>{value}</p>
+    </div>
+  );
+}
+
+type AccrualStat = { accrued: number; lastPaid: string | null };
+
+function getAccrualStat(
+  expenses: PayrollExpense[],
+  subcategory: PayrollSubcategory,
+  hireDate: string | null,
+  asOf: string,
+  salaryHistory: SalaryEntry[],
+  monthlyRate: number
+): AccrualStat {
+  const paymentDates = expenses.filter((e) => e.subcategory === subcategory).map((e) => e.date);
+  const periodStart = accrualPeriodStart(paymentDates, hireDate);
+  const lastPaid = paymentDates.length > 0 ? paymentDates.reduce((a, b) => (b > a ? b : a)) : null;
+  if (!periodStart) return { accrued: 0, lastPaid };
+  return { accrued: computeAccrual(periodStart, asOf, salaryHistory, monthlyRate), lastPaid };
+}
+
+function AccrualCard({
+  title,
+  stat,
+  dict,
+  locale,
+}: {
+  title: string;
+  stat: AccrualStat;
+  dict: Dictionary;
+  locale: Locale;
+}) {
+  return (
+    <div className={`space-y-3 p-4 ${card}`}>
+      <h3 className="text-sm font-medium text-ink">{title}</h3>
+      <div className="flex items-baseline justify-between">
+        <span className={mutedText}>{dict.payroll.accruedLabel}</span>
+        <span className="text-lg font-semibold text-ink">{formatCurrency(stat.accrued)}</span>
+      </div>
+      <div className="flex items-baseline justify-between">
+        <span className={mutedText}>{dict.payroll.lastPaidLabel}</span>
+        <span className="text-sm text-ink-secondary">
+          {stat.lastPaid ? formatLongDate(stat.lastPaid, locale) : dict.payroll.neverPaid}
+        </span>
+      </div>
     </div>
   );
 }

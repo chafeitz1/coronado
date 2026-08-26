@@ -30,14 +30,14 @@ export default async function DirectoryPage() {
   let prefLookup: Record<string, boolean> = {};
   let staffDetailsLookup: Record<
     string,
-    { hire_date: string | null; birth_date: string | null; id_document_path: string | null }
+    { hire_date: string | null; birth_date: string | null; termination_date: string | null; id_document_path: string | null }
   > = {};
   let salaryHistoryLookup: Record<string, { salary: number; effective_date: string }[]> = {};
 
   if (isOwner) {
     const [{ data: prefs }, { data: staffDetails }, { data: salaryHistory }] = await Promise.all([
       supabase.from("notification_preferences").select("user_id, event_type, channel, enabled"),
-      supabase.from("staff_details").select("user_id, hire_date, birth_date, id_document_path"),
+      supabase.from("staff_details").select("user_id, hire_date, birth_date, termination_date, id_document_path"),
       supabase
         .from("staff_salary_history")
         .select("user_id, salary, effective_date")
@@ -50,7 +50,12 @@ export default async function DirectoryPage() {
     staffDetailsLookup = Object.fromEntries(
       (staffDetails ?? []).map((s) => [
         s.user_id,
-        { hire_date: s.hire_date, birth_date: s.birth_date, id_document_path: s.id_document_path },
+        {
+          hire_date: s.hire_date,
+          birth_date: s.birth_date,
+          termination_date: s.termination_date,
+          id_document_path: s.id_document_path,
+        },
       ])
     );
     salaryHistoryLookup = {};

@@ -272,6 +272,14 @@ export function PersonPanel({
                 <Field label={dict.directory.hireDateLabel}>
                   <input type="date" name="hire_date" defaultValue={staffDetails.hire_date ?? ""} className={input} />
                 </Field>
+                <Field label={dict.directory.terminationDateLabel}>
+                  <input
+                    type="date"
+                    name="termination_date"
+                    defaultValue={staffDetails.termination_date ?? ""}
+                    className={input}
+                  />
+                </Field>
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={datesPending} className={buttonSecondary}>
                     {datesPending ? dict.vendorForm.submitPending : dict.vendorForm.submitEdit}
@@ -283,11 +291,20 @@ export function PersonPanel({
               </form>
             ) : (
               <div className="flex items-center justify-between rounded-lg border border-hairline bg-canvas-soft p-3.5 text-sm">
-                <p className="text-ink-secondary">
-                  {staffDetails.hire_date
-                    ? format(dict.directory.sinceLabel, { date: formatLongDate(staffDetails.hire_date, locale) })
-                    : dict.directory.hireDateLabel}
-                </p>
+                <div className="space-y-1 text-ink-secondary">
+                  <p>
+                    {staffDetails.hire_date
+                      ? format(dict.directory.sinceLabel, { date: formatLongDate(staffDetails.hire_date, locale) })
+                      : dict.directory.hireDateLabel}
+                  </p>
+                  {staffDetails.termination_date && (
+                    <p className="text-status-overdue-fg">
+                      {format(dict.directory.terminatedLabel, {
+                        date: formatLongDate(staffDetails.termination_date, locale),
+                      })}
+                    </p>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => setEditingDates(true)}

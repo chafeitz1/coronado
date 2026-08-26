@@ -20,17 +20,35 @@ export default async function PayrollPersonPage({ params }: { params: Promise<{ 
 
   if (!person) notFound();
 
-  const { data: expenseRows } = await supabase
-    .from("expenses")
-    .select("id, date, subcategory, amount, expected_amount, notes")
-    .eq("category", "planilla")
-    .eq("person_id", personId)
-    .order("date", { ascending: false });
+  const [{ data: expenseRows }, { data: staffDetails }, { data: salaryHistory }] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select("id, date, subcategory, amount, expected_amount, notes")
+      .eq("category", "planilla")
+      .eq("person_id", personId)
+      .order("date", { ascending: false }),
+    supabase.from("staff_details").select("hire_date, termination_date").eq("user_id", personId).maybeSingle(),
+    supabase
+      .from("staff_salary_history")
+      .select("salary, effective_date")
+      .eq("user_id", personId)
+      .order("effective_date", { ascending: false }),
+  ]);
 
   const expenses: PayrollExpense[] = (expenseRows ?? []).map((e) => ({
     ...e,
     subcategory: e.subcategory as PayrollSubcategory,
   }));
 
-  return <PayrollDetail person={person} expenses={expenses} dict={dict} locale={profile.locale} />;
+  return (
+    <PayrollDetail
+      person={person}
+      expenses={expenses}
+      hireDate={staffDetails?.hire_date ?? null}
+      terminationDate={staffDetails?.termination_date ?? null}
+      salaryHistory={salaryHistory ?? []}
+      dict={dict}
+      locale={profile.locale}
+    />
+  );
 }

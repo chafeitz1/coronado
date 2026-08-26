@@ -46,7 +46,12 @@ export type NotifEvent = { key: NotificationEventType; label: string };
 
 export type SalaryEntry = { salary: number; effective_date: string };
 
-export type StaffDetails = { hire_date: string | null; birth_date: string | null; id_document_path: string | null };
+export type StaffDetails = {
+  hire_date: string | null;
+  birth_date: string | null;
+  termination_date: string | null;
+  id_document_path: string | null;
+};
 
 type DirectoryType = "all" | "vendors" | "people";
 
@@ -322,7 +327,12 @@ export function DirectoryExplorer({
           events={notifEvents}
           prefLookup={prefLookup}
           staffDetails={
-            staffDetailsLookup[personPanel.id] ?? { hire_date: null, birth_date: null, id_document_path: null }
+            staffDetailsLookup[personPanel.id] ?? {
+              hire_date: null,
+              birth_date: null,
+              termination_date: null,
+              id_document_path: null,
+            }
           }
           salaryHistory={salaryHistoryLookup[personPanel.id] ?? []}
           onClose={() => setPersonPanelId(null)}

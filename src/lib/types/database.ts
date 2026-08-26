@@ -184,6 +184,7 @@ export interface Database {
           user_id: string;
           hire_date: string | null;
           birth_date: string | null;
+          termination_date: string | null;
           id_document_path: string | null;
           updated_at: string;
         };

@@ -24,7 +24,8 @@ import { StatusBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { createAsset, updateAsset, deleteAsset, updateAssetStatus } from "@/app/actions/assets";
-import { listCard, listRow, mutedText, sectionHeading } from "@/lib/ui";
+import { card, listCard, listRow, mutedText, sectionHeading } from "@/lib/ui";
+import { formatLongDate } from "@/lib/dates";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { AssetStatus, Locale } from "@/lib/types/database";
 import type { AssetDetailData } from "@/components/asset-types";
@@ -204,41 +205,17 @@ export function AssetPanel({
 
           {(asset.category || asset.location || asset.brand || asset.model || asset.serial_number ||
             asset.purchase_date || asset.warranty_expires) && (
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-              {asset.category && (
-                <span>
-                  <span className={mutedText}>{dict.assetDetail.categoryLabel}:</span> {asset.category}
-                </span>
-              )}
-              {asset.location && (
-                <span>
-                  <span className={mutedText}>{dict.assetDetail.locationLabel}:</span> {asset.location}
-                </span>
-              )}
-              {asset.brand && (
-                <span>
-                  <span className={mutedText}>{dict.assetDetail.brandLabel}:</span> {asset.brand}
-                </span>
-              )}
-              {asset.model && (
-                <span>
-                  <span className={mutedText}>{dict.assetDetail.modelLabel}:</span> {asset.model}
-                </span>
-              )}
-              {asset.serial_number && (
-                <span>
-                  <span className={mutedText}>{dict.assetDetail.serialLabel}:</span> {asset.serial_number}
-                </span>
-              )}
+            <div className={`grid grid-cols-2 gap-x-4 gap-y-4 p-4 ${card}`}>
+              {asset.category && <AssetField label={dict.assetDetail.categoryLabel} value={asset.category} />}
+              {asset.location && <AssetField label={dict.assetDetail.locationLabel} value={asset.location} />}
+              {asset.brand && <AssetField label={dict.assetDetail.brandLabel} value={asset.brand} />}
+              {asset.model && <AssetField label={dict.assetDetail.modelLabel} value={asset.model} />}
+              {asset.serial_number && <AssetField label={dict.assetDetail.serialLabel} value={asset.serial_number} />}
               {asset.purchase_date && (
-                <span>
-                  <span className={mutedText}>{dict.assetDetail.purchaseDateLabel}:</span> {asset.purchase_date}
-                </span>
+                <AssetField label={dict.assetDetail.purchaseDateLabel} value={formatLongDate(asset.purchase_date, locale)} />
               )}
               {asset.warranty_expires && (
-                <span>
-                  <span className={mutedText}>{dict.assetDetail.warrantyLabel}:</span> {asset.warranty_expires}
-                </span>
+                <AssetField label={dict.assetDetail.warrantyLabel} value={formatLongDate(asset.warranty_expires, locale)} />
               )}
             </div>
           )}
@@ -404,6 +381,18 @@ function AssetStatusChip({
     >
       <Icon className="size-3" strokeWidth={2.5} /> {label}
     </button>
+  );
+}
+
+// Label above value, each field in its own cell — a plain "Label: value"
+// span wrapped mid-sentence read as a jumble once the grid squeezed two
+// columns into a narrow panel.
+function AssetField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className={mutedText}>{label}</p>
+      <p className="break-words font-medium text-ink">{value}</p>
+    </div>
   );
 }
 

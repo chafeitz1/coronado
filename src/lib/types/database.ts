@@ -33,6 +33,8 @@ export type VendorTrade = string;
 // a UI today.
 export type ExpenseCategory = "planilla";
 export type PayrollSubcategory = "quincena" | "decimo" | "vacacion" | "adelanto" | "liquidacion";
+export type LoanCategory = "prestamo" | "adelanto";
+export type LoanStatus = "active" | "cancelled";
 
 export interface Database {
   public: {
@@ -214,12 +216,45 @@ export interface Database {
           vendor_id: string | null;
           asset_id: string | null;
           payment_method: string | null;
+          loan_id: string | null;
           notes: string | null;
           created_by: string;
           created_at: string;
         };
         Insert: Omit<Database["public"]["Tables"]["expenses"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["expenses"]["Insert"]>;
+      };
+      payroll_loans: {
+        Row: {
+          id: string;
+          person_id: string;
+          category: LoanCategory;
+          principal_amount: number;
+          num_installments: number;
+          request_date: string;
+          start_year: number;
+          start_month: number;
+          start_half: 1 | 2;
+          status: LoanStatus;
+          notes: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["payroll_loans"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["payroll_loans"]["Insert"]>;
+      };
+      payroll_loan_payments: {
+        Row: {
+          id: string;
+          loan_id: string;
+          amount: number;
+          payment_date: string;
+          notes: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["payroll_loan_payments"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["payroll_loan_payments"]["Insert"]>;
       };
       push_subscriptions: {
         Row: {

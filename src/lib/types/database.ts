@@ -35,6 +35,7 @@ export type ExpenseCategory = "planilla";
 export type PayrollSubcategory = "quincena" | "decimo" | "vacacion" | "adelanto" | "liquidacion";
 export type LoanCategory = "prestamo" | "adelanto";
 export type LoanStatus = "active" | "cancelled";
+export type LoanRequestStatus = "pending" | "approved" | "rejected";
 
 export interface Database {
   public: {
@@ -255,6 +256,22 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["payroll_loan_payments"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["payroll_loan_payments"]["Insert"]>;
+      };
+      payroll_loan_requests: {
+        Row: {
+          id: string;
+          person_id: string;
+          category: LoanCategory;
+          amount: number;
+          request_date: string;
+          status: LoanRequestStatus;
+          notes: string | null;
+          loan_id: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["payroll_loan_requests"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["payroll_loan_requests"]["Insert"]>;
       };
       push_subscriptions: {
         Row: {

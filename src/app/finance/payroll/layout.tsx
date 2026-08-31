@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardCheck, Users } from "lucide-react";
+import { ClipboardCheck, HandCoins, Users } from "lucide-react";
 import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -67,9 +67,14 @@ export default async function PayrollLayout({ children }: { children: React.Reac
           <h1 className={pageHeading}>{dict.payroll.title}</h1>
           <p className={mutedText}>{dict.payroll.subtitle}</p>
         </div>
-        <Link href="/finance/payroll/audit" className={buttonUtility}>
-          <ClipboardCheck className="size-3.5" /> {dict.payroll.auditHeading}
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/finance/payroll/requests" className={buttonUtility}>
+            <HandCoins className="size-3.5" /> {dict.payroll.requestsHeading}
+          </Link>
+          <Link href="/finance/payroll/audit" className={buttonUtility}>
+            <ClipboardCheck className="size-3.5" /> {dict.payroll.auditHeading}
+          </Link>
+        </div>
       </div>
 
       {activeStaff.length > 0 || formerStaff.length > 0 ? (

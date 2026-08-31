@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { ClipboardCheck, HandCoins, Users } from "lucide-react";
+import { ClipboardCheck, HandCoins, NotebookPen, Users } from "lucide-react";
 import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Avatar } from "@/components/ui/avatar";
 import { PayrollShell } from "@/components/payroll-shell";
 import { formatCurrency } from "@/lib/money";
-import { buttonUtility, listCard, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
+import { buttonPrimary, buttonUtility, listCard, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export default async function PayrollLayout({ children }: { children: React.ReactNode }) {
@@ -62,19 +62,21 @@ export default async function PayrollLayout({ children }: { children: React.Reac
 
   const listPane = (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className={pageHeading}>{dict.payroll.title}</h1>
-          <p className={mutedText}>{dict.payroll.subtitle}</p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/finance/payroll/requests" className={buttonUtility}>
-            <HandCoins className="size-3.5" /> {dict.payroll.requestsHeading}
-          </Link>
-          <Link href="/finance/payroll/audit" className={buttonUtility}>
-            <ClipboardCheck className="size-3.5" /> {dict.payroll.auditHeading}
-          </Link>
-        </div>
+      <div>
+        <h1 className={pageHeading}>{dict.payroll.title}</h1>
+        <p className={mutedText}>{dict.payroll.subtitle}</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Link href="/finance/payroll/registro" className={buttonPrimary}>
+          <NotebookPen className="size-4" /> {dict.payroll.registroHeading}
+        </Link>
+        <Link href="/finance/payroll/requests" className={buttonUtility}>
+          <HandCoins className="size-3.5" /> {dict.payroll.requestsHeading}
+        </Link>
+        <Link href="/finance/payroll/audit" className={buttonUtility}>
+          <ClipboardCheck className="size-3.5" /> {dict.payroll.auditHeading}
+        </Link>
       </div>
 
       {activeStaff.length > 0 || formerStaff.length > 0 ? (

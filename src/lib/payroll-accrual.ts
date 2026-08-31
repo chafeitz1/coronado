@@ -18,6 +18,22 @@ export function nextPeriod(p: Period): Period {
     : { year: p.month === 12 ? p.year + 1 : p.year, month: p.month === 12 ? 1 : p.month + 1, half: 1 };
 }
 
+export function previousPeriod(p: Period): Period {
+  return p.half === 2
+    ? { year: p.year, month: p.month, half: 1 }
+    : { year: p.month === 1 ? p.year - 1 : p.year, month: p.month === 1 ? 12 : p.month - 1, half: 2 };
+}
+
+// The date a Registro entry for this period gets logged under — the 15th
+// for the first quincena, the last calendar day of the month for the
+// second, matching how the rest of Planilla already reads dates 1-15 as
+// half 1 and 16-end as half 2 (periodFromDateString).
+export function periodRepresentativeDate(p: Period): string {
+  if (p.half === 1) return `${p.year}-${String(p.month).padStart(2, "0")}-15`;
+  const lastDay = new Date(Date.UTC(p.year, p.month, 0)).getUTCDate();
+  return `${p.year}-${String(p.month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+}
+
 // day 1-15 -> half 1, 16-end -> half 2
 export function periodFromDateString(dateStr: string): Period | null {
   const d = new Date(`${dateStr}T00:00:00Z`);

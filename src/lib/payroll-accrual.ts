@@ -1,10 +1,57 @@
 // Décimo, vacación and prima de antigüedad aren't discrete payments — they
 // accrue continuously and get paid down periodically. Ported from the
 // anthropic-skills "payroll-ledger-system" blueprint (Panama Código de
-// Trabajo / Ley 44 de 1995 formulas, validated against real payroll data),
-// adapted to Coronado's data: there's no per-quincena capture-grid row here,
-// so quincena compensation is derived from the `expenses` ledger instead of
-// a stored PayrollEntry.
+// Trabajo / Ley 44 de 1995 formulas, validated against real payroll data).
+// Quincena compensation comes from payroll_entries — one real row per
+// (person, quincena), captured in Registro.
+
+// 120 hours/quincena, 30-day month — standard payroll convention, not
+// per-employee (see the skill's "Rate derivation" note).
+export const HOURS_PER_MONTH = 240;
+export const DAYS_PER_MONTH = 30;
+export function hourlyRate(baseSalary: number): number {
+  return baseSalary / HOURS_PER_MONTH;
+}
+export function dailyRate(baseSalary: number): number {
+  return baseSalary / DAYS_PER_MONTH;
+}
+
+export type PayrollEntryLike = {
+  base_pay: number;
+  extra_hours_amount: number;
+  extra_days_amount: number;
+  bonus: number;
+  dias_libres: number;
+  horas_descontadas_amount: number;
+  dias_descontados_amount: number;
+  other_deduction: number;
+  decimo_paid: number;
+  vacation_paid: number;
+  prima_paid: number;
+};
+
+// The quincena's base compensation — what décimo/vacación accrue on, and
+// what the per-person page's "Quincena" summary shows. Décimo/vacación/
+// prima paid this period are real benefit payouts, not part of it.
+export function quincenaTotal(e: PayrollEntryLike): number {
+  return (
+    e.base_pay +
+    e.extra_hours_amount +
+    e.extra_days_amount +
+    e.bonus +
+    e.dias_libres -
+    e.horas_descontadas_amount -
+    e.dias_descontados_amount -
+    e.other_deduction
+  );
+}
+
+// Everything actually disbursed this quincena — quincena pay plus whatever
+// décimo/vacación/prima happened to be paid the same period. What the
+// Registro KPI row totals.
+export function entryTotal(e: PayrollEntryLike): number {
+  return quincenaTotal(e) + e.decimo_paid + e.vacation_paid + e.prima_paid;
+}
 
 export type Period = { year: number; month: number; half: 1 | 2 };
 

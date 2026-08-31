@@ -16,28 +16,35 @@ import {
   decimoSegmentStart,
   periodFromDateString,
   periodOrdinal,
+  periodRepresentativeDate,
+  quincenaTotal,
   type Period,
+  type PayrollEntryLike,
 } from "@/lib/payroll-accrual";
 import { buttonGhost, buttonSecondary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale, PayrollSubcategory } from "@/lib/types/database";
 
+// adelanto/liquidación only now — quincena/décimo/vacación/prima are
+// captured in Registro (payroll_entries), not this flat event log.
 export type PayrollExpense = {
   id: string;
   date: string;
   subcategory: PayrollSubcategory;
   amount: number;
-  expected_amount: number | null;
   notes: string | null;
 };
 
+export type PayrollEntryRecord = PayrollEntryLike & { id: string; period: Period };
+
 export type SalaryHistoryEntry = { salary: number; effective_date: string };
 
-const SUBCATEGORIES: PayrollSubcategory[] = ["quincena", "decimo", "vacacion", "adelanto", "liquidacion"];
+const SUBCATEGORIES: PayrollSubcategory[] = ["adelanto", "liquidacion"];
 
 export function PayrollDetail({
   person,
   expenses,
+  entries,
   hireDate,
   terminationDate,
   salaryHistory,
@@ -47,6 +54,7 @@ export function PayrollDetail({
 }: {
   person: { id: string; full_name: string; avatar_url: string | null };
   expenses: PayrollExpense[];
+  entries: PayrollEntryRecord[];
   hireDate: string | null;
   terminationDate: string | null;
   salaryHistory: SalaryHistoryEntry[];
@@ -62,28 +70,40 @@ export function PayrollDetail({
     liquidacion: dict.payroll.subcategoryLiquidacion,
   };
 
-  // Quincena keeps the esperado/pagado/pendiente shape — décimo and
-  // vacación get their own accrual cards below instead, so mixing their
-  // expected_amount in here would double-count against those.
-  const quincenaEntries = expenses.filter((e) => e.subcategory === "quincena");
-  const quincenaPaid = quincenaEntries.reduce((sum, e) => sum + e.amount, 0);
-  const quincenaWithExpected = quincenaEntries.filter((e) => e.expected_amount !== null);
-  const quincenaExpected = quincenaWithExpected.reduce((sum, e) => sum + (e.expected_amount ?? 0), 0);
-  const quincenaPending = quincenaExpected - quincenaWithExpected.reduce((sum, e) => sum + e.amount, 0);
+  const quincenaTotalPaid = entries.reduce((sum, e) => sum + quincenaTotal(e), 0);
+  const lastEntryPeriod = entries.reduce<Period | null>((latest, e) => {
+    if (!latest) return e.period;
+    return periodOrdinal(e.period.year, e.period.month, e.period.half) > periodOrdinal(latest.year, latest.month, latest.half)
+      ? e.period
+      : latest;
+  }, null);
 
   const asOfDate = terminationDate ?? new Date().toISOString().slice(0, 10);
   const asOfPeriod = periodFromDateString(asOfDate);
   const currentSalary = salaryHistory[0]?.salary ?? 0;
-  const decimoStat = asOfPeriod ? getDecimoStat(expenses, asOfPeriod) : null;
-  const vacacionStat = asOfPeriod ? getVacacionStat(expenses, asOfPeriod) : null;
+  const decimoStat = asOfPeriod ? getDecimoStat(entries, expenses, asOfPeriod) : null;
+  const vacacionStat = asOfPeriod ? getVacacionStat(entries, expenses, asOfPeriod) : null;
   const primaStat = asOfPeriod ? getPrimaStat(expenses, hireDate, currentSalary, asOfPeriod) : null;
 
-  const months = new Map<string, PayrollExpense[]>();
+  const timelineItems: { id: string; date: string; label: string; amount: number; deletable: boolean }[] = [];
+  for (const e of entries) {
+    const date = periodRepresentativeDate(e.period);
+    const total = quincenaTotal(e);
+    if (total !== 0) timelineItems.push({ id: `${e.id}-q`, date, label: dict.payroll.subcategoryQuincena, amount: total, deletable: false });
+    if (e.decimo_paid !== 0) timelineItems.push({ id: `${e.id}-d`, date, label: dict.payroll.subcategoryDecimo, amount: e.decimo_paid, deletable: false });
+    if (e.vacation_paid !== 0) timelineItems.push({ id: `${e.id}-v`, date, label: dict.payroll.subcategoryVacacion, amount: e.vacation_paid, deletable: false });
+    if (e.prima_paid !== 0) timelineItems.push({ id: `${e.id}-p`, date, label: dict.payroll.primaTitle, amount: e.prima_paid, deletable: false });
+  }
   for (const e of expenses) {
-    const key = e.date.slice(0, 7);
+    timelineItems.push({ id: e.id, date: e.date, label: subcategoryLabel[e.subcategory], amount: e.amount, deletable: true });
+  }
+
+  const months = new Map<string, typeof timelineItems>();
+  for (const item of timelineItems) {
+    const key = item.date.slice(0, 7);
     const list = months.get(key);
-    if (list) list.push(e);
-    else months.set(key, [e]);
+    if (list) list.push(item);
+    else months.set(key, [item]);
   }
   const monthKeys = [...months.keys()].sort((a, b) => b.localeCompare(a));
 
@@ -108,13 +128,11 @@ export function PayrollDetail({
 
       <div className="space-y-3">
         <h2 className={sectionHeading}>{dict.payroll.quincenaTitle}</h2>
-        <div className={`grid grid-cols-3 divide-x divide-hairline ${card}`}>
-          <SummaryStat label={dict.payroll.summaryExpected} value={formatCurrency(quincenaExpected)} />
-          <SummaryStat label={dict.payroll.summaryPaid} value={formatCurrency(quincenaPaid)} />
+        <div className={`grid grid-cols-2 divide-x divide-hairline ${card}`}>
+          <SummaryStat label={dict.payroll.summaryPaid} value={formatCurrency(quincenaTotalPaid)} />
           <SummaryStat
-            label={dict.payroll.summaryPending}
-            value={formatCurrency(quincenaPending)}
-            warn={quincenaPending > 0.004}
+            label={dict.payroll.lastPaidLabel}
+            value={lastEntryPeriod ? formatLongDate(periodRepresentativeDate(lastEntryPeriod), locale) : dict.payroll.neverPaid}
           />
         </div>
       </div>
@@ -163,7 +181,7 @@ export function PayrollDetail({
               <input type="date" name="date" required className={input} />
             </Field>
             <Field label={dict.payroll.subcategoryLabel}>
-              <select name="subcategory" required defaultValue="quincena" className={input}>
+              <select name="subcategory" required defaultValue="adelanto" className={input}>
                 {SUBCATEGORIES.map((s) => (
                   <option key={s} value={s}>
                     {subcategoryLabel[s]}
@@ -172,14 +190,9 @@ export function PayrollDetail({
               </select>
             </Field>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Field label={dict.payroll.amountLabel}>
-              <input type="number" step="0.01" min="0" name="amount" required className={input} />
-            </Field>
-            <Field label={dict.payroll.expectedAmountLabel}>
-              <input type="number" step="0.01" min="0" name="expected_amount" className={input} />
-            </Field>
-          </div>
+          <Field label={dict.payroll.amountLabel}>
+            <input type="number" step="0.01" min="0" name="amount" required className={input} />
+          </Field>
           <Field label={dict.payroll.notesLabel}>
             <input name="notes" className={input} />
           </Field>
@@ -201,7 +214,7 @@ export function PayrollDetail({
       {monthKeys.length > 0 ? (
         <div className="space-y-5">
           {monthKeys.map((key) => {
-            const rows = months.get(key)!;
+            const rows = [...months.get(key)!].sort((a, b) => (a.date < b.date ? 1 : -1));
             const monthTotal = rows.reduce((sum, e) => sum + e.amount, 0);
             return (
               <section key={key} className="space-y-2">
@@ -210,25 +223,23 @@ export function PayrollDetail({
                   <span className={mutedText}>{formatCurrency(monthTotal)}</span>
                 </div>
                 <ul className={card}>
-                  {rows.map((e) => (
+                  {rows.map((item) => (
                     <li
-                      key={e.id}
+                      key={item.id}
                       className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-hairline px-4 py-3 last:border-b-0"
                     >
-                      <span className="w-24 shrink-0 text-sm text-ink-faint">{formatLongDate(e.date, locale)}</span>
+                      <span className="w-24 shrink-0 text-sm text-ink-faint">{formatLongDate(item.date, locale)}</span>
                       <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
-                        {subcategoryLabel[e.subcategory]}
+                        {item.label}
                       </span>
-                      <span className="ml-auto text-sm font-medium text-ink">{formatCurrency(e.amount)}</span>
-                      {e.expected_amount !== null && (
-                        <span className={mutedText}>/ {formatCurrency(e.expected_amount)}</span>
+                      <span className="ml-auto text-sm font-medium text-ink">{formatCurrency(item.amount)}</span>
+                      {item.deletable && (
+                        <form action={deleteExpense.bind(null, item.id, person.id)}>
+                          <ConfirmSubmitButton confirmMessage={dict.payroll.deleteConfirm} className={buttonGhost}>
+                            <Trash2 className="size-3.5" />
+                          </ConfirmSubmitButton>
+                        </form>
                       )}
-                      {e.notes && <p className={`w-full ${mutedText}`}>{e.notes}</p>}
-                      <form action={deleteExpense.bind(null, e.id, person.id)}>
-                        <ConfirmSubmitButton confirmMessage={dict.payroll.deleteConfirm} className={buttonGhost}>
-                          <Trash2 className="size-3.5" />
-                        </ConfirmSubmitButton>
-                      </form>
                     </li>
                   ))}
                 </ul>
@@ -261,17 +272,11 @@ function StatLine({ label, value, warn }: { label: string; value: string; warn?:
   );
 }
 
-// Sums this person's real quincena-tagged payments that fall in a given
-// period — the stand-in for a stored per-quincena compensation row (see
-// src/lib/payroll-accrual.ts's module comment).
-function makeQuincenaLookup(expenses: PayrollExpense[]): (p: Period) => number {
+function makeEntryLookup(entries: PayrollEntryRecord[]): (p: Period) => number {
   const byOrdinal = new Map<number, number>();
-  for (const e of expenses) {
-    if (e.subcategory !== "quincena") continue;
-    const period = periodFromDateString(e.date);
-    if (!period) continue;
-    const ord = periodOrdinal(period.year, period.month, period.half);
-    byOrdinal.set(ord, (byOrdinal.get(ord) ?? 0) + e.amount);
+  for (const e of entries) {
+    const ord = periodOrdinal(e.period.year, e.period.month, e.period.half);
+    byOrdinal.set(ord, (byOrdinal.get(ord) ?? 0) + quincenaTotal(e));
   }
   return (p) => byOrdinal.get(periodOrdinal(p.year, p.month, p.half)) ?? 0;
 }
@@ -284,40 +289,45 @@ function latestDate(dates: string[]): string | null {
 // history, so "pendiente" nets the segment total against whatever décimo
 // was already paid in THIS segment — and treats a liquidación inside the
 // segment as settling it in full, since a liquidación is a combined payout
-// of whatever's accrued (see the plan's "correctness refinement").
-function getDecimoStat(expenses: PayrollExpense[], asOf: Period) {
-  const lookup = makeQuincenaLookup(expenses);
+// of whatever's accrued.
+function getDecimoStat(entries: PayrollEntryRecord[], expenses: PayrollExpense[], asOf: Period) {
+  const lookup = makeEntryLookup(entries);
   const accrued = computeDecimoAccrual(lookup, asOf);
   const segmentStart = decimoSegmentStart(asOf);
   const segmentStartOrd = periodOrdinal(segmentStart.year, segmentStart.month, segmentStart.half);
   const asOfOrd = periodOrdinal(asOf.year, asOf.month, asOf.half);
-  const inSegment = (e: PayrollExpense) => {
+  const inSegment = (ord: number) => ord >= segmentStartOrd && ord <= asOfOrd;
+  const paidDirectly = entries
+    .filter((e) => inSegment(periodOrdinal(e.period.year, e.period.month, e.period.half)))
+    .reduce((s, e) => s + e.decimo_paid, 0);
+  const settledByLiquidacion = expenses.some((e) => {
+    if (e.subcategory !== "liquidacion") return false;
     const p = periodFromDateString(e.date);
-    if (!p) return false;
-    const ord = periodOrdinal(p.year, p.month, p.half);
-    return ord >= segmentStartOrd && ord <= asOfOrd;
-  };
-  const paidDirectly = expenses.filter((e) => e.subcategory === "decimo" && inSegment(e)).reduce((s, e) => s + e.amount, 0);
-  const settledByLiquidacion = expenses.some((e) => e.subcategory === "liquidacion" && inSegment(e));
+    return p ? inSegment(periodOrdinal(p.year, p.month, p.half)) : false;
+  });
   const paid = settledByLiquidacion ? accrued : paidDirectly;
   return { accrued, paid, pending: Math.max(0, accrued - paid) };
 }
 
-function getVacacionStat(expenses: PayrollExpense[], asOf: Period) {
-  const lookup = makeQuincenaLookup(expenses);
-  const realPeriods: Period[] = [];
-  for (const e of expenses) {
-    if (e.subcategory !== "quincena") continue;
-    const p = periodFromDateString(e.date);
-    if (p) realPeriods.push(p);
+function getVacacionStat(entries: PayrollEntryRecord[], expenses: PayrollExpense[], asOf: Period) {
+  const lookup = makeEntryLookup(entries);
+  const realPeriods = entries.map((e) => e.period);
+
+  let lastPayout: Period | null = null;
+  const consider = (p: Period) => {
+    if (!lastPayout || periodOrdinal(p.year, p.month, p.half) > periodOrdinal(lastPayout.year, lastPayout.month, lastPayout.half)) {
+      lastPayout = p;
+    }
+  };
+  for (const e of entries) if (e.vacation_paid !== 0) consider(e.period);
+  const lastLiquidacion = latestDate(expenses.filter((e) => e.subcategory === "liquidacion").map((e) => e.date));
+  if (lastLiquidacion) {
+    const p = periodFromDateString(lastLiquidacion);
+    if (p) consider(p);
   }
-  const resetDates = expenses
-    .filter((e) => e.subcategory === "vacacion" || e.subcategory === "liquidacion")
-    .map((e) => e.date);
-  const lastPaidDate = latestDate(resetDates);
-  const lastPayout = lastPaidDate ? periodFromDateString(lastPaidDate) : null;
+
   const accrued = computeVacationAccrual(realPeriods, lastPayout, lookup, asOf);
-  return { accrued, lastPaid: lastPaidDate };
+  return { accrued, lastPaid: lastPayout ? periodRepresentativeDate(lastPayout) : null };
 }
 
 function getPrimaStat(expenses: PayrollExpense[], hireDate: string | null, currentSalary: number, asOf: Period) {

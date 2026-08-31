@@ -36,6 +36,7 @@ export type PayrollSubcategory = "quincena" | "decimo" | "vacacion" | "adelanto"
 export type LoanCategory = "prestamo" | "adelanto";
 export type LoanStatus = "active" | "cancelled";
 export type LoanRequestStatus = "pending" | "approved" | "rejected";
+export type PaymentMethod = "efectivo" | "transferencia" | "yappy" | "cheque";
 
 export interface Database {
   public: {
@@ -272,6 +273,37 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["payroll_loan_requests"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["payroll_loan_requests"]["Insert"]>;
+      };
+      payroll_entries: {
+        Row: {
+          id: string;
+          person_id: string;
+          period_year: number;
+          period_month: number;
+          period_half: 1 | 2;
+          base_pay: number;
+          extra_hours: number;
+          extra_hours_amount: number;
+          extra_days: number;
+          extra_days_amount: number;
+          bonus: number;
+          dias_libres: number;
+          horas_descontadas: number;
+          horas_descontadas_amount: number;
+          dias_descontados: number;
+          dias_descontados_amount: number;
+          other_deduction: number;
+          decimo_paid: number;
+          vacation_paid: number;
+          prima_paid: number;
+          payment_method: PaymentMethod;
+          notes: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["payroll_entries"]["Row"], "id" | "created_at" | "updated_at">;
+        Update: Partial<Database["public"]["Tables"]["payroll_entries"]["Insert"]>;
       };
       push_subscriptions: {
         Row: {

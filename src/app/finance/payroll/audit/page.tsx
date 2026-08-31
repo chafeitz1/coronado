@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/money";
 import { formatLongDate } from "@/lib/dates";
 import { getDictionary, format } from "@/lib/i18n/dictionaries";
+import { quincenaTotal, periodRepresentativeDate } from "@/lib/payroll-accrual";
 import { card, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import type { PayrollSubcategory } from "@/lib/types/database";
 
@@ -24,19 +25,26 @@ export default async function PayrollAuditPage({
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year}-12-31`;
 
-  const [{ data: staff }, { data: staffDetails }, { data: expenseRows }, { data: loanRows }] = await Promise.all([
-    supabase.from("profiles").select("id, full_name").eq("role", "staff").order("full_name"),
-    supabase.from("staff_details").select("user_id, termination_date"),
-    supabase
-      .from("expenses")
-      .select("id, person_id, subcategory, amount, date")
-      .eq("category", "planilla")
-      .gte("date", yearStart)
-      .lte("date", yearEnd),
-    supabase
-      .from("payroll_loans")
-      .select("id, person_id, principal_amount, payroll_loan_payments(amount, payment_date)"),
-  ]);
+  const [{ data: staff }, { data: staffDetails }, { data: expenseRows }, { data: entryRows }, { data: loanRows }] =
+    await Promise.all([
+      supabase.from("profiles").select("id, full_name").eq("role", "staff").order("full_name"),
+      supabase.from("staff_details").select("user_id, termination_date"),
+      supabase
+        .from("expenses")
+        .select("id, person_id, subcategory, amount, date")
+        .eq("category", "planilla")
+        .gte("date", yearStart)
+        .lte("date", yearEnd),
+      supabase
+        .from("payroll_entries")
+        .select(
+          "id, person_id, period_year, period_month, period_half, base_pay, extra_hours_amount, extra_days_amount, bonus, dias_libres, horas_descontadas_amount, dias_descontados_amount, other_deduction, decimo_paid, vacation_paid, prima_paid"
+        )
+        .eq("period_year", year),
+      supabase
+        .from("payroll_loans")
+        .select("id, person_id, principal_amount, payroll_loan_payments(amount, payment_date)"),
+    ]);
 
   const terminationByPerson = new Map<string, string>();
   for (const s of staffDetails ?? []) {
@@ -45,7 +53,6 @@ export default async function PayrollAuditPage({
 
   const nameById = new Map((staff ?? []).map((p) => [p.id, p.full_name]));
 
-  // Category totals per person, for the selected year only.
   const totalsByPerson = new Map<string, Record<PayrollSubcategory, number>>();
   function totalsFor(personId: string) {
     let t = totalsByPerson.get(personId);
@@ -58,8 +65,14 @@ export default async function PayrollAuditPage({
   for (const e of expenseRows ?? []) {
     if (!e.person_id) continue;
     const sub = e.subcategory as PayrollSubcategory;
-    if (!SUBCATEGORIES.includes(sub)) continue;
+    if (sub !== "adelanto" && sub !== "liquidacion") continue;
     totalsFor(e.person_id)[sub] += e.amount;
+  }
+  for (const e of entryRows ?? []) {
+    const t = totalsFor(e.person_id);
+    t.quincena += quincenaTotal(e);
+    t.decimo += e.decimo_paid;
+    t.vacacion += e.vacation_paid;
   }
 
   // Loan payments received this year, per person (informational — never
@@ -112,6 +125,19 @@ export default async function PayrollAuditPage({
         format(dict.payroll.auditAnomalyPostTermination, {
           name: nameById.get(e.person_id) ?? "?",
           date: formatLongDate(e.date, profile.locale),
+          termDate: formatLongDate(termination, profile.locale),
+        })
+      );
+    }
+  }
+  for (const e of entryRows ?? []) {
+    const termination = terminationByPerson.get(e.person_id);
+    const date = periodRepresentativeDate({ year: e.period_year, month: e.period_month, half: e.period_half as 1 | 2 });
+    if (termination && date > termination) {
+      anomalies.push(
+        format(dict.payroll.auditAnomalyPostTermination, {
+          name: nameById.get(e.person_id) ?? "?",
+          date: formatLongDate(date, profile.locale),
           termDate: formatLongDate(termination, profile.locale),
         })
       );

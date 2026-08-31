@@ -13,23 +13,21 @@ export async function addExpense(personId: string, formData: FormData) {
   const subcategory = String(formData.get("subcategory") ?? "").trim() as PayrollSubcategory;
   const amountRaw = String(formData.get("amount") ?? "").trim();
   const amount = Number(amountRaw);
-  const expectedRaw = String(formData.get("expected_amount") ?? "").trim();
-  const expectedAmount = expectedRaw ? Number(expectedRaw) : null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
   if (!date || !subcategory || !amountRaw || Number.isNaN(amount)) return;
-  if (expectedRaw && Number.isNaN(expectedAmount)) return;
 
   await supabase.from("expenses").insert({
     date,
     category: "planilla",
     subcategory,
     amount,
-    expected_amount: expectedAmount,
+    expected_amount: null,
     person_id: personId,
     vendor_id: null,
     asset_id: null,
     payment_method: null,
+    loan_id: null,
     notes,
     created_by: profile.id,
   });

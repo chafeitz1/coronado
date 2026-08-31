@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { ClipboardCheck, Users } from "lucide-react";
 import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Avatar } from "@/components/ui/avatar";
 import { PayrollShell } from "@/components/payroll-shell";
 import { formatCurrency } from "@/lib/money";
-import { listCard, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
+import { buttonUtility, listCard, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export default async function PayrollLayout({ children }: { children: React.ReactNode }) {
@@ -67,6 +67,9 @@ export default async function PayrollLayout({ children }: { children: React.Reac
           <h1 className={pageHeading}>{dict.payroll.title}</h1>
           <p className={mutedText}>{dict.payroll.subtitle}</p>
         </div>
+        <Link href="/finance/payroll/audit" className={buttonUtility}>
+          <ClipboardCheck className="size-3.5" /> {dict.payroll.auditHeading}
+        </Link>
       </div>
 
       {activeStaff.length > 0 || formerStaff.length > 0 ? (

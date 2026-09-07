@@ -15,12 +15,17 @@ export function AssetRowMenu({
   status = "active",
   dict,
   onEdit,
+  variant = "ghost",
 }: {
   assetId: string;
   assetName: string;
   status?: AssetStatus;
   dict: Dictionary;
   onEdit: () => void;
+  // "ghost" sits on plain surface (list rows); "overlay" sits on top of a
+  // photo (gallery cards) and needs its own backdrop to stay legible/tappable
+  // against whatever the photo looks like.
+  variant?: "ghost" | "overlay";
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -40,12 +45,16 @@ export function AssetRowMenu({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label={dict.assetDetail.edit}
-        className="flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft hover:text-ink"
+        className={
+          variant === "overlay"
+            ? "flex size-8 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:bg-black/65"
+            : "flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft hover:text-ink"
+        }
       >
         <MoreVertical className="size-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-lg border border-hairline bg-surface py-1 shadow-[var(--shadow-soft)]">
+        <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-lg border border-hairline bg-surface py-1 shadow-[var(--shadow-soft)]">
           <button
             type="button"
             onClick={() => {

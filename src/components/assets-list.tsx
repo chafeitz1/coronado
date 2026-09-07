@@ -8,7 +8,7 @@ import { AssetStatusBadge } from "@/components/ui/badge";
 import { AssetRowMenu } from "@/components/asset-row-menu";
 import { card } from "@/lib/ui";
 import { formatLongDate } from "@/lib/dates";
-import { format, type Dictionary } from "@/lib/i18n/dictionaries";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
 import type { AssetSummary } from "@/components/asset-types";
 
@@ -81,12 +81,26 @@ function AssetsGallery({ assets, isOwner, dict, locale, onSelect, onEdit }: View
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
       {assets.map((asset) => (
-        <div key={asset.id} className={card}>
-          <button type="button" onClick={() => onSelect(asset.id)} className="block w-full text-left">
-            {/* overflow-hidden scoped to just the image (not the whole
-                card) — putting it on the card clipped AssetRowMenu's
-                dropdown, which renders below the card's own bounds. */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-md bg-canvas-soft">
+        // relative + h-full (not overflow-hidden) so the card can stretch to
+        // match the tallest card in its grid row without clipping the "..."
+        // menu's dropdown — the menu itself lives here, not inside the image
+        // wrapper below, precisely so that wrapper's own overflow-hidden
+        // (for the photo's rounded corners) never clips it again.
+        <div key={asset.id} className={`relative flex h-full flex-col ${card}`}>
+          {isOwner && (
+            <div className="absolute right-1.5 top-1.5 z-10">
+              <AssetRowMenu
+                assetId={asset.id}
+                assetName={asset.name}
+                status={asset.status}
+                dict={dict}
+                onEdit={() => onEdit(asset.id)}
+                variant="overlay"
+              />
+            </div>
+          )}
+          <button type="button" onClick={() => onSelect(asset.id)} className="flex flex-1 flex-col text-left">
+            <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-t-md bg-canvas-soft">
               {asset.coverUrl ? (
                 <Image src={asset.coverUrl} alt="" fill unoptimized className="object-cover" />
               ) : (
@@ -98,38 +112,39 @@ function AssetsGallery({ assets, isOwner, dict, locale, onSelect, onEdit }: View
                 <AssetStatusBadge status={asset.status} locale={locale} />
               </span>
             </div>
-            <div className="space-y-1.5 p-3">
+            <div className="flex flex-1 flex-col gap-1.5 p-3">
               <p className="truncate text-sm font-medium text-ink">{asset.name}</p>
               {asset.category && (
-                <span className="inline-flex rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
+                <span className="inline-flex w-fit rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
                   {asset.category}
                 </span>
               )}
-              {asset.nextMaintenanceDate && (
-                <p
-                  className={`flex items-center gap-1.5 text-xs ${
-                    asset.nextMaintenanceOverdue ? "font-medium text-status-overdue-fg" : "text-ink-faint"
-                  }`}
-                >
-                  <CalendarClock className="size-3.5 shrink-0" strokeWidth={2} />
-                  {format(dict.assets.nextMaintenanceLabel, {
-                    date: formatLongDate(asset.nextMaintenanceDate.slice(0, 10), locale),
-                  })}
-                </p>
-              )}
-              {asset.nextMaintenanceRecurrenceText && (
-                <p className="flex items-center gap-1.5 text-xs text-ink-faint">
-                  <Repeat className="size-3 shrink-0" strokeWidth={2} />
-                  {asset.nextMaintenanceRecurrenceText}
-                </p>
+              {/* Pushed to the bottom of the card (mt-auto) so the next-
+                  maintenance/recurrence lines — present on some cards, not
+                  others — don't shift where each card's content block ends;
+                  every card's text still starts at the same height. */}
+              {(asset.nextMaintenanceDate || asset.nextMaintenanceRecurrenceText) && (
+                <div className="mt-auto space-y-1 pt-1">
+                  {asset.nextMaintenanceDate && (
+                    <p
+                      className={`flex items-center gap-1.5 text-xs ${
+                        asset.nextMaintenanceOverdue ? "font-medium text-status-overdue-fg" : "text-ink-faint"
+                      }`}
+                    >
+                      <CalendarClock className="size-3.5 shrink-0" strokeWidth={2} />
+                      {formatLongDate(asset.nextMaintenanceDate.slice(0, 10), locale)}
+                    </p>
+                  )}
+                  {asset.nextMaintenanceRecurrenceText && (
+                    <p className="flex items-center gap-1.5 text-xs text-ink-faint">
+                      <Repeat className="size-3 shrink-0" strokeWidth={2} />
+                      {asset.nextMaintenanceRecurrenceText}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </button>
-          {isOwner && (
-            <div className="flex justify-end border-t border-hairline px-2 py-1">
-              <AssetRowMenu assetId={asset.id} assetName={asset.name} status={asset.status} dict={dict} onEdit={() => onEdit(asset.id)} />
-            </div>
-          )}
         </div>
       ))}
     </div>

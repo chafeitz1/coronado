@@ -289,7 +289,7 @@ export function AssetPanel({
                         </p>
                         <p className={mutedText}>
                           {wo.due_date
-                            ? format(dict.assetDetail.dueDate, { date: wo.due_date })
+                            ? format(dict.assetDetail.dueDate, { date: formatLongDate(wo.due_date, locale) })
                             : dict.assetDetail.noDueDate}
                           {wo.vendorName && ` · ${wo.vendorName}`}
                         </p>
@@ -321,7 +321,7 @@ export function AssetPanel({
                       <div className="min-w-40 flex-1">
                         <p className="truncate font-medium text-ink">{wo.title}</p>
                         <p className={mutedText}>
-                          {wo.completed_at ? new Date(wo.completed_at).toLocaleDateString(locale) : "—"}
+                          {wo.completed_at ? formatLongDate(wo.completed_at.slice(0, 10), locale) : "—"}
                         </p>
                       </div>
                       <StatusBadge status={wo.status} locale={locale} />

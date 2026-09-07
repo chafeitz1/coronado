@@ -2,13 +2,16 @@ import { notFound } from "next/navigation";
 import { Bell, MessageSquare, Wrench, Building2, Repeat } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { updateWorkOrderStatus, addWorkOrderNote } from "@/app/actions/work-orders";
-import { StatusBadge } from "@/components/ui/badge";
+import { addWorkOrderNote } from "@/app/actions/work-orders";
+import { StatusBadge, PriorityBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Avatar } from "@/components/ui/avatar";
 import { WorkOrderAttachments } from "@/components/work-order-attachments";
+import { WorkOrderStatusButtons } from "@/components/work-order-status-buttons";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { buttonPrimary, buttonUtility, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
+import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { getDictionary, format } from "@/lib/i18n/dictionaries";
+import { formatLongDate } from "@/lib/dates";
 
 export default async function WorkOrderDetailPage({
   params,
@@ -23,7 +26,7 @@ export default async function WorkOrderDetailPage({
   const { data: workOrder } = await supabase
     .from("work_orders")
     .select(
-      "*, assets(name), vendors(name), assignee:profiles!work_orders_assigned_to_fkey(full_name), creator:profiles!work_orders_created_by_fkey(full_name)"
+      "*, assets(name), vendors(name), assignee:profiles!work_orders_assigned_to_fkey(full_name, avatar_url), creator:profiles!work_orders_created_by_fkey(full_name)"
     )
     .eq("id", id)
     .single();
@@ -67,16 +70,18 @@ export default async function WorkOrderDetailPage({
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className={pageHeading}>{workOrder.title}</h1>
-          <StatusBadge status={workOrder.status} locale={profile.locale} />
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className={pageHeading}>{workOrder.title}</h1>
+            <p className={mutedText}>{format(dict.workOrderDetail.createdBy, { name: creator?.full_name ?? "—" })}</p>
+          </div>
+          {canChangeStatus ? (
+            <WorkOrderStatusButtons workOrderId={workOrder.id} status={workOrder.status} dict={dict} />
+          ) : (
+            <StatusBadge status={workOrder.status} locale={profile.locale} />
+          )}
         </div>
-        <p className={mutedText}>
-          {format(dict.workOrderDetail.createdBy, { name: creator?.full_name ?? "—" })}
-          {assignee ? ` · ${format(dict.workOrderDetail.assignedTo, { name: assignee.full_name })}` : ""}
-          {workOrder.due_date ? ` · ${format(dict.workOrderDetail.dueDate, { date: workOrder.due_date })}` : ""}
-        </p>
         {workOrder.recurrence_interval_value && (
           <p className="flex items-center gap-1.5 text-sm text-ink-muted">
             <Repeat className="size-3.5" />
@@ -88,7 +93,29 @@ export default async function WorkOrderDetailPage({
         )}
       </div>
 
-      {workOrder.description && <p className="text-sm text-ink-secondary">{workOrder.description}</p>}
+      <div className={`grid grid-cols-2 gap-x-6 gap-y-4 p-4 sm:grid-cols-3 ${card}`}>
+        <div className="space-y-1">
+          <p className={sectionHeading}>{dict.workOrderForm.dueDateLabel}</p>
+          <p className="text-sm text-ink">
+            {workOrder.due_date ? formatLongDate(workOrder.due_date, profile.locale) : dict.workOrders.noDueDate}
+          </p>
+        </div>
+        <div className="space-y-1">
+          <p className={sectionHeading}>{dict.workOrderForm.priorityLabel}</p>
+          <PriorityBadge priority={workOrder.priority} locale={profile.locale} />
+        </div>
+        <div className="space-y-1">
+          <p className={sectionHeading}>{dict.workOrderDetail.assignedToLabel}</p>
+          {assignee ? (
+            <div className="flex items-center gap-2">
+              <Avatar fullName={assignee.full_name} avatarUrl={assignee.avatar_url} />
+              <span className="truncate text-sm text-ink">{assignee.full_name}</span>
+            </div>
+          ) : (
+            <p className="text-sm text-ink-muted">{dict.workOrderDetail.unassigned}</p>
+          )}
+        </div>
+      </div>
 
       {(asset || vendor) && (
         <div className={`flex flex-wrap gap-x-8 gap-y-3 p-4 text-sm ${card}`}>
@@ -107,18 +134,11 @@ export default async function WorkOrderDetailPage({
         </div>
       )}
 
-      {canChangeStatus && (
-        <div className="flex flex-wrap gap-2">
-          {(["open", "in_progress", "done", "skipped"] as const)
-            .filter((status) => status !== workOrder.status)
-            .map((status) => (
-              <form key={status} action={updateWorkOrderStatus.bind(null, workOrder.id, status)}>
-                <SubmitButton className={buttonUtility} pendingLabel={dict.workOrderDetail.markPending}>
-                  {format(dict.workOrderDetail.markAs, { status: dict.statuses[status].toLowerCase() })}
-                </SubmitButton>
-              </form>
-            ))}
-        </div>
+      {workOrder.description && (
+        <section className="space-y-2">
+          <h2 className={sectionHeading}>{dict.workOrderDetail.descriptionTitle}</h2>
+          <p className="text-sm text-ink-secondary">{workOrder.description}</p>
+        </section>
       )}
 
       <section className="space-y-3">

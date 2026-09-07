@@ -61,7 +61,7 @@ export function WorkOrderListView({
                   <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
                     <ClipboardList className="size-4" strokeWidth={2} />
                   </span>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 space-y-1.5">
                     <p className="flex items-center gap-1.5 font-medium text-ink">
                       {wo.recurrence_interval_value && (
                         <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
@@ -69,20 +69,12 @@ export function WorkOrderListView({
                       <span className="truncate">{wo.title}</span>
                     </p>
                     <p className={`${mutedText} truncate`}>
-                      {wo.asset?.name || wo.due_date ? (
-                        <>
-                          {wo.asset?.name}
-                          {wo.asset?.name && wo.due_date && " · "}
-                          {wo.due_date && (
-                            <span className={overdue ? "font-medium text-status-overdue-fg" : undefined}>
-                              {format(dict.workOrders.dueDate, { date: wo.due_date })}
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        dict.workOrders.unassigned
-                      )}
+                      {wo.creator ? format(dict.workOrders.requestedBy, { name: wo.creator.full_name }) : wo.asset?.name}
+                      {wo.creator && wo.asset?.name && ` · ${wo.asset.name}`}
                     </p>
+                    <div onClick={(e) => e.preventDefault()}>
+                      <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
+                    </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
                     {wo.assignee ? (
@@ -95,7 +87,11 @@ export function WorkOrderListView({
                         </span>
                       )
                     )}
-                    <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
+                    {overdue && (
+                      <span className="rounded-full bg-status-overdue-bg px-2 py-0.5 text-[11px] font-semibold text-status-overdue-fg">
+                        {dict.badges.overdue}
+                      </span>
+                    )}
                   </div>
                 </Link>
               </li>

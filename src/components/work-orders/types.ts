@@ -10,6 +10,7 @@ export type WorkOrderRow = {
   recurrence_interval_value: number | null;
   assigned_to: string | null;
   assignee: { full_name: string; avatar_url: string | null } | null;
+  creator: { full_name: string } | null;
   vendor: { name: string } | null;
   asset: { name: string; location: string | null } | null;
 };

@@ -37,6 +37,8 @@ export function AssetPanel({
   asset,
   vendors,
   staff,
+  existingCategories,
+  existingLocations,
   isOwner,
   dict,
   locale,
@@ -46,6 +48,8 @@ export function AssetPanel({
   asset: AssetDetailData | null;
   vendors: { id: string; name: string }[];
   staff: { id: string; full_name: string }[];
+  existingCategories: string[];
+  existingLocations: string[];
   isOwner: boolean;
   dict: Dictionary;
   locale: Locale;
@@ -132,6 +136,8 @@ export function AssetPanel({
           action={handleCreate}
           submitLabel={dict.assetForm.submit}
           vendors={vendors}
+          existingCategories={existingCategories}
+          existingLocations={existingLocations}
           dict={dict}
           error={createError ?? undefined}
           onCancel={onClose}
@@ -143,6 +149,8 @@ export function AssetPanel({
           action={handleUpdate}
           submitLabel={dict.assetForm.submitEdit}
           vendors={vendors}
+          existingCategories={existingCategories}
+          existingLocations={existingLocations}
           dict={dict}
           defaultValues={asset}
           error={updateError ?? undefined}

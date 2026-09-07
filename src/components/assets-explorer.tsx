@@ -63,6 +63,18 @@ export function AssetsExplorer({
     [assets, q]
   );
 
+  // Suggests existing categories/locations in the create/edit form —
+  // nudges people toward reusing "Piscina" instead of also typing
+  // "piscina"/"Pool", same idea as the directory's vendor-trade suggestions.
+  const existingCategories = useMemo(
+    () => [...new Set(assets.map((a) => a.category).filter((c): c is string => !!c))].sort((a, b) => a.localeCompare(b)),
+    [assets]
+  );
+  const existingLocations = useMemo(
+    () => [...new Set(assets.map((a) => a.location).filter((l): l is string => !!l))].sort((a, b) => a.localeCompare(b)),
+    [assets]
+  );
+
   const unitLabels: Record<string, string> = useMemo(
     () => ({
       days: dict.assetDetail.unitDays,
@@ -207,6 +219,8 @@ export function AssetsExplorer({
           asset={panelState.mode === "create" ? null : panelAsset}
           vendors={vendors}
           staff={staff}
+          existingCategories={existingCategories}
+          existingLocations={existingLocations}
           isOwner={isOwner}
           dict={dict}
           locale={locale}

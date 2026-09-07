@@ -1,5 +1,6 @@
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { SuggestInput } from "@/components/ui/suggest-input";
 import { buttonPrimary, buttonSecondary, input, label as labelClass } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
@@ -7,6 +8,8 @@ export function AssetForm({
   action,
   submitLabel,
   vendors,
+  existingCategories,
+  existingLocations,
   dict,
   defaultValues,
   error,
@@ -15,6 +18,8 @@ export function AssetForm({
   action: (formData: FormData) => void;
   submitLabel: string;
   vendors: { id: string; name: string }[];
+  existingCategories: string[];
+  existingLocations: string[];
   dict: Dictionary;
   defaultValues?: {
     name: string;
@@ -43,19 +48,19 @@ export function AssetForm({
 
       <div className="grid grid-cols-2 gap-4">
         <Field label={dict.assetForm.categoryLabel}>
-          <input
+          <SuggestInput
             name="category"
             placeholder={dict.assetForm.categoryPlaceholder}
             defaultValue={defaultValues?.category ?? ""}
-            className={input}
+            suggestions={existingCategories}
           />
         </Field>
         <Field label={dict.assetForm.locationLabel}>
-          <input
+          <SuggestInput
             name="location"
             placeholder={dict.assetForm.locationPlaceholder}
             defaultValue={defaultValues?.location ?? ""}
-            className={input}
+            suggestions={existingLocations}
           />
         </Field>
       </div>

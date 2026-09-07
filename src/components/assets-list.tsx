@@ -86,9 +86,9 @@ function AssetsGallery({ assets, isOwner, dict, locale, onSelect, onEdit }: View
         // menu's dropdown — the menu itself lives here, not inside the image
         // wrapper below, precisely so that wrapper's own overflow-hidden
         // (for the photo's rounded corners) never clips it again.
-        <div key={asset.id} className={`relative flex h-full flex-col ${card}`}>
+        <div key={asset.id} className={`group relative flex h-full flex-col ${card}`}>
           {isOwner && (
-            <div className="absolute right-1.5 top-1.5 z-10">
+            <div className="absolute right-1.5 top-1.5 z-10 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
               <AssetRowMenu
                 assetId={asset.id}
                 assetName={asset.name}

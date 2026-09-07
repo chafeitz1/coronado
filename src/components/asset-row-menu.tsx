@@ -47,7 +47,7 @@ export function AssetRowMenu({
         aria-label={dict.assetDetail.edit}
         className={
           variant === "overlay"
-            ? "flex size-8 items-center justify-center text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] transition-opacity hover:opacity-70"
+            ? "flex size-8 items-center justify-center text-ink drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)] transition-opacity hover:opacity-70"
             : "flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft hover:text-ink"
         }
       >

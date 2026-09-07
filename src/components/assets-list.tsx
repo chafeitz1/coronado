@@ -81,9 +81,12 @@ function AssetsGallery({ assets, isOwner, dict, locale, onSelect, onEdit }: View
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
       {assets.map((asset) => (
-        <div key={asset.id} className={`overflow-hidden ${card}`}>
+        <div key={asset.id} className={card}>
           <button type="button" onClick={() => onSelect(asset.id)} className="block w-full text-left">
-            <div className="relative aspect-[4/3] w-full bg-canvas-soft">
+            {/* overflow-hidden scoped to just the image (not the whole
+                card) — putting it on the card clipped AssetRowMenu's
+                dropdown, which renders below the card's own bounds. */}
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-md bg-canvas-soft">
               {asset.coverUrl ? (
                 <Image src={asset.coverUrl} alt="" fill unoptimized className="object-cover" />
               ) : (

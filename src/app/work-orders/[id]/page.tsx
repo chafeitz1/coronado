@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Bell, MessageSquare, Wrench, Building2, Repeat } from "lucide-react";
+import { Bell, MessageSquare, Wrench, Building2, Repeat, CalendarCheck, History } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { addWorkOrderNote } from "@/app/actions/work-orders";
@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Avatar } from "@/components/ui/avatar";
 import { WorkOrderAttachments } from "@/components/work-order-attachments";
 import { WorkOrderStatusButtons } from "@/components/work-order-status-buttons";
+import { WorkOrderMenu } from "@/components/work-order-menu";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { getDictionary, format } from "@/lib/i18n/dictionaries";
@@ -45,6 +46,12 @@ export default async function WorkOrderDetailPage({
     .eq("work_order_id", id)
     .order("created_at", { ascending: true });
 
+  const { data: activityRows } = await supabase
+    .from("work_order_activity")
+    .select("id, event_type, meta, created_at, actor:profiles(full_name)")
+    .eq("work_order_id", id)
+    .order("created_at", { ascending: false });
+
   const isOwner = profile.role === "owner";
   const canChangeStatus = isOwner || workOrder.assigned_to === profile.id;
 
@@ -68,6 +75,43 @@ export default async function WorkOrderDetailPage({
     years: dict.workOrderDetail.unitYears,
   };
 
+  const fieldLabels: Record<string, string> = {
+    title: dict.workOrderDetail.fieldTitle,
+    description: dict.workOrderDetail.fieldDescription,
+    priority: dict.workOrderDetail.fieldPriority,
+    due_date: dict.workOrderDetail.fieldDueDate,
+    asset_id: dict.workOrderDetail.fieldAsset,
+    assigned_to: dict.workOrderDetail.fieldAssignee,
+    vendor_id: dict.workOrderDetail.fieldVendor,
+    recurrence: dict.workOrderDetail.fieldRecurrence,
+  };
+
+  // Newest first, with a synthetic "created" entry (derived from the work
+  // order's own created_by/created_at — no need to log that separately)
+  // sorted in alongside the real logged rows (status changes, edits).
+  const activity = [
+    ...(activityRows ?? []).map((row) => {
+      const actor = single(row.actor);
+      const meta = (row.meta ?? {}) as { from?: string; to?: string; fields?: string[] };
+      const text =
+        row.event_type === "status_changed"
+          ? format(dict.workOrderDetail.activityStatusChanged, {
+              from: dict.statuses[meta.from as keyof typeof dict.statuses] ?? meta.from ?? "",
+              to: dict.statuses[meta.to as keyof typeof dict.statuses] ?? meta.to ?? "",
+            })
+          : format(dict.workOrderDetail.activityEdited, {
+              fields: (meta.fields ?? []).map((f) => fieldLabels[f] ?? f).join(", "),
+            });
+      return { id: row.id, actorName: actor?.full_name ?? "—", createdAt: row.created_at, text };
+    }),
+    {
+      id: "created",
+      actorName: creator?.full_name ?? "—",
+      createdAt: workOrder.created_at,
+      text: dict.workOrderDetail.activityCreated,
+    },
+  ].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+
   return (
     <div className={`overflow-hidden ${card}`}>
       <div className="space-y-3 p-5">
@@ -76,19 +120,40 @@ export default async function WorkOrderDetailPage({
             <h1 className={pageHeading}>{workOrder.title}</h1>
             <p className={mutedText}>{format(dict.workOrderDetail.createdBy, { name: creator?.full_name ?? "—" })}</p>
           </div>
-          {canChangeStatus ? (
-            <WorkOrderStatusButtons workOrderId={workOrder.id} status={workOrder.status} dict={dict} />
-          ) : (
-            <StatusBadge status={workOrder.status} locale={profile.locale} />
-          )}
+          <div className="flex items-center gap-1.5">
+            {canChangeStatus ? (
+              <WorkOrderStatusButtons workOrderId={workOrder.id} status={workOrder.status} dict={dict} />
+            ) : (
+              <StatusBadge status={workOrder.status} locale={profile.locale} />
+            )}
+            <WorkOrderMenu
+              workOrderId={workOrder.id}
+              workOrderTitle={workOrder.title}
+              canEdit={canChangeStatus}
+              canDelete={isOwner}
+              dict={dict}
+            />
+          </div>
         </div>
-        {workOrder.recurrence_interval_value && (
-          <p className="flex items-center gap-1.5 text-sm text-ink-muted">
-            <Repeat className="size-3.5" />
-            {format(dict.workOrderDetail.recurrence, {
-              value: workOrder.recurrence_interval_value,
-              unit: unitLabels[workOrder.recurrence_interval_unit ?? ""] ?? workOrder.recurrence_interval_unit ?? "",
-            })}
+        {(workOrder.recurrence_interval_value || workOrder.completed_at) && (
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-muted">
+            {workOrder.recurrence_interval_value && (
+              <span className="flex items-center gap-1.5">
+                <Repeat className="size-3.5" />
+                {format(dict.workOrderDetail.recurrence, {
+                  value: workOrder.recurrence_interval_value,
+                  unit: unitLabels[workOrder.recurrence_interval_unit ?? ""] ?? workOrder.recurrence_interval_unit ?? "",
+                })}
+              </span>
+            )}
+            {workOrder.completed_at && (
+              <span className="flex items-center gap-1.5">
+                <CalendarCheck className="size-3.5" />
+                {format(dict.workOrderDetail.completedOn, {
+                  date: formatLongDate(workOrder.completed_at.slice(0, 10), profile.locale),
+                })}
+              </span>
+            )}
           </p>
         )}
       </div>
@@ -193,6 +258,25 @@ export default async function WorkOrderDetailPage({
             {dict.workOrderDetail.addNote}
           </SubmitButton>
         </form>
+      </section>
+
+      <section className="space-y-3 border-t border-hairline p-5">
+        <h2 className={sectionHeading}>{dict.workOrderDetail.activityTitle}</h2>
+        <ul className="space-y-3">
+          {activity.map((entry) => (
+            <li key={entry.id} className="flex gap-3 text-sm">
+              <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-canvas-soft text-ink-faint">
+                <History className="size-3.5" strokeWidth={2} />
+              </span>
+              <p className="text-ink-secondary">
+                <span className="font-medium text-ink">{entry.actorName}</span> {entry.text}
+                <span className={`block text-xs ${mutedText}`}>
+                  {new Date(entry.createdAt).toLocaleString(profile.locale)}
+                </span>
+              </p>
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   );

@@ -2,10 +2,11 @@
 
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Calendar as CalendarIcon, MapPin, Flag } from "lucide-react";
+import { Search, Calendar as CalendarIcon, MapPin, Flag } from "lucide-react";
 import type { DisplayMode } from "@/components/view-switcher";
 import { FilterChip, FilterChipOption } from "@/components/ui/filter-chip";
 import { useWorkOrdersFilters } from "./work-orders-filters-context";
+import { input } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { WorkOrderPriority } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
@@ -17,8 +18,20 @@ import type { WorkOrderRow } from "./types";
 export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; dict: Dictionary }) {
   const searchParams = useSearchParams();
   const display = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
-  const { tab, setTab, dueBucket, setDueBucket, priority, setPriority, location, setLocation, sortKey, setSortKey } =
-    useWorkOrdersFilters();
+  const {
+    search,
+    setSearch,
+    tab,
+    setTab,
+    dueBucket,
+    setDueBucket,
+    priority,
+    setPriority,
+    location,
+    setLocation,
+    sortKey,
+    setSortKey,
+  } = useWorkOrdersFilters();
 
   const locations = useMemo(() => {
     const set = new Set<string>();
@@ -40,6 +53,17 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
 
   return (
     <div className="space-y-4">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={dict.workOrders.searchPlaceholder}
+          className={`${input} pl-9`}
+        />
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <FilterChip
           icon={CalendarIcon}

@@ -16,6 +16,7 @@ export type AssetStatus = "active" | "inactive";
 export type WorkOrderPriority = "low" | "medium" | "high";
 export type WorkOrderSource = "manual" | "pm";
 export type IntervalUnit = "days" | "weeks" | "months" | "years";
+export type WorkOrderActivityEventType = "status_changed" | "edited";
 export type NotificationEventType =
   | "task_assigned"
   | "status_changed"
@@ -158,6 +159,18 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["work_order_notes"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["work_order_notes"]["Insert"]>;
+      };
+      work_order_activity: {
+        Row: {
+          id: string;
+          work_order_id: string;
+          actor_id: string;
+          event_type: WorkOrderActivityEventType;
+          meta: Record<string, unknown> | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["work_order_activity"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["work_order_activity"]["Insert"]>;
       };
       attachments: {
         Row: {

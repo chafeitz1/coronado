@@ -30,7 +30,7 @@ export default async function NewWorkOrderPage({
   ]);
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="space-y-6">
       <form action={createWorkOrder} className={`space-y-5 p-5 ${card}`}>
         <input
           name="title"

@@ -8,6 +8,8 @@ export type SortKey = "priority" | "due_date";
 export type TabKey = "to_do" | "done";
 
 type WorkOrdersFiltersValue = {
+  search: string;
+  setSearch: (v: string) => void;
   tab: TabKey;
   setTab: (v: TabKey) => void;
   dueBucket: DueBucket;
@@ -29,6 +31,7 @@ const WorkOrdersFiltersContext = createContext<WorkOrdersFiltersValue | null>(nu
 // survives navigating into a task's detail route since this Provider sits
 // in the work-orders layout, above the routed `children`.
 export function WorkOrdersFiltersProvider({ children }: { children: React.ReactNode }) {
+  const [search, setSearch] = useState("");
   const [tab, setTab] = useState<TabKey>("to_do");
   const [dueBucket, setDueBucket] = useState<DueBucket>("all");
   const [priority, setPriority] = useState<WorkOrderPriority | null>(null);
@@ -36,8 +39,21 @@ export function WorkOrdersFiltersProvider({ children }: { children: React.ReactN
   const [sortKey, setSortKey] = useState<SortKey>("priority");
 
   const value = useMemo(
-    () => ({ tab, setTab, dueBucket, setDueBucket, priority, setPriority, location, setLocation, sortKey, setSortKey }),
-    [tab, dueBucket, priority, location, sortKey]
+    () => ({
+      search,
+      setSearch,
+      tab,
+      setTab,
+      dueBucket,
+      setDueBucket,
+      priority,
+      setPriority,
+      location,
+      setLocation,
+      sortKey,
+      setSortKey,
+    }),
+    [search, tab, dueBucket, priority, location, sortKey]
   );
 
   return <WorkOrdersFiltersContext.Provider value={value}>{children}</WorkOrdersFiltersContext.Provider>;

@@ -34,12 +34,14 @@ export function WorkOrdersListBody({
 }) {
   const searchParams = useSearchParams();
   const display = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
-  const { tab, dueBucket, priority, location, sortKey } = useWorkOrdersFilters();
+  const { search, tab, dueBucket, priority, location, sortKey } = useWorkOrdersFilters();
 
   const in7Days = isoDateOffset(7);
+  const q = search.trim().toLowerCase();
 
   const filtered = useMemo(() => {
     return orders.filter((wo) => {
+      if (q && !wo.title.toLowerCase().includes(q) && !wo.asset?.name?.toLowerCase().includes(q)) return false;
       if (tab === "to_do" && isWorkOrderClosed(wo.status)) return false;
       if (tab === "done" && !isWorkOrderClosed(wo.status)) return false;
       if (priority && wo.priority !== priority) return false;
@@ -49,7 +51,7 @@ export function WorkOrdersListBody({
       if (dueBucket === "none" && wo.due_date) return false;
       return true;
     });
-  }, [orders, tab, priority, location, dueBucket, today, in7Days]);
+  }, [orders, q, tab, priority, location, dueBucket, today, in7Days]);
 
   const sorted = useMemo(() => {
     const rows = [...filtered];

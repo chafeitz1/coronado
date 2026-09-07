@@ -6,8 +6,20 @@ import { Field } from "@/components/ui/field";
 import { input } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-export function RecurrenceFields({ dict }: { dict: Dictionary }) {
-  const [enabled, setEnabled] = useState(false);
+export function RecurrenceFields({
+  dict,
+  defaultEnabled = false,
+  defaultValue = 3,
+  defaultUnit = "months",
+}: {
+  dict: Dictionary;
+  // For prefilling the edit form from an already-recurring task — create
+  // always starts unchecked with these same defaults.
+  defaultEnabled?: boolean;
+  defaultValue?: number;
+  defaultUnit?: string;
+}) {
+  const [enabled, setEnabled] = useState(defaultEnabled);
 
   return (
     <div className="space-y-3 rounded-lg border border-hairline p-3">
@@ -29,13 +41,13 @@ export function RecurrenceFields({ dict }: { dict: Dictionary }) {
               type="number"
               name="recurrence_interval_value"
               min={1}
-              defaultValue={3}
+              defaultValue={defaultValue}
               required
               className={input}
             />
           </Field>
           <Field label={dict.workOrderForm.unitLabel}>
-            <select name="recurrence_interval_unit" defaultValue="months" className={input}>
+            <select name="recurrence_interval_unit" defaultValue={defaultUnit} className={input}>
               <option value="days">{dict.workOrderForm.unitDays}</option>
               <option value="weeks">{dict.workOrderForm.unitWeeks}</option>
               <option value="months">{dict.workOrderForm.unitMonths}</option>

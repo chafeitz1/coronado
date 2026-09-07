@@ -3,28 +3,37 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/auth";
+import { requireUser, requireOwner } from "@/lib/auth";
 import { notifyUser } from "@/lib/notifications/send";
 import { advanceDate, isoDateOffset } from "@/lib/dates";
 import { uploadAttachment } from "@/lib/attachments-server";
 import { isWorkOrderClosed, type Database, type IntervalUnit, type WorkOrderPriority } from "@/lib/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
-async function getOwnerId(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function getOwnerId(supabase: SupabaseClient) {
   const { data } = await supabase.from("profiles").select("id").eq("role", "owner").limit(1).single();
   return data?.id ?? null;
+}
+
+async function logWorkOrderActivity(
+  supabase: SupabaseClient,
+  workOrderId: string,
+  actorId: string,
+  eventType: "status_changed" | "edited",
+  meta: Record<string, unknown>
+) {
+  await supabase
+    .from("work_order_activity")
+    .insert({ work_order_id: workOrderId, actor_id: actorId, event_type: eventType, meta });
 }
 
 // Shared by the standalone /work-orders/new form and the in-panel
 // "Nueva tarea de mantenimiento" shortcut on an asset's page — same
 // fields, same validation, just different post-creation behavior
 // (redirect to the task vs. stay put and close the panel).
-async function insertWorkOrder(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  profile: Profile,
-  formData: FormData
-) {
+async function insertWorkOrder(supabase: SupabaseClient, profile: Profile, formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   if (!title) throw new Error("El título es obligatorio.");
 
@@ -117,9 +126,100 @@ export async function createMaintenanceTask(
   return { ok: true };
 }
 
+// Diff-based so the "Actividad" section can list which fields an edit
+// touched instead of just "se editó la tarea" — compared against the row
+// as it was before this update, not against the submitted form itself.
+export async function updateWorkOrder(workOrderId: string, formData: FormData) {
+  const profile = await requireUser();
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("work_orders")
+    .select(
+      "title, description, priority, asset_id, due_date, assigned_to, vendor_id, recurrence_interval_value, recurrence_interval_unit"
+    )
+    .eq("id", workOrderId)
+    .single();
+
+  if (!existing) throw new Error("Tarea no encontrada.");
+
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) throw new Error("El título es obligatorio.");
+
+  const description = String(formData.get("description") ?? "").trim() || null;
+  const priority = String(formData.get("priority") ?? "medium") as WorkOrderPriority;
+  const assetId = String(formData.get("asset_id") ?? "") || null;
+  const dueDate = String(formData.get("due_date") ?? "") || null;
+
+  const update: Record<string, unknown> = {
+    title,
+    description,
+    priority,
+    asset_id: assetId,
+    due_date: dueDate,
+  };
+
+  // Assignment/vendor/recurrence are owner-only fields — a non-owner
+  // editor (an assignee) never sees them in the form, so leave them out
+  // of the update instead of nulling them from missing form fields.
+  if (profile.role === "owner") {
+    update.assigned_to = String(formData.get("assigned_to") ?? "") || null;
+    update.vendor_id = String(formData.get("vendor_id") ?? "") || null;
+    const recurrenceValue = Number(formData.get("recurrence_interval_value") ?? "") || null;
+    const recurrenceUnit = recurrenceValue
+      ? (String(formData.get("recurrence_interval_unit") ?? "") as IntervalUnit) || null
+      : null;
+    update.recurrence_interval_value = recurrenceUnit ? recurrenceValue : null;
+    update.recurrence_interval_unit = recurrenceUnit;
+  }
+
+  const { error } = await supabase.from("work_orders").update(update).eq("id", workOrderId);
+  if (error) throw new Error(error.message);
+
+  const changed: string[] = [];
+  if (existing.title !== title) changed.push("title");
+  if ((existing.description ?? null) !== description) changed.push("description");
+  if (existing.priority !== priority) changed.push("priority");
+  if ((existing.asset_id ?? null) !== assetId) changed.push("asset_id");
+  if ((existing.due_date ?? null) !== dueDate) changed.push("due_date");
+  if (profile.role === "owner") {
+    if ((existing.assigned_to ?? null) !== (update.assigned_to as string | null)) changed.push("assigned_to");
+    if ((existing.vendor_id ?? null) !== (update.vendor_id as string | null)) changed.push("vendor_id");
+    if (
+      (existing.recurrence_interval_value ?? null) !== (update.recurrence_interval_value as number | null) ||
+      (existing.recurrence_interval_unit ?? null) !== (update.recurrence_interval_unit as string | null)
+    ) {
+      changed.push("recurrence");
+    }
+  }
+
+  if (changed.length > 0) {
+    await logWorkOrderActivity(supabase, workOrderId, profile.id, "edited", { fields: changed });
+  }
+
+  revalidatePath(`/work-orders/${workOrderId}`);
+  revalidatePath("/work-orders", "layout");
+  revalidatePath("/");
+  redirect(`/work-orders/${workOrderId}`);
+}
+
+export async function deleteWorkOrder(workOrderId: string) {
+  await requireOwner();
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("work_orders").delete().eq("id", workOrderId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/work-orders", "layout");
+  revalidatePath("/");
+  redirect("/work-orders");
+}
+
 export async function updateWorkOrderStatus(workOrderId: string, status: string) {
   const profile = await requireUser();
   const supabase = await createClient();
+
+  const { data: previous } = await supabase.from("work_orders").select("status").eq("id", workOrderId).single();
 
   const { data: workOrder, error } = await supabase
     .from("work_orders")
@@ -135,6 +235,13 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
 
   if (error || !workOrder) {
     throw new Error(error?.message ?? "No se pudo actualizar la tarea.");
+  }
+
+  if (previous && previous.status !== status) {
+    await logWorkOrderActivity(supabase, workOrderId, profile.id, "status_changed", {
+      from: previous.status,
+      to: status,
+    });
   }
 
   const ownerId = await getOwnerId(supabase);

@@ -98,7 +98,7 @@ export function WorkOrderTableView({
               <tr
                 key={wo.id}
                 onClick={() => router.push(`/work-orders/${wo.id}`)}
-                className="cursor-pointer transition-colors hover:bg-surface-hover"
+                className="cursor-pointer transition-colors hover:bg-surface-hover active:bg-surface-hover"
               >
                 <td className="max-w-64 truncate px-4 py-2.5 font-medium text-ink">{wo.title}</td>
                 <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>

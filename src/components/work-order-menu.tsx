@@ -43,7 +43,7 @@ export function WorkOrderMenu({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label={dict.workOrderDetail.edit}
-        className="flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft hover:text-ink"
+        className="flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
       >
         <MoreVertical className="size-4" />
       </button>
@@ -53,7 +53,7 @@ export function WorkOrderMenu({
             <Link
               href={`/work-orders/${workOrderId}/edit`}
               onClick={() => setOpen(false)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
             >
               <Pencil className="size-3.5" /> {dict.workOrderDetail.edit}
             </Link>

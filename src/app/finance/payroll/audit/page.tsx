@@ -172,7 +172,7 @@ export default async function PayrollAuditPage({
           <Link
             href={`/finance/payroll/audit?year=${year - 1}`}
             aria-label={dict.payroll.auditPrevYear}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover active:bg-surface-hover"
           >
             <ChevronLeft className="size-4" />
           </Link>
@@ -180,7 +180,7 @@ export default async function PayrollAuditPage({
           <Link
             href={`/finance/payroll/audit?year=${year + 1}`}
             aria-label={dict.payroll.auditNextYear}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover active:bg-surface-hover"
           >
             <ChevronRight className="size-4" />
           </Link>
@@ -207,7 +207,7 @@ export default async function PayrollAuditPage({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.person.id} className="border-b border-hairline last:border-b-0 hover:bg-surface-hover">
+              <tr key={row.person.id} className="border-b border-hairline last:border-b-0 hover:bg-surface-hover active:bg-surface-hover">
                 <td className="px-4 py-2.5">
                   <Link href={`/finance/payroll/${row.person.id}`} className="font-medium text-ink hover:underline">
                     {row.person.full_name}

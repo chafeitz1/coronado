@@ -22,7 +22,7 @@ export function Pill({
       } ${
         active
           ? "border-primary bg-primary-soft text-primary"
-          : "border-hairline bg-surface text-ink-muted hover:bg-surface-hover"
+          : "border-hairline bg-surface text-ink-muted hover:bg-surface-hover active:bg-surface-hover"
       }`}
     >
       {label}

@@ -372,7 +372,7 @@ function AddMenu({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label={dict.directory.addButton}
-        className="flex size-10 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-active"
+        className="flex size-10 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-active active:bg-primary-active"
       >
         <Plus className="size-5" />
       </button>
@@ -384,7 +384,7 @@ function AddMenu({
               setOpen(false);
               onAddVendor();
             }}
-            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
           >
             <Building2 className="size-4" /> {dict.directory.addVendorOption}
           </button>
@@ -394,7 +394,7 @@ function AddMenu({
               setOpen(false);
               onAddPerson();
             }}
-            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
           >
             <UserPlus className="size-4" /> {dict.directory.addPersonOption}
           </button>

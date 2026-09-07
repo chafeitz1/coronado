@@ -142,7 +142,7 @@ export default async function PayrollRegistroPage({
           <Link
             href={periodHref(prev)}
             aria-label={dict.payroll.prevPeriod}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover active:bg-surface-hover"
           >
             <ChevronLeft className="size-4" />
           </Link>
@@ -152,7 +152,7 @@ export default async function PayrollRegistroPage({
           <Link
             href={periodHref(next)}
             aria-label={dict.payroll.nextPeriod}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover active:bg-surface-hover"
           >
             <ChevronRight className="size-4" />
           </Link>

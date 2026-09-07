@@ -190,7 +190,7 @@ export function AssetsExplorer({
             onClick={() => setPanelState({ mode: "create", assetId: null })}
             aria-label={dict.assets.newAsset}
             title={dict.assets.newAsset}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-active"
+            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-active active:bg-primary-active"
           >
             <Plus className="size-5" />
           </button>
@@ -211,7 +211,7 @@ export function AssetsExplorer({
                 key={item.workOrderId}
                 type="button"
                 onClick={() => setPanelState({ mode: "view", assetId: item.assetId })}
-                className={`flex flex-col gap-3 p-4 text-left transition-colors hover:bg-surface-hover ${card}`}
+                className={`flex flex-col gap-3 p-4 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover ${card}`}
               >
                 <div className="flex items-center gap-3">
                   <AssetThumb url={item.coverUrl} />

@@ -47,8 +47,8 @@ export function AssetRowMenu({
         aria-label={dict.assetDetail.edit}
         className={
           variant === "overlay"
-            ? "flex size-8 items-center justify-center text-ink drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)] transition-opacity hover:opacity-70"
-            : "flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft hover:text-ink"
+            ? "flex size-8 items-center justify-center text-ink drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)] transition-opacity hover:opacity-70 active:opacity-70"
+            : "flex size-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
         }
       >
         <MoreVertical className="size-4" />
@@ -61,7 +61,7 @@ export function AssetRowMenu({
               setOpen(false);
               onEdit();
             }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
           >
             <Pencil className="size-3.5" /> {dict.assetDetail.edit}
           </button>
@@ -70,7 +70,7 @@ export function AssetRowMenu({
             onSubmit={() => setOpen(false)}
           >
             <SubmitButton
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
               pendingLabel="..."
             >
               <Power className="size-3.5" />

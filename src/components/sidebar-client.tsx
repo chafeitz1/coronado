@@ -60,7 +60,7 @@ export function SidebarClient({
             type="button"
             onClick={openSearch}
             aria-label={dict.sidebar.search}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover active:bg-surface-hover"
           >
             <Search className="size-5" />
           </button>
@@ -113,7 +113,7 @@ export function SidebarClient({
           <button
             type="button"
             onClick={openSearch}
-            className="flex w-full items-center gap-2 rounded-lg border border-hairline bg-canvas-soft px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-hover"
+            className="flex w-full items-center gap-2 rounded-lg border border-hairline bg-canvas-soft px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-hover active:bg-surface-hover"
           >
             <Search className="size-4" />
             <span className="flex-1 text-left">{dict.sidebar.searchPlaceholder}</span>
@@ -129,7 +129,7 @@ export function SidebarClient({
           <div className="flex items-center justify-between px-1 pb-2">
             <PushSubscribeButton locale={locale} />
           </div>
-          <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-hover">
+          <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-hover active:bg-surface-hover">
             <Link href="/profile" className="flex min-w-0 flex-1 items-center gap-2.5">
               <Avatar fullName={profile.fullName} avatarUrl={profile.avatarUrl} />
               <div className="min-w-0 flex-1">
@@ -141,7 +141,7 @@ export function SidebarClient({
               <button
                 type="submit"
                 aria-label={dict.sidebar.logout}
-                className="rounded-md p-1.5 text-ink-faint hover:bg-canvas-soft hover:text-ink"
+                className="rounded-md p-1.5 text-ink-faint hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
               >
                 <LogOut className="size-4" />
               </button>
@@ -176,7 +176,7 @@ function SidebarSection({
                 className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors ${
                   active
                     ? "bg-primary-soft text-primary"
-                    : "text-ink-secondary hover:bg-surface-hover hover:text-ink"
+                    : "text-ink-secondary hover:bg-surface-hover active:bg-surface-hover hover:text-ink"
                 }`}
               >
                 <Icon className="size-4 shrink-0" strokeWidth={2} />

@@ -186,7 +186,7 @@ function RegistroRow({
   const numberInput = "w-20 rounded border border-hairline bg-surface px-1.5 py-1 text-right text-sm outline-none focus:border-primary";
 
   return (
-    <tr className="border-t border-hairline transition-colors focus-within:bg-primary-soft/30 hover:bg-surface-hover">
+    <tr className="border-t border-hairline transition-colors focus-within:bg-primary-soft/30 hover:bg-surface-hover active:bg-surface-hover">
       <td className={`${cell} whitespace-nowrap`}>
         <div className="flex items-center gap-2">
           <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} size="sm" />

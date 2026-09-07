@@ -58,7 +58,7 @@ export function ViewSwitcher({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-surface px-2.5 py-1.5 text-sm font-medium text-ink-secondary transition-colors hover:bg-surface-hover"
+        className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-surface px-2.5 py-1.5 text-sm font-medium text-ink-secondary transition-colors hover:bg-surface-hover active:bg-surface-hover"
       >
         <Icon className="size-4" />
         {options.find((o) => o.key === value)?.label}
@@ -73,7 +73,7 @@ export function ViewSwitcher({
                 key={opt.key}
                 type="button"
                 onClick={() => select(opt.key)}
-                className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-surface-hover ${
+                className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-surface-hover active:bg-surface-hover ${
                   opt.key === value ? "font-medium text-primary" : "text-ink-secondary"
                 }`}
               >

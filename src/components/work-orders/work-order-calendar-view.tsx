@@ -80,7 +80,7 @@ export function WorkOrderCalendarView({
               type="button"
               onClick={goPrev}
               aria-label="Mes anterior"
-              className="flex size-7 items-center justify-center rounded-md text-ink-muted hover:bg-surface-hover hover:text-ink"
+              className="flex size-7 items-center justify-center rounded-md text-ink-muted hover:bg-surface-hover active:bg-surface-hover hover:text-ink"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -88,7 +88,7 @@ export function WorkOrderCalendarView({
               type="button"
               onClick={goNext}
               aria-label="Mes siguiente"
-              className="flex size-7 items-center justify-center rounded-md text-ink-muted hover:bg-surface-hover hover:text-ink"
+              className="flex size-7 items-center justify-center rounded-md text-ink-muted hover:bg-surface-hover active:bg-surface-hover hover:text-ink"
             >
               <ChevronRight className="size-4" />
             </button>
@@ -128,7 +128,7 @@ export function WorkOrderCalendarView({
                     <Link
                       key={wo.id}
                       href={`/work-orders/${wo.id}`}
-                      className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] text-ink-secondary hover:bg-surface-hover"
+                      className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
                     >
                       <span className={`size-1.5 shrink-0 rounded-full ${PRIORITY_DOT[wo.priority]}`} />
                       <span className="truncate">{wo.title}</span>
@@ -152,7 +152,7 @@ export function WorkOrderCalendarView({
           <ul className={`divide-y divide-hairline overflow-hidden ${card}`}>
             {unscheduled.map((wo) => (
               <li key={wo.id}>
-                <Link href={`/work-orders/${wo.id}`} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-hover">
+                <Link href={`/work-orders/${wo.id}`} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-hover active:bg-surface-hover">
                   <ClipboardList className="size-3.5 shrink-0 text-ink-faint" />
                   <span className="truncate">{wo.title}</span>
                   {wo.asset && <span className={`${mutedText} truncate`}>· {wo.asset.name}</span>}

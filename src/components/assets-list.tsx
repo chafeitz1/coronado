@@ -170,7 +170,7 @@ function AssetsRows({ assets, isOwner, dict, locale, onSelect, onEdit }: ViewPro
         </thead>
         <tbody className="divide-y divide-hairline">
           {assets.map((asset) => (
-            <tr key={asset.id} onClick={() => onSelect(asset.id)} className="cursor-pointer transition-colors hover:bg-surface-hover">
+            <tr key={asset.id} onClick={() => onSelect(asset.id)} className="cursor-pointer transition-colors hover:bg-surface-hover active:bg-surface-hover">
               <td className="px-4 py-2.5">
                 <span className="flex min-w-0 items-center gap-2.5">
                   <AssetThumb url={asset.coverUrl} />

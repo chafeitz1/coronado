@@ -49,7 +49,7 @@ export function SidePanel({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+              className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-hover active:bg-surface-hover hover:text-ink"
             >
               <X className="size-5" />
             </button>
@@ -59,7 +59,7 @@ export function SidePanel({
             <button
               type="button"
               onClick={onClose}
-              className="absolute right-3 top-3 z-10 rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+              className="absolute right-3 top-3 z-10 rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-hover active:bg-surface-hover hover:text-ink"
             >
               <X className="size-5" />
             </button>

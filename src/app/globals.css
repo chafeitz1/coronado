@@ -101,3 +101,17 @@ body {
   color: var(--ink);
   font-family: var(--font-sans), Inter, ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Sliding stripe for the top-of-page route progress bar — indeterminate,
+   since we don't track real navigation progress, just that one is happening. */
+@keyframes route-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(150%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}

@@ -133,7 +133,7 @@ function StatTile({
   tone?: "danger";
 }) {
   return (
-    <Link href={href} className={`flex flex-col gap-2 p-4 transition-colors hover:bg-surface-hover ${card}`}>
+    <Link href={href} className={`flex flex-col gap-2 p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover ${card}`}>
       <Icon className={`size-4 ${tone === "danger" ? "text-status-overdue-fg" : "text-ink-faint"}`} />
       <span className={`text-2xl font-bold ${tone === "danger" && value > 0 ? "text-status-overdue-fg" : "text-ink"}`}>
         {value}

@@ -175,7 +175,7 @@ export function VendorPanel({
                       type="button"
                       onClick={() => setMode("edit")}
                       title={dict.vendorDetail.edit}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft hover:text-ink"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
                     >
                       <Pencil className="size-3.5" />
                     </button>
@@ -194,7 +194,7 @@ export function VendorPanel({
                   type="button"
                   onClick={onClose}
                   title={dict.vendorDetail.close}
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft hover:text-ink"
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
                 >
                   <X className="size-3.5" />
                 </button>

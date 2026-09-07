@@ -175,7 +175,7 @@ export function AssetPanel({
                       type="button"
                       onClick={() => setMode("edit")}
                       title={dict.assetDetail.edit}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft hover:text-ink"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
                     >
                       <Pencil className="size-3.5" />
                     </button>
@@ -194,7 +194,7 @@ export function AssetPanel({
                   type="button"
                   onClick={onClose}
                   title={dict.assetDetail.close}
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft hover:text-ink"
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
                 >
                   <X className="size-3.5" />
                 </button>
@@ -240,7 +240,7 @@ export function AssetPanel({
           {asset.preferred_vendor_id && asset.preferredVendorName && (
             <Link
               href={`/directory?vendor=${asset.preferred_vendor_id}`}
-              className="flex items-center gap-3 rounded-lg border border-hairline p-3 text-sm transition-colors hover:bg-surface-hover"
+              className="flex items-center gap-3 rounded-lg border border-hairline p-3 text-sm transition-colors hover:bg-surface-hover active:bg-surface-hover"
             >
               <VendorAvatar avatarUrl={asset.preferredVendorAvatarUrl} />
               <div className="min-w-0 flex-1">
@@ -274,7 +274,7 @@ export function AssetPanel({
                 onClick={() => setShowNewTask(true)}
                 title={dict.assetDetail.newMaintenanceTask}
                 aria-label={dict.assetDetail.newMaintenanceTask}
-                className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft hover:text-ink"
+                className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
               >
                 <Plus className="size-4" strokeWidth={2.5} />
               </button>

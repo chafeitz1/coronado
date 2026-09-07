@@ -40,7 +40,7 @@ export function FilterChip({
         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
           active
             ? "border-primary bg-primary-soft text-primary"
-            : "border-hairline bg-surface text-ink-secondary hover:bg-surface-hover"
+            : "border-hairline bg-surface text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
         }`}
       >
         {Icon && <Icon className="size-3.5" />}
@@ -84,7 +84,7 @@ export function FilterChipOption({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-surface-hover ${
+      className={`flex w-full items-center rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-surface-hover active:bg-surface-hover ${
         active ? "font-medium text-primary" : "text-ink-secondary"
       }`}
     >

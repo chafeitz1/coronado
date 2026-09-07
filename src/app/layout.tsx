@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Inter } from "next/font/google";
 import { Sidebar } from "@/components/sidebar";
+import { RouteProgressBar } from "@/components/ui/route-progress-bar";
 import "./globals.css";
 
 const inter = Inter({
@@ -22,6 +24,9 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full bg-canvas-soft text-ink">
+        <Suspense fallback={null}>
+          <RouteProgressBar />
+        </Suspense>
         <div className="flex min-h-screen flex-col md:flex-row">
           <Sidebar />
           <main className="w-full flex-1 px-4 pb-24 pt-6 md:px-8 md:py-8">{children}</main>

@@ -86,8 +86,13 @@ export function WorkOrderListView({
                     {subtitleParts.length > 0 && (
                       <p className={`${mutedText} truncate`}>{subtitleParts.join(" · ")}</p>
                     )}
-                    <div onClick={(e) => e.preventDefault()}>
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
                       <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
+                      {overdue && (
+                        <span className="rounded-full bg-status-overdue-bg px-2.5 py-1 text-xs font-semibold text-status-overdue-fg">
+                          {dict.badges.overdue}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
@@ -100,11 +105,6 @@ export function WorkOrderListView({
                           <span className="max-w-24 truncate">{wo.vendor.name}</span>
                         </span>
                       )
-                    )}
-                    {overdue && (
-                      <span className="rounded-full bg-status-overdue-bg px-2 py-0.5 text-[11px] font-semibold text-status-overdue-fg">
-                        {dict.badges.overdue}
-                      </span>
                     )}
                   </div>
                 </Link>

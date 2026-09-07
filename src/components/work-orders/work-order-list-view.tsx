@@ -8,7 +8,9 @@ import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { listCard, mutedText, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
+import { formatLongDate } from "@/lib/dates";
 import { isWorkOrderClosed } from "@/lib/types/database";
+import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
 
 export function WorkOrderListView({
@@ -16,6 +18,7 @@ export function WorkOrderListView({
   orders,
   today,
   dict,
+  locale,
   currentUserId,
   isOwner,
   emptyMessage,
@@ -24,6 +27,7 @@ export function WorkOrderListView({
   orders: WorkOrderRow[];
   today: string;
   dict: Dictionary;
+  locale: Locale;
   currentUserId: string;
   isOwner: boolean;
   emptyMessage?: string;
@@ -51,6 +55,17 @@ export function WorkOrderListView({
           {orders.map((wo) => {
             const overdue = !isWorkOrderClosed(wo.status) && !!wo.due_date && wo.due_date < today;
             const canEdit = isOwner || wo.assigned_to === currentUserId;
+            const isRecurring = !!wo.recurrence_interval_value;
+
+            // A recurring task is always requested by the owner — not
+            // worth the space. Show its due date there instead; a
+            // one-off is more useful shown by who asked for it.
+            const subtitleParts = [
+              isRecurring
+                ? wo.due_date && format(dict.workOrders.dueDate, { date: formatLongDate(wo.due_date, locale) })
+                : wo.creator && format(dict.workOrders.requestedBy, { name: wo.creator.full_name }),
+              wo.asset?.name,
+            ].filter(Boolean);
 
             return (
               <li key={wo.id}>
@@ -68,10 +83,9 @@ export function WorkOrderListView({
                       )}
                       <span className="truncate">{wo.title}</span>
                     </p>
-                    <p className={`${mutedText} truncate`}>
-                      {wo.creator ? format(dict.workOrders.requestedBy, { name: wo.creator.full_name }) : wo.asset?.name}
-                      {wo.creator && wo.asset?.name && ` · ${wo.asset.name}`}
-                    </p>
+                    {subtitleParts.length > 0 && (
+                      <p className={`${mutedText} truncate`}>{subtitleParts.join(" · ")}</p>
+                    )}
                     <div onClick={(e) => e.preventDefault()}>
                       <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
                     </div>

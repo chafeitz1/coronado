@@ -92,6 +92,7 @@ export function WorkOrdersListBody({
           orders={mine}
           today={today}
           dict={dict}
+          locale={locale}
           currentUserId={currentUserId}
           isOwner={isOwner}
         />
@@ -100,6 +101,7 @@ export function WorkOrdersListBody({
           orders={others}
           today={today}
           dict={dict}
+          locale={locale}
           currentUserId={currentUserId}
           isOwner={isOwner}
         />
@@ -112,6 +114,7 @@ export function WorkOrdersListBody({
       orders={sorted}
       today={today}
       dict={dict}
+      locale={locale}
       currentUserId={currentUserId}
       isOwner={isOwner}
       emptyMessage={dict.workOrders.emptyView}

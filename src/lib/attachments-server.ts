@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
-export const ALLOWED_ATTACHMENT_TYPES = ["image/jpeg", "image/png", "image/webp"];
+export const ALLOWED_ATTACHMENT_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 
 type AttachmentTarget = { assetId: string; workOrderId?: never } | { workOrderId: string; assetId?: never };
 
@@ -17,7 +17,7 @@ export async function uploadAttachment(
   file: File
 ) {
   if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
-    throw new Error("Solo se permiten fotos JPG, PNG o WEBP.");
+    throw new Error("Solo se permiten fotos JPG, PNG, WEBP o archivos PDF.");
   }
   if (file.size > MAX_ATTACHMENT_BYTES) {
     throw new Error("La foto no puede pesar más de 5MB.");

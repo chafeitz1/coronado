@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { updateWorkOrderStatus, addWorkOrderNote } from "@/app/actions/work-orders";
 import { StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { WorkOrderAttachments } from "@/components/work-order-attachments";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, buttonUtility, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { getDictionary, format } from "@/lib/i18n/dictionaries";
@@ -35,8 +36,22 @@ export default async function WorkOrderDetailPage({
     .eq("work_order_id", id)
     .order("created_at", { ascending: true });
 
-  const canChangeStatus =
-    profile.role === "owner" || workOrder.assigned_to === profile.id;
+  const { data: attachmentRows } = await supabase
+    .from("attachments")
+    .select("id, storage_path, file_name, uploaded_by")
+    .eq("work_order_id", id)
+    .order("created_at", { ascending: true });
+
+  const isOwner = profile.role === "owner";
+  const canChangeStatus = isOwner || workOrder.assigned_to === profile.id;
+
+  const attachments = (attachmentRows ?? []).map((row) => ({
+    id: row.id,
+    storagePath: row.storage_path,
+    fileName: row.file_name,
+    publicUrl: supabase.storage.from("attachments").getPublicUrl(row.storage_path).data.publicUrl,
+    canDelete: isOwner || row.uploaded_by === profile.id,
+  }));
 
   const asset = single(workOrder.assets);
   const vendor = single(workOrder.vendors);
@@ -105,6 +120,11 @@ export default async function WorkOrderDetailPage({
             ))}
         </div>
       )}
+
+      <section className="space-y-3">
+        <h2 className={sectionHeading}>{dict.workOrderDetail.attachmentsTitle}</h2>
+        <WorkOrderAttachments workOrderId={workOrder.id} attachments={attachments} dict={dict} />
+      </section>
 
       <section className="space-y-4">
         <h2 className={sectionHeading}>{dict.workOrderDetail.notesTitle}</h2>

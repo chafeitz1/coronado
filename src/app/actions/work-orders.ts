@@ -221,3 +221,39 @@ export async function addWorkOrderNote(formData: FormData) {
 
   revalidatePath(`/work-orders/${workOrderId}`);
 }
+
+export type WorkOrderAttachmentState = { error?: string } | undefined;
+
+export async function uploadWorkOrderAttachment(
+  workOrderId: string,
+  _prevState: WorkOrderAttachmentState,
+  formData: FormData
+): Promise<WorkOrderAttachmentState> {
+  const profile = await requireUser();
+  const supabase = await createClient();
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Elige un archivo primero." };
+  }
+
+  try {
+    await uploadAttachment(supabase, { workOrderId }, profile.id, file);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "No se pudo subir el archivo." };
+  }
+
+  revalidatePath(`/work-orders/${workOrderId}`);
+  return undefined;
+}
+
+export async function deleteWorkOrderAttachment(attachmentId: string, storagePath: string, workOrderId: string) {
+  await requireUser();
+  const supabase = await createClient();
+
+  await supabase.storage.from("attachments").remove([storagePath]);
+  const { error } = await supabase.from("attachments").delete().eq("id", attachmentId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/work-orders/${workOrderId}`);
+}

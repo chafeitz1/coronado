@@ -144,6 +144,8 @@ const es = {
     addNotePending: "Agregando...",
     emptyNotes: "Sin notas todavía.",
     notifiedOwner: "notificó al dueño",
+    attachmentsTitle: "Adjuntos",
+    addAttachment: "Agregar foto o PDF",
     unitDays: "días",
     unitWeeks: "semanas",
     unitMonths: "meses",
@@ -475,6 +477,7 @@ const es = {
     errorSize: "La foto no puede pesar más de 5MB.",
     errorUpload: "No se pudo subir la foto. Intenta de nuevo.",
     errorSave: "No se pudo guardar la foto. Intenta de nuevo.",
+    deleteConfirm: "¿Borrar este adjunto?",
   },
 };
 
@@ -624,6 +627,8 @@ const en: Dictionary = {
     addNotePending: "Adding...",
     emptyNotes: "No notes yet.",
     notifiedOwner: "notified the owner",
+    attachmentsTitle: "Attachments",
+    addAttachment: "Add photo or PDF",
     unitDays: "days",
     unitWeeks: "weeks",
     unitMonths: "months",
@@ -955,6 +960,7 @@ const en: Dictionary = {
     errorSize: "The photo can't be larger than 5MB.",
     errorUpload: "Couldn't upload the photo. Try again.",
     errorSave: "Couldn't save the photo. Try again.",
+    deleteConfirm: "Delete this attachment?",
   },
 };
 

@@ -8,6 +8,7 @@ import { AssetsList } from "@/components/assets-list";
 import { AssetPanel, type AssetPanelMode } from "@/components/asset-panel";
 import { OverdueBadge } from "@/components/ui/badge";
 import { Pill } from "@/components/ui/pill";
+import { ViewSwitcher, type DisplayMode } from "@/components/view-switcher";
 import { card, input, mutedText, sectionHeading } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
@@ -46,6 +47,10 @@ export function AssetsExplorer({
   const [activeLocation, setActiveLocation] = useState<string | null>(null);
 
   const panelAsset = panelState?.assetId ? (assets.find((a) => a.id === panelState.assetId) ?? null) : null;
+  // Gallery is the default — closest to the previous single-view look —
+  // list is the compact, information-dense alternative.
+  const display = ((searchParams.get("display") as DisplayMode) ?? "gallery") as DisplayMode;
+  const view = display === "list" ? "list" : "gallery";
 
   const q = search.trim().toLowerCase();
   // Search only narrows the browsable list below — the "Upcoming
@@ -172,6 +177,13 @@ export function AssetsExplorer({
             className={`${input} pl-9`}
           />
         </div>
+        <ViewSwitcher
+          options={[
+            { key: "gallery", label: dict.assets.viewGallery },
+            { key: "list", label: dict.assets.viewList },
+          ]}
+          defaultMode="gallery"
+        />
         {isOwner && (
           <button
             type="button"
@@ -268,6 +280,7 @@ export function AssetsExplorer({
 
         <AssetsList
           assets={assetSummaries}
+          view={view}
           isOwner={isOwner}
           dict={dict}
           locale={locale}

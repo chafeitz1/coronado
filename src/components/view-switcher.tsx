@@ -2,27 +2,37 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, LayoutPanelLeft, Table2, CalendarDays } from "lucide-react";
+import { ChevronDown, LayoutPanelLeft, Table2, CalendarDays, LayoutGrid } from "lucide-react";
 
-export type DisplayMode = "list" | "table" | "calendar";
+export type DisplayMode = "list" | "table" | "calendar" | "gallery";
 
 const ICONS: Record<DisplayMode, typeof LayoutPanelLeft> = {
   list: LayoutPanelLeft,
   table: Table2,
   calendar: CalendarDays,
+  gallery: LayoutGrid,
 };
 
 // Matches MaintainX's "◫ To Do View ⌄" control: switches how the same
 // underlying list is displayed via a `display` query param. Reads its own
 // current value from the URL so it can be dropped anywhere (e.g. next to a
 // server-rendered page heading) without a parent having to thread it down.
-export function ViewSwitcher({ options }: { options: { key: DisplayMode; label: string }[] }) {
+// `defaultMode` is the mode assumed (and left out of the URL) when the
+// query param is absent — work orders default to "list", assets default
+// to "gallery".
+export function ViewSwitcher({
+  options,
+  defaultMode = "list",
+}: {
+  options: { key: DisplayMode; label: string }[];
+  defaultMode?: DisplayMode;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const value = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
+  const value = ((searchParams.get("display") as DisplayMode) ?? defaultMode) as DisplayMode;
   const Icon = ICONS[value];
 
   useEffect(() => {
@@ -37,7 +47,7 @@ export function ViewSwitcher({ options }: { options: { key: DisplayMode; label: 
   function select(mode: DisplayMode) {
     setOpen(false);
     const params = new URLSearchParams(searchParams.toString());
-    if (mode === "list") params.delete("display");
+    if (mode === defaultMode) params.delete("display");
     else params.set("display", mode);
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);

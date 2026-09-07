@@ -34,7 +34,7 @@ export function WorkOrdersListBody({
 }) {
   const searchParams = useSearchParams();
   const display = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
-  const { search, tab, dueBucket, priority, location, sortKey } = useWorkOrdersFilters();
+  const { search, tab, taskType, dueBucket, priority, location, sortKey } = useWorkOrdersFilters();
 
   const in7Days = isoDateOffset(7);
   const q = search.trim().toLowerCase();
@@ -44,6 +44,8 @@ export function WorkOrdersListBody({
       if (q && !wo.title.toLowerCase().includes(q) && !wo.asset?.name?.toLowerCase().includes(q)) return false;
       if (tab === "to_do" && isWorkOrderClosed(wo.status)) return false;
       if (tab === "done" && !isWorkOrderClosed(wo.status)) return false;
+      if (taskType === "recurring" && !wo.recurrence_interval_value) return false;
+      if (taskType === "one_time" && wo.recurrence_interval_value) return false;
       if (priority && wo.priority !== priority) return false;
       if (location && wo.asset?.location !== location) return false;
       if (dueBucket === "overdue" && !(wo.due_date && wo.due_date < today && !isWorkOrderClosed(wo.status))) return false;
@@ -51,7 +53,7 @@ export function WorkOrdersListBody({
       if (dueBucket === "none" && wo.due_date) return false;
       return true;
     });
-  }, [orders, q, tab, priority, location, dueBucket, today, in7Days]);
+  }, [orders, q, tab, taskType, priority, location, dueBucket, today, in7Days]);
 
   const sorted = useMemo(() => {
     const rows = [...filtered];

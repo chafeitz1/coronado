@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Calendar as CalendarIcon, MapPin, Flag } from "lucide-react";
+import { Search, Calendar as CalendarIcon, MapPin, Flag, Repeat } from "lucide-react";
 import type { DisplayMode } from "@/components/view-switcher";
 import { FilterChip, FilterChipOption } from "@/components/ui/filter-chip";
 import { useWorkOrdersFilters } from "./work-orders-filters-context";
@@ -23,6 +23,8 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
     setSearch,
     tab,
     setTab,
+    taskType,
+    setTaskType,
     dueBucket,
     setDueBucket,
     priority,
@@ -49,6 +51,8 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
           : null;
 
   const priorityLabel = priority ? dict.priorities[priority] : null;
+  const taskTypeLabel =
+    taskType === "recurring" ? dict.workOrders.typeRecurring : taskType === "one_time" ? dict.workOrders.typeOneTime : null;
   const sortLabel = sortKey === "priority" ? dict.workOrders.sortPriority : dict.workOrders.sortDueDate;
 
   return (
@@ -108,6 +112,20 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
               {dict.priorities[p]}
             </FilterChipOption>
           ))}
+        </FilterChip>
+
+        <FilterChip
+          icon={Repeat}
+          label={dict.workOrders.filterType}
+          activeLabel={taskTypeLabel}
+          onClear={() => setTaskType("all")}
+        >
+          <FilterChipOption active={taskType === "recurring"} onClick={() => setTaskType("recurring")}>
+            {dict.workOrders.typeRecurring}
+          </FilterChipOption>
+          <FilterChipOption active={taskType === "one_time"} onClick={() => setTaskType("one_time")}>
+            {dict.workOrders.typeOneTime}
+          </FilterChipOption>
         </FilterChip>
       </div>
 

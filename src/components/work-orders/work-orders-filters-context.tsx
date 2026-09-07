@@ -6,12 +6,18 @@ import type { WorkOrderPriority } from "@/lib/types/database";
 export type DueBucket = "all" | "overdue" | "due_soon" | "none";
 export type SortKey = "priority" | "due_date";
 export type TabKey = "to_do" | "done";
+// "recurring" = has a maintenance schedule (recurrence_interval_value
+// set) — a one-off report/repair never does, regardless of whether it
+// happens to reference an asset.
+export type TaskType = "all" | "recurring" | "one_time";
 
 type WorkOrdersFiltersValue = {
   search: string;
   setSearch: (v: string) => void;
   tab: TabKey;
   setTab: (v: TabKey) => void;
+  taskType: TaskType;
+  setTaskType: (v: TaskType) => void;
   dueBucket: DueBucket;
   setDueBucket: (v: DueBucket) => void;
   priority: WorkOrderPriority | null;
@@ -33,6 +39,7 @@ const WorkOrdersFiltersContext = createContext<WorkOrdersFiltersValue | null>(nu
 export function WorkOrdersFiltersProvider({ children }: { children: React.ReactNode }) {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<TabKey>("to_do");
+  const [taskType, setTaskType] = useState<TaskType>("all");
   const [dueBucket, setDueBucket] = useState<DueBucket>("all");
   const [priority, setPriority] = useState<WorkOrderPriority | null>(null);
   const [location, setLocation] = useState<string | null>(null);
@@ -44,6 +51,8 @@ export function WorkOrdersFiltersProvider({ children }: { children: React.ReactN
       setSearch,
       tab,
       setTab,
+      taskType,
+      setTaskType,
       dueBucket,
       setDueBucket,
       priority,
@@ -53,7 +62,7 @@ export function WorkOrdersFiltersProvider({ children }: { children: React.ReactN
       sortKey,
       setSortKey,
     }),
-    [search, tab, dueBucket, priority, location, sortKey]
+    [search, tab, taskType, dueBucket, priority, location, sortKey]
   );
 
   return <WorkOrdersFiltersContext.Provider value={value}>{children}</WorkOrdersFiltersContext.Provider>;

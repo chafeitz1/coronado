@@ -20,6 +20,15 @@ const ACTIVE_STYLES: Record<WorkOrderStatus, string> = {
   skipped: "bg-canvas-soft text-ink-muted",
 };
 
+// Hovering an inactive button previews the color it would switch to, so
+// the row reads as clickable instead of a static status legend.
+const HOVER_STYLES: Record<WorkOrderStatus, string> = {
+  open: "hover:bg-status-open-bg hover:text-status-open-fg",
+  in_progress: "hover:bg-status-progress-bg hover:text-status-progress-fg",
+  done: "hover:bg-status-done-bg hover:text-status-done-fg",
+  skipped: "hover:bg-surface-hover hover:text-ink",
+};
+
 const ORDER: WorkOrderStatus[] = ["open", "in_progress", "done", "skipped"];
 
 // A persistent 4-button status picker for the work order detail page —
@@ -54,7 +63,7 @@ export function WorkOrderStatusButtons({
               });
             }}
             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
-              active ? ACTIVE_STYLES[s] : "bg-canvas-soft text-ink-muted hover:bg-surface-hover"
+              active ? `${ACTIVE_STYLES[s]} hover:brightness-95` : `bg-canvas-soft text-ink-muted ${HOVER_STYLES[s]}`
             }`}
           >
             <Icon className="size-3.5" strokeWidth={2.5} />

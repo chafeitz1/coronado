@@ -129,7 +129,7 @@ export default async function WorkOrderDetailPage({
             <WorkOrderMenu
               workOrderId={workOrder.id}
               workOrderTitle={workOrder.title}
-              canEdit={canChangeStatus}
+              canEdit={isOwner}
               canDelete={isOwner}
               dict={dict}
             />

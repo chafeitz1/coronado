@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { updateWorkOrder } from "@/app/actions/work-orders";
 import { Field } from "@/components/ui/field";
@@ -16,24 +16,17 @@ export default async function EditWorkOrderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const profile = await requireUser();
+  const profile = await requireOwner();
   const dict = getDictionary(profile.locale);
   const supabase = await createClient();
 
   const { data: workOrder } = await supabase.from("work_orders").select("*").eq("id", id).single();
   if (!workOrder) notFound();
 
-  const canEdit = profile.role === "owner" || workOrder.assigned_to === profile.id;
-  if (!canEdit) notFound();
-
   const [{ data: assets }, { data: staff }, { data: vendors }] = await Promise.all([
     supabase.from("assets").select("id, name").order("name"),
-    profile.role === "owner"
-      ? supabase.from("profiles").select("id, full_name").eq("role", "staff").order("full_name")
-      : Promise.resolve({ data: null }),
-    profile.role === "owner"
-      ? supabase.from("vendors").select("id, name").order("name")
-      : Promise.resolve({ data: null }),
+    supabase.from("profiles").select("id, full_name").eq("role", "staff").order("full_name"),
+    supabase.from("vendors").select("id, name").order("name"),
   ]);
 
   return (
@@ -76,37 +69,33 @@ export default async function EditWorkOrderPage({
           />
         </Field>
 
-        {profile.role === "owner" && (
-          <>
-            <Field label={dict.workOrderForm.assignLabel}>
-              <Combobox
-                name="assigned_to"
-                placeholder={dict.workOrderForm.startTyping}
-                noResultsLabel={dict.workOrderForm.noOptions}
-                defaultValue={workOrder.assigned_to ?? undefined}
-                options={(staff ?? []).map((s) => ({ value: s.id, label: s.full_name }))}
-              />
-            </Field>
+        <Field label={dict.workOrderForm.assignLabel}>
+          <Combobox
+            name="assigned_to"
+            placeholder={dict.workOrderForm.startTyping}
+            noResultsLabel={dict.workOrderForm.noOptions}
+            defaultValue={workOrder.assigned_to ?? undefined}
+            options={(staff ?? []).map((s) => ({ value: s.id, label: s.full_name }))}
+          />
+        </Field>
 
-            <Field label={dict.workOrderForm.vendorLabel}>
-              <Combobox
-                name="vendor_id"
-                placeholder={dict.workOrderForm.startTyping}
-                noResultsLabel={dict.workOrderForm.noOptions}
-                defaultValue={workOrder.vendor_id ?? undefined}
-                options={(vendors ?? []).map((v) => ({ value: v.id, label: v.name }))}
-              />
-            </Field>
+        <Field label={dict.workOrderForm.vendorLabel}>
+          <Combobox
+            name="vendor_id"
+            placeholder={dict.workOrderForm.startTyping}
+            noResultsLabel={dict.workOrderForm.noOptions}
+            defaultValue={workOrder.vendor_id ?? undefined}
+            options={(vendors ?? []).map((v) => ({ value: v.id, label: v.name }))}
+          />
+        </Field>
 
-            <RecurrenceFields
-              dict={dict}
-              defaultEnabled={!!workOrder.recurrence_interval_value}
-              defaultValue={workOrder.recurrence_interval_value ?? 3}
-              defaultUnit={(workOrder.recurrence_interval_unit as IntervalUnit) ?? "months"}
-            />
-            <p className={mutedText}>{dict.workOrderForm.recurrenceHint}</p>
-          </>
-        )}
+        <RecurrenceFields
+          dict={dict}
+          defaultEnabled={!!workOrder.recurrence_interval_value}
+          defaultValue={workOrder.recurrence_interval_value ?? 3}
+          defaultUnit={(workOrder.recurrence_interval_unit as IntervalUnit) ?? "months"}
+        />
+        <p className={mutedText}>{dict.workOrderForm.recurrenceHint}</p>
 
         <SubmitButton className={`w-full ${buttonPrimary}`} pendingLabel={dict.workOrderForm.submitPending}>
           {dict.workOrderForm.submitEdit}

@@ -129,8 +129,10 @@ export async function createMaintenanceTask(
 // Diff-based so the "Actividad" section can list which fields an edit
 // touched instead of just "se editó la tarea" — compared against the row
 // as it was before this update, not against the submitted form itself.
+// Owner-only: editing (unlike a status change) isn't something an
+// assignee can do here, matching deleteWorkOrder's permission.
 export async function updateWorkOrder(workOrderId: string, formData: FormData) {
-  const profile = await requireUser();
+  const profile = await requireOwner();
   const supabase = await createClient();
 
   const { data: existing } = await supabase
@@ -150,28 +152,24 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   const priority = String(formData.get("priority") ?? "medium") as WorkOrderPriority;
   const assetId = String(formData.get("asset_id") ?? "") || null;
   const dueDate = String(formData.get("due_date") ?? "") || null;
+  const assignedTo = String(formData.get("assigned_to") ?? "") || null;
+  const vendorId = String(formData.get("vendor_id") ?? "") || null;
+  const recurrenceValue = Number(formData.get("recurrence_interval_value") ?? "") || null;
+  const recurrenceUnit = recurrenceValue
+    ? (String(formData.get("recurrence_interval_unit") ?? "") as IntervalUnit) || null
+    : null;
 
-  const update: Record<string, unknown> = {
+  const update = {
     title,
     description,
     priority,
     asset_id: assetId,
     due_date: dueDate,
+    assigned_to: assignedTo,
+    vendor_id: vendorId,
+    recurrence_interval_value: recurrenceUnit ? recurrenceValue : null,
+    recurrence_interval_unit: recurrenceUnit,
   };
-
-  // Assignment/vendor/recurrence are owner-only fields — a non-owner
-  // editor (an assignee) never sees them in the form, so leave them out
-  // of the update instead of nulling them from missing form fields.
-  if (profile.role === "owner") {
-    update.assigned_to = String(formData.get("assigned_to") ?? "") || null;
-    update.vendor_id = String(formData.get("vendor_id") ?? "") || null;
-    const recurrenceValue = Number(formData.get("recurrence_interval_value") ?? "") || null;
-    const recurrenceUnit = recurrenceValue
-      ? (String(formData.get("recurrence_interval_unit") ?? "") as IntervalUnit) || null
-      : null;
-    update.recurrence_interval_value = recurrenceUnit ? recurrenceValue : null;
-    update.recurrence_interval_unit = recurrenceUnit;
-  }
 
   const { error } = await supabase.from("work_orders").update(update).eq("id", workOrderId);
   if (error) throw new Error(error.message);
@@ -182,15 +180,13 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   if (existing.priority !== priority) changed.push("priority");
   if ((existing.asset_id ?? null) !== assetId) changed.push("asset_id");
   if ((existing.due_date ?? null) !== dueDate) changed.push("due_date");
-  if (profile.role === "owner") {
-    if ((existing.assigned_to ?? null) !== (update.assigned_to as string | null)) changed.push("assigned_to");
-    if ((existing.vendor_id ?? null) !== (update.vendor_id as string | null)) changed.push("vendor_id");
-    if (
-      (existing.recurrence_interval_value ?? null) !== (update.recurrence_interval_value as number | null) ||
-      (existing.recurrence_interval_unit ?? null) !== (update.recurrence_interval_unit as string | null)
-    ) {
-      changed.push("recurrence");
-    }
+  if ((existing.assigned_to ?? null) !== assignedTo) changed.push("assigned_to");
+  if ((existing.vendor_id ?? null) !== vendorId) changed.push("vendor_id");
+  if (
+    (existing.recurrence_interval_value ?? null) !== update.recurrence_interval_value ||
+    (existing.recurrence_interval_unit ?? null) !== update.recurrence_interval_unit
+  ) {
+    changed.push("recurrence");
   }
 
   if (changed.length > 0) {

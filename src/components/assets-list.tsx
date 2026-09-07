@@ -6,7 +6,7 @@ import { CalendarClock, Repeat, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AssetStatusBadge } from "@/components/ui/badge";
 import { AssetRowMenu } from "@/components/asset-row-menu";
-import { card, listCard, listRow, mutedText } from "@/lib/ui";
+import { card } from "@/lib/ui";
 import { formatLongDate } from "@/lib/dates";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
@@ -133,52 +133,71 @@ function AssetsGallery({ assets, isOwner, dict, locale, onSelect, onEdit }: View
   );
 }
 
-// Compact, information-dense rows — same idea as the work-orders list:
-// small thumbnail, name + category/location on one line, status and menu
-// at the end, more assets visible per screen than the gallery.
+// Compact, information-dense table — same idea as the work-orders table
+// view, with explicit column headers so it's clear what each cell means
+// (name/thumb, category, location, next maintenance, recurrence).
 function AssetsRows({ assets, isOwner, dict, locale, onSelect, onEdit }: ViewProps) {
   return (
-    <ul className={listCard}>
-      {assets.map((asset) => (
-        <li key={asset.id} className="flex items-center">
-          <button type="button" onClick={() => onSelect(asset.id)} className={`min-w-0 flex-1 ${listRow}`}>
-            <AssetThumb url={asset.coverUrl} />
-            <div className="min-w-0 flex-1">
-              <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-ink">
-                <span className="truncate">{asset.name}</span>
-                <AssetStatusBadge status={asset.status} locale={locale} />
-              </p>
-              <p className={`${mutedText} truncate`}>
-                {[asset.category, asset.location].filter(Boolean).join(" · ")}
-              </p>
-            </div>
-            <div className="shrink-0 text-right">
-              {asset.nextMaintenanceDate && (
-                <p
-                  className={`flex items-center justify-end gap-1.5 text-xs ${
-                    asset.nextMaintenanceOverdue ? "font-medium text-status-overdue-fg" : "text-ink-faint"
-                  }`}
-                >
-                  <CalendarClock className="size-3.5 shrink-0" strokeWidth={2} />
-                  {formatLongDate(asset.nextMaintenanceDate.slice(0, 10), locale)}
-                </p>
+    <div className={`overflow-x-auto ${card}`}>
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-hairline text-xs text-ink-faint">
+            <th className="whitespace-nowrap px-4 py-2.5 font-medium">{dict.assets.columnAsset}</th>
+            <th className="whitespace-nowrap px-4 py-2.5 font-medium">{dict.assets.columnCategory}</th>
+            <th className="whitespace-nowrap px-4 py-2.5 font-medium">{dict.assets.columnLocation}</th>
+            <th className="whitespace-nowrap px-4 py-2.5 font-medium">{dict.assets.columnNextMaintenance}</th>
+            <th className="whitespace-nowrap px-4 py-2.5 font-medium">{dict.assets.columnRecurrence}</th>
+            {isOwner && <th className="px-2 py-2.5" aria-hidden />}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-hairline">
+          {assets.map((asset) => (
+            <tr key={asset.id} onClick={() => onSelect(asset.id)} className="cursor-pointer transition-colors hover:bg-surface-hover">
+              <td className="px-4 py-2.5">
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <AssetThumb url={asset.coverUrl} />
+                  <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    <span className="max-w-48 truncate font-medium text-ink">{asset.name}</span>
+                    <AssetStatusBadge status={asset.status} locale={locale} />
+                  </span>
+                </span>
+              </td>
+              <td className="max-w-32 truncate px-4 py-2.5 text-ink-secondary">{asset.category ?? "—"}</td>
+              <td className="max-w-32 truncate px-4 py-2.5 text-ink-secondary">{asset.location ?? "—"}</td>
+              <td className="whitespace-nowrap px-4 py-2.5">
+                {asset.nextMaintenanceDate ? (
+                  <span
+                    className={`flex items-center gap-1.5 ${
+                      asset.nextMaintenanceOverdue ? "font-medium text-status-overdue-fg" : "text-ink-secondary"
+                    }`}
+                  >
+                    <CalendarClock className="size-3.5 shrink-0" strokeWidth={2} />
+                    {formatLongDate(asset.nextMaintenanceDate.slice(0, 10), locale)}
+                  </span>
+                ) : (
+                  <span className="text-ink-faint">—</span>
+                )}
+              </td>
+              <td className="whitespace-nowrap px-4 py-2.5 text-ink-secondary">
+                {asset.nextMaintenanceRecurrenceText ? (
+                  <span className="flex items-center gap-1.5">
+                    <Repeat className="size-3 shrink-0" strokeWidth={2} />
+                    {asset.nextMaintenanceRecurrenceText}
+                  </span>
+                ) : (
+                  <span className="text-ink-faint">—</span>
+                )}
+              </td>
+              {isOwner && (
+                <td className="px-2 py-2.5" onClick={(e) => e.stopPropagation()}>
+                  <AssetRowMenu assetId={asset.id} assetName={asset.name} status={asset.status} dict={dict} onEdit={() => onEdit(asset.id)} />
+                </td>
               )}
-              {asset.nextMaintenanceRecurrenceText && (
-                <p className="mt-1 flex items-center justify-end gap-1.5 text-xs text-ink-faint">
-                  <Repeat className="size-3 shrink-0" strokeWidth={2} />
-                  {asset.nextMaintenanceRecurrenceText}
-                </p>
-              )}
-            </div>
-          </button>
-          {isOwner && (
-            <div className="pr-3">
-              <AssetRowMenu assetId={asset.id} assetName={asset.name} status={asset.status} dict={dict} onEdit={() => onEdit(asset.id)} />
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

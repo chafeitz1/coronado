@@ -21,7 +21,7 @@ export default async function AssetsPage() {
     supabase
       .from("assets")
       .select(
-        "id, name, category, location, brand, model, serial_number, preferred_vendor_id, purchase_date, warranty_expires, notes, status, preferred_vendor:vendors(name)"
+        "id, name, category, location, brand, model, serial_number, preferred_vendor_id, purchase_date, warranty_expires, notes, status, preferred_vendor:vendors(name, avatar_url)"
       )
       .order("name"),
     supabase.from("vendors").select("id, name").order("name"),
@@ -112,6 +112,7 @@ export default async function AssetsPage() {
     serial_number: a.serial_number,
     preferred_vendor_id: a.preferred_vendor_id,
     preferredVendorName: single(a.preferred_vendor)?.name ?? null,
+    preferredVendorAvatarUrl: single(a.preferred_vendor)?.avatar_url ?? null,
     purchase_date: a.purchase_date,
     warranty_expires: a.warranty_expires,
     notes: a.notes,

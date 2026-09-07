@@ -9,7 +9,6 @@ import {
   Power,
   PowerOff,
   Wrench,
-  Building2,
   ClipboardList,
   Repeat,
   History,
@@ -17,6 +16,7 @@ import {
   Plus,
 } from "lucide-react";
 import { SidePanel } from "@/components/ui/side-panel";
+import { VendorAvatar } from "@/components/vendor-panel";
 import { AssetForm } from "@/components/asset-form";
 import { AssetAttachments } from "@/components/asset-attachments";
 import { NewMaintenanceTaskPanel } from "@/components/new-maintenance-task-panel";
@@ -233,9 +233,7 @@ export function AssetPanel({
               href={`/directory?vendor=${asset.preferred_vendor_id}`}
               className="flex items-center gap-3 rounded-lg border border-hairline p-3 text-sm transition-colors hover:bg-surface-hover"
             >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
-                <Building2 className="size-4" strokeWidth={2} />
-              </span>
+              <VendorAvatar avatarUrl={asset.preferredVendorAvatarUrl} />
               <div className="min-w-0 flex-1">
                 <p className={mutedText}>{dict.assetDetail.preferredVendorLabel}</p>
                 <p className="font-medium text-ink">{asset.preferredVendorName}</p>

@@ -41,6 +41,7 @@ export type AssetDetailData = {
   serial_number: string | null;
   preferred_vendor_id: string | null;
   preferredVendorName: string | null;
+  preferredVendorAvatarUrl: string | null;
   purchase_date: string | null;
   warranty_expires: string | null;
   notes: string | null;

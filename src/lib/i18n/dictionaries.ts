@@ -203,6 +203,7 @@ const es = {
     editAsset: "Editar activo",
     edit: "Editar",
     delete: "Borrar",
+    close: "Cerrar",
     deleteConfirm: "¿Borrar {name} del inventario?",
     updatedBanner: "Cambios guardados.",
     statusActive: "Activo",
@@ -363,6 +364,7 @@ const es = {
     whatsapp: "WhatsApp",
     email: "Email",
     notesTitle: "Notas",
+    close: "Cerrar",
   },
   directory: {
     title: "Directorio",
@@ -686,6 +688,7 @@ const en: Dictionary = {
     editAsset: "Edit asset",
     edit: "Edit",
     delete: "Delete",
+    close: "Close",
     deleteConfirm: "Delete {name} from the inventory?",
     updatedBanner: "Changes saved.",
     statusActive: "Active",
@@ -846,6 +849,7 @@ const en: Dictionary = {
     whatsapp: "WhatsApp",
     email: "Email",
     notesTitle: "Notes",
+    close: "Close",
   },
   directory: {
     title: "Directory",

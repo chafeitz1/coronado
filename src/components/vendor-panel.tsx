@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
-import { Pencil, Trash2, Phone, Mail, User as UserIcon, Building2, Siren, Camera } from "lucide-react";
+import { Pencil, Trash2, Phone, Mail, User as UserIcon, Building2, Siren, Camera, X } from "lucide-react";
 import { SidePanel } from "@/components/ui/side-panel";
 import { VendorForm } from "@/components/vendor-form";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
@@ -102,7 +102,7 @@ export function VendorPanel({
   const title = mode === "create" ? dict.vendorForm.title : mode === "edit" ? dict.vendorForm.editTitle : undefined;
 
   return (
-    <SidePanel open onClose={onClose} title={title}>
+    <SidePanel open onClose={onClose} title={title} hideClose={mode === "view"}>
       {mode === "create" && (
         <VendorForm
           action={createAction}
@@ -163,9 +163,44 @@ export function VendorPanel({
             ) : (
               <VendorAvatar avatarUrl={vendor.avatar_url} size="lg" />
             )}
-            <div className="min-w-0">
-              <p className="text-lg font-semibold text-ink">{vendor.name}</p>
-              {avatarState?.error && <p className="text-sm text-status-overdue-fg">{avatarState.error}</p>}
+            <div className="min-w-0 flex-1">
+              {/* Edit/delete/close all live in this one row (instead of a
+                  separate floating close "X" plus bordered buttons further
+                  down) so they're guaranteed to sit on the same line. */}
+              <div className="flex items-center gap-1.5">
+                <p className="min-w-0 flex-1 truncate text-lg font-semibold text-ink">{vendor.name}</p>
+                {isOwner && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setMode("edit")}
+                      title={dict.vendorDetail.edit}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft hover:text-ink"
+                    >
+                      <Pencil className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={deletePending}
+                      title={dict.vendorDetail.delete}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-status-overdue-bg hover:text-status-overdue-fg disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  title={dict.vendorDetail.close}
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft hover:text-ink"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+              {avatarState?.error && <p className="mt-1 text-sm text-status-overdue-fg">{avatarState.error}</p>}
+              {deleteError && <p className="mt-1 text-sm text-status-overdue-fg">{deleteError}</p>}
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {vendor.is_emergency && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-status-overdue-fg px-2.5 py-0.5 text-xs font-semibold text-white">
@@ -245,24 +280,6 @@ export function VendorPanel({
             </div>
           )}
 
-          {isOwner && (
-            <div className="space-y-2 border-t border-hairline pt-4">
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setMode("edit")} className={`flex-1 ${buttonSecondary}`}>
-                  <Pencil className="size-3.5" /> {dict.vendorDetail.edit}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deletePending}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-hairline bg-surface px-4 py-2 text-sm font-medium text-status-overdue-fg transition-colors hover:bg-status-overdue-bg disabled:pointer-events-none disabled:opacity-50"
-                >
-                  <Trash2 className="size-3.5" /> {deletePending ? dict.vendorDetail.deleting : dict.vendorDetail.delete}
-                </button>
-              </div>
-              {deleteError && <p className="text-sm text-status-overdue-fg">{deleteError}</p>}
-            </div>
-          )}
         </div>
       )}
     </SidePanel>

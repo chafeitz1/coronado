@@ -10,11 +10,17 @@ export function SidePanel({
   open,
   onClose,
   title,
+  hideClose,
   children,
 }: {
   open: boolean;
   onClose: () => void;
   title?: string;
+  // For panels that build their own close control inline with other
+  // header icons (edit/delete) so everything sits on one row instead of
+  // this floating "X" and the content's own icons landing at different
+  // heights depending on what's above them in the body.
+  hideClose?: boolean;
   children: React.ReactNode;
 }) {
   useEffect(() => {
@@ -49,13 +55,15 @@ export function SidePanel({
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-3 top-3 z-10 rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
-          >
-            <X className="size-5" />
-          </button>
+          !hideClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute right-3 top-3 z-10 rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+            >
+              <X className="size-5" />
+            </button>
+          )
         )}
         <div className="flex-1 overflow-y-auto p-5">{children}</div>
       </div>

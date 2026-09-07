@@ -14,6 +14,7 @@ import {
   History,
   CalendarClock,
   Plus,
+  X,
 } from "lucide-react";
 import { SidePanel } from "@/components/ui/side-panel";
 import { VendorAvatar } from "@/components/vendor-panel";
@@ -130,7 +131,7 @@ export function AssetPanel({
   const title = mode === "create" ? dict.assets.newAsset : mode === "edit" ? dict.assetDetail.editAsset : undefined;
 
   return (
-    <SidePanel open onClose={onClose} title={title}>
+    <SidePanel open onClose={onClose} title={title} hideClose={mode === "view"}>
       {mode === "create" && (
         <AssetForm
           action={handleCreate}
@@ -160,12 +161,12 @@ export function AssetPanel({
 
       {mode === "view" && asset && (
         <div className="space-y-6">
-          {/* pr-8 keeps the edit/delete icons clear of SidePanel's own
-              floating close "X", which sits absolutely at top-right when
-              there's no panel title (view mode never sets one). */}
-          <div className="flex items-center gap-3 pr-8">
+          <div className="flex items-center gap-3">
             <AssetThumb url={asset.attachments[0]?.publicUrl} />
             <div className="min-w-0 flex-1">
+              {/* Edit/delete/close all live in this one row (instead of a
+                  separate floating close "X") so they're guaranteed to sit
+                  on the same line, regardless of the avatar's height. */}
               <div className="flex items-center gap-1.5">
                 <p className="min-w-0 flex-1 truncate text-lg font-semibold text-ink">{asset.name}</p>
                 {isOwner && (
@@ -189,6 +190,14 @@ export function AssetPanel({
                     </button>
                   </>
                 )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  title={dict.assetDetail.close}
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft hover:text-ink"
+                >
+                  <X className="size-3.5" />
+                </button>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 <AssetStatusChip

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Building2, Users, User, Phone, Mail, Siren, ChevronRight, Plus, UserPlus, Calendar } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pill } from "@/components/ui/pill";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Avatar } from "@/components/ui/avatar";
 import { VendorPanel, VendorAvatar, type VendorPanelMode } from "@/components/vendor-panel";
@@ -565,32 +566,3 @@ function PersonCard({
   );
 }
 
-function Pill({
-  label,
-  active,
-  onClick,
-  small,
-  noShrink,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  small?: boolean;
-  noShrink?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full border font-medium transition-colors ${noShrink ? "shrink-0 whitespace-nowrap" : ""} ${
-        small ? "px-3 py-1 text-xs" : "px-3.5 py-1.5 text-sm"
-      } ${
-        active
-          ? "border-primary bg-primary-soft text-primary"
-          : "border-hairline bg-surface text-ink-muted hover:bg-surface-hover"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}

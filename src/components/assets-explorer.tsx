@@ -7,6 +7,7 @@ import { Search, Plus, CalendarClock, Repeat, Wrench } from "lucide-react";
 import { AssetsList } from "@/components/assets-list";
 import { AssetPanel, type AssetPanelMode } from "@/components/asset-panel";
 import { OverdueBadge } from "@/components/ui/badge";
+import { Pill } from "@/components/ui/pill";
 import { card, input, mutedText, sectionHeading } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
@@ -41,6 +42,8 @@ export function AssetsExplorer({
     return assetId ? { mode: "view", assetId } : null;
   });
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeLocation, setActiveLocation] = useState<string | null>(null);
 
   const panelAsset = panelState?.assetId ? (assets.find((a) => a.id === panelState.assetId) ?? null) : null;
 
@@ -75,6 +78,32 @@ export function AssetsExplorer({
     [assets]
   );
 
+  // Category/location filter chips — same "All / option · count" pattern
+  // as the directory's vendor-trade filter. Counts are computed before
+  // that same filter narrows the list further, so a chip's own count
+  // doesn't shrink to zero the moment you select it.
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const a of searchedAssets) if (a.category) counts.set(a.category, (counts.get(a.category) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [searchedAssets]);
+
+  const categoryFilteredAssets = useMemo(
+    () => (activeCategory ? searchedAssets.filter((a) => a.category === activeCategory) : searchedAssets),
+    [searchedAssets, activeCategory]
+  );
+
+  const locationCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const a of categoryFilteredAssets) if (a.location) counts.set(a.location, (counts.get(a.location) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [categoryFilteredAssets]);
+
+  const filteredAssets = useMemo(
+    () => (activeLocation ? categoryFilteredAssets.filter((a) => a.location === activeLocation) : categoryFilteredAssets),
+    [categoryFilteredAssets, activeLocation]
+  );
+
   const unitLabels: Record<string, string> = useMemo(
     () => ({
       days: dict.assetDetail.unitDays,
@@ -85,7 +114,7 @@ export function AssetsExplorer({
     [dict]
   );
 
-  const assetSummaries: AssetSummary[] = searchedAssets.map((a) => {
+  const assetSummaries: AssetSummary[] = filteredAssets.map((a) => {
     // upcoming is already sorted ascending by due_date (see assets/page.tsx)
     const nextUpcoming = a.upcoming[0] ?? null;
     return {
@@ -199,8 +228,44 @@ export function AssetsExplorer({
         </section>
       )}
 
-      <section className="space-y-2">
+      <section className="space-y-3">
         {maintenanceDue.length > 0 && <h2 className={sectionHeading}>{dict.assets.allAssetsTitle}</h2>}
+
+        {categoryCounts.length > 0 && (
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
+            <Pill label={dict.assets.filterAllCategories} active={!activeCategory} onClick={() => setActiveCategory(null)} small noShrink />
+            {categoryCounts.map(([category, count]) => (
+              <Pill
+                key={category}
+                label={`${category} · ${count}`}
+                active={activeCategory === category}
+                onClick={() => {
+                  setActiveCategory(activeCategory === category ? null : category);
+                  setActiveLocation(null);
+                }}
+                small
+                noShrink
+              />
+            ))}
+          </div>
+        )}
+
+        {locationCounts.length > 0 && (
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
+            <Pill label={dict.assets.filterAllLocations} active={!activeLocation} onClick={() => setActiveLocation(null)} small noShrink />
+            {locationCounts.map(([location, count]) => (
+              <Pill
+                key={location}
+                label={`${location} · ${count}`}
+                active={activeLocation === location}
+                onClick={() => setActiveLocation(activeLocation === location ? null : location)}
+                small
+                noShrink
+              />
+            ))}
+          </div>
+        )}
+
         <AssetsList
           assets={assetSummaries}
           isOwner={isOwner}
@@ -208,7 +273,7 @@ export function AssetsExplorer({
           locale={locale}
           onSelect={(assetId) => setPanelState({ mode: "view", assetId })}
           onEdit={(assetId) => setPanelState({ mode: "edit", assetId })}
-          emptyMessage={q ? dict.assets.emptySearch : undefined}
+          emptyMessage={q || activeCategory || activeLocation ? dict.assets.emptySearch : undefined}
         />
       </section>
 

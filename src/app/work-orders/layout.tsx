@@ -3,7 +3,9 @@ import { Plus } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { WorkOrdersShell } from "@/components/work-orders-shell";
-import { WorkOrdersExplorer } from "@/components/work-orders/work-orders-explorer";
+import { WorkOrdersFiltersProvider } from "@/components/work-orders/work-orders-filters-context";
+import { WorkOrdersControls } from "@/components/work-orders/work-orders-controls";
+import { WorkOrdersListBody } from "@/components/work-orders/work-orders-list-body";
 import { ViewSwitcher, type DisplayMode } from "@/components/view-switcher";
 import type { WorkOrderRow } from "@/components/work-orders/types";
 import { buttonPrimary, pageHeading } from "@/lib/ui";
@@ -49,7 +51,7 @@ export default async function WorkOrdersLayout({ children }: { children: React.R
     { key: "calendar", label: dict.workOrders.viewCalendar },
   ];
 
-  const listPane = (
+  const header = (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
@@ -60,20 +62,26 @@ export default async function WorkOrdersLayout({ children }: { children: React.R
           <Plus className="size-4" /> {dict.workOrders.newTask}
         </Link>
       </div>
-      <WorkOrdersExplorer
-        orders={orders}
-        today={today}
-        dict={dict}
-        locale={profile.locale}
-        currentUserId={profile.id}
-        isOwner={profile.role === "owner"}
-      />
+      <WorkOrdersControls orders={orders} dict={dict} />
     </div>
   );
 
+  const listPane = (
+    <WorkOrdersListBody
+      orders={orders}
+      today={today}
+      dict={dict}
+      locale={profile.locale}
+      currentUserId={profile.id}
+      isOwner={profile.role === "owner"}
+    />
+  );
+
   return (
-    <WorkOrdersShell listPane={listPane} dict={dict}>
-      {children}
-    </WorkOrdersShell>
+    <WorkOrdersFiltersProvider>
+      <WorkOrdersShell header={header} listPane={listPane} dict={dict}>
+        {children}
+      </WorkOrdersShell>
+    </WorkOrdersFiltersProvider>
   );
 }

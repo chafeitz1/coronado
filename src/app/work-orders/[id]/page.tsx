@@ -69,8 +69,8 @@ export default async function WorkOrderDetailPage({
   };
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-3">
+    <div className={`overflow-hidden ${card}`}>
+      <div className="space-y-3 p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
             <h1 className={pageHeading}>{workOrder.title}</h1>
@@ -93,7 +93,7 @@ export default async function WorkOrderDetailPage({
         )}
       </div>
 
-      <div className={`grid grid-cols-2 gap-x-6 gap-y-4 p-4 sm:grid-cols-3 ${card}`}>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-hairline p-5 sm:grid-cols-3">
         <div className="space-y-1">
           <p className={sectionHeading}>{dict.workOrderForm.dueDateLabel}</p>
           <p className="text-sm text-ink">
@@ -118,7 +118,7 @@ export default async function WorkOrderDetailPage({
       </div>
 
       {(asset || vendor) && (
-        <div className={`flex flex-wrap gap-x-8 gap-y-3 p-4 text-sm ${card}`}>
+        <div className="flex flex-wrap gap-x-8 gap-y-3 border-t border-hairline p-5 text-sm">
           {asset && (
             <span className="flex items-center gap-2">
               <Wrench className="size-4 text-ink-faint" strokeWidth={2} />
@@ -135,25 +135,25 @@ export default async function WorkOrderDetailPage({
       )}
 
       {workOrder.description && (
-        <section className="space-y-2">
+        <section className="space-y-2 border-t border-hairline p-5">
           <h2 className={sectionHeading}>{dict.workOrderDetail.descriptionTitle}</h2>
           <p className="text-sm text-ink-secondary">{workOrder.description}</p>
         </section>
       )}
 
-      <section className="space-y-3">
+      <section className="space-y-3 border-t border-hairline p-5">
         <h2 className={sectionHeading}>{dict.workOrderDetail.attachmentsTitle}</h2>
         <WorkOrderAttachments workOrderId={workOrder.id} attachments={attachments} dict={dict} />
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-4 border-t border-hairline p-5">
         <h2 className={sectionHeading}>{dict.workOrderDetail.notesTitle}</h2>
 
         <ul className="space-y-3">
           {notes?.map((note) => {
             const author = single(note.author);
             return (
-              <li key={note.id} className={`flex gap-3 p-3.5 text-sm ${card}`}>
+              <li key={note.id} className="flex gap-3 rounded-md border border-hairline p-3.5 text-sm">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
                   <MessageSquare className="size-4" strokeWidth={2} />
                 </span>
@@ -174,7 +174,7 @@ export default async function WorkOrderDetailPage({
           {(!notes || notes.length === 0) && <EmptyState icon={MessageSquare} message={dict.workOrderDetail.emptyNotes} />}
         </ul>
 
-        <form action={addWorkOrderNote} className={`space-y-3 p-4 ${card}`}>
+        <form action={addWorkOrderNote} className="space-y-3 rounded-md border border-hairline p-4">
           <input type="hidden" name="work_order_id" value={workOrder.id} />
           <textarea
             name="body"

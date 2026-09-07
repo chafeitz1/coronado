@@ -20,6 +20,16 @@ const STYLES: Record<WorkOrderStatus, string> = {
   skipped: "bg-canvas-soft text-ink-muted",
 };
 
+// Same idea as WorkOrderStatusButtons: hovering a dropdown option
+// previews the color it would switch to, instead of a flat generic
+// hover — same colors, same affordance, whichever control you use.
+const HOVER_STYLES: Record<WorkOrderStatus, string> = {
+  open: "hover:bg-status-open-bg hover:text-status-open-fg",
+  in_progress: "hover:bg-status-progress-bg hover:text-status-progress-fg",
+  done: "hover:bg-status-done-bg hover:text-status-done-fg",
+  skipped: "hover:bg-surface-hover hover:text-ink",
+};
+
 const ORDER: WorkOrderStatus[] = ["open", "in_progress", "done", "skipped"];
 
 // Inline status chip you can change right from a list/table row, without
@@ -99,7 +109,7 @@ export function WorkOrderStatusChip({
                     updateWorkOrderStatus(workOrderId, s);
                   });
                 }}
-                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-hover ${
+                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${HOVER_STYLES[s]} ${
                   s === status ? "font-medium text-primary" : "text-ink-secondary"
                 }`}
               >

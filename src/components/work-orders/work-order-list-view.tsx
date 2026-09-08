@@ -100,13 +100,13 @@ export function WorkOrderListView({
               <li key={wo.id}>
                 <Link
                   href={`/work-orders/${wo.id}`}
-                  className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                  className="flex flex-col gap-1.5 px-4 py-3.5 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                 >
-                  <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
-                    <ClipboardList className="size-4" strokeWidth={2} />
-                  </span>
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <p className="flex items-center gap-1.5 font-medium text-ink">
+                  <div className="flex items-start gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+                      <ClipboardList className="size-4" strokeWidth={2} />
+                    </span>
+                    <p className="flex min-w-0 flex-1 items-center gap-1.5 font-medium text-ink">
                       {wo.recurrence_interval_value && (
                         <span title={recurrenceLabel(wo, dict)} className="shrink-0">
                           <Repeat className="size-3.5 text-ink-faint" strokeWidth={2} />
@@ -114,27 +114,27 @@ export function WorkOrderListView({
                       )}
                       <span className="truncate">{wo.title}</span>
                     </p>
-                    {subtitleParts.length > 0 && (
-                      <p className={`truncate text-sm ${overdue ? "text-status-overdue-fg" : "text-ink-muted"}`}>
-                        {subtitleParts.join(" · ")}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between gap-1.5" onClick={(e) => e.preventDefault()}>
-                      <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
-                      {overdue && <OverdueBadge locale={locale} />}
+                    <div className="shrink-0">
+                      {wo.assignee ? (
+                        <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />
+                      ) : (
+                        wo.vendor && (
+                          <span className="flex items-center gap-1 text-xs text-ink-muted">
+                            <Building2 className="size-3.5 shrink-0" strokeWidth={2} />
+                            <span className="max-w-24 truncate">{wo.vendor.name}</span>
+                          </span>
+                        )
+                      )}
                     </div>
                   </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1.5">
-                    {wo.assignee ? (
-                      <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />
-                    ) : (
-                      wo.vendor && (
-                        <span className="flex items-center gap-1 text-xs text-ink-muted">
-                          <Building2 className="size-3.5 shrink-0" strokeWidth={2} />
-                          <span className="max-w-24 truncate">{wo.vendor.name}</span>
-                        </span>
-                      )
-                    )}
+                  {subtitleParts.length > 0 && (
+                    <p className={`truncate pl-12 text-sm ${overdue ? "text-status-overdue-fg" : "text-ink-muted"}`}>
+                      {subtitleParts.join(" · ")}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between gap-1.5 pl-12" onClick={(e) => e.preventDefault()}>
+                    <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
+                    {overdue && <OverdueBadge locale={locale} />}
                   </div>
                 </Link>
               </li>

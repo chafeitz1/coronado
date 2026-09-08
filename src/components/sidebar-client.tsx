@@ -182,11 +182,7 @@ function SidebarSection({
                 <Icon className="size-4 shrink-0" strokeWidth={2} />
                 <span className="flex-1 truncate">{link.label}</span>
                 {!!link.badge && (
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
-                      active ? "bg-primary text-on-primary" : "bg-canvas-soft text-ink-muted"
-                    }`}
-                  >
+                  <span className="rounded-full bg-status-overdue-fg px-1.5 py-0.5 text-xs font-semibold text-white">
                     {link.badge}
                   </span>
                 )}

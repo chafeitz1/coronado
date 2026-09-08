@@ -125,10 +125,10 @@ export function WorkOrderBoardView({
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") onSelect(wo.id);
                       }}
-                      className={`flex cursor-pointer items-start gap-3 p-3 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover ${card}`}
+                      className={`flex cursor-pointer flex-col gap-1.5 p-3 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover ${card}`}
                     >
-                      <div className="min-w-0 flex-1 space-y-1.5">
-                        <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-ink">
                           {wo.recurrence_interval_value && (
                             <span title={recurrenceLabel(wo, dict)} className="shrink-0">
                               <Repeat className="size-3.5 text-ink-faint" strokeWidth={2} />
@@ -136,30 +136,30 @@ export function WorkOrderBoardView({
                           )}
                           <span className="truncate">{wo.title}</span>
                         </p>
-                        {wo.due_date && (
-                          <p className={`truncate text-xs ${overdue ? "text-status-overdue-fg" : "text-ink-muted"}`}>
-                            {overdue
-                              ? `${formatLongDate(wo.due_date, locale)} · ${overdueRelativeLabel(-daysUntil(wo.due_date), dict)}`
-                              : formatLongDate(wo.due_date, locale)}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between gap-2">
-                          <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
-                          {overdue && <OverdueBadge locale={locale} />}
-                        </div>
-                      </div>
-                      {wo.assignee ? (
-                        <span className="shrink-0">
-                          <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />
-                        </span>
-                      ) : (
-                        wo.vendor && (
-                          <span className="flex min-w-0 shrink-0 items-center gap-1 text-xs text-ink-muted">
-                            <Building2 className="size-3.5 shrink-0" strokeWidth={2} />
-                            <span className="max-w-20 truncate">{wo.vendor.name}</span>
+                        {wo.assignee ? (
+                          <span className="shrink-0">
+                            <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />
                           </span>
-                        )
+                        ) : (
+                          wo.vendor && (
+                            <span className="flex min-w-0 shrink-0 items-center gap-1 text-xs text-ink-muted">
+                              <Building2 className="size-3.5 shrink-0" strokeWidth={2} />
+                              <span className="max-w-20 truncate">{wo.vendor.name}</span>
+                            </span>
+                          )
+                        )}
+                      </div>
+                      {wo.due_date && (
+                        <p className={`truncate text-xs ${overdue ? "text-status-overdue-fg" : "text-ink-muted"}`}>
+                          {overdue
+                            ? `${formatLongDate(wo.due_date, locale)} · ${overdueRelativeLabel(-daysUntil(wo.due_date), dict)}`
+                            : formatLongDate(wo.due_date, locale)}
+                        </p>
                       )}
+                      <div className="flex items-center justify-between gap-2">
+                        <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
+                        {overdue && <OverdueBadge locale={locale} />}
+                      </div>
                     </div>
                   );
                 })

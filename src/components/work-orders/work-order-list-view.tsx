@@ -100,7 +100,7 @@ export function WorkOrderListView({
               <li key={wo.id}>
                 <Link
                   href={`/work-orders/${wo.id}`}
-                  className="relative flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                  className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                 >
                   <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
                     <ClipboardList className="size-4" strokeWidth={2} />
@@ -119,8 +119,9 @@ export function WorkOrderListView({
                         {subtitleParts.join(" · ")}
                       </p>
                     )}
-                    <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
+                    <div className="flex items-center justify-between gap-1.5" onClick={(e) => e.preventDefault()}>
                       <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
+                      {overdue && <OverdueBadge locale={locale} />}
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
@@ -135,15 +136,6 @@ export function WorkOrderListView({
                       )
                     )}
                   </div>
-                  {/* Pinned to the card's bottom-right corner, aligned with
-                      the status chip row above it — near the title reads
-                      as attached to the task name, but this card's status
-                      is the thing that's actually overdue. */}
-                  {overdue && (
-                    <span className="absolute bottom-2 right-3">
-                      <OverdueBadge locale={locale} />
-                    </span>
-                  )}
                 </Link>
               </li>
             );

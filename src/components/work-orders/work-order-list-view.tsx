@@ -13,6 +13,19 @@ import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
 
+const UNIT_LABEL_KEYS = {
+  days: "unitDays",
+  weeks: "unitWeeks",
+  months: "unitMonths",
+  years: "unitYears",
+} as const;
+
+function recurrenceLabel(wo: WorkOrderRow, dict: Dictionary) {
+  if (!wo.recurrence_interval_value || !wo.recurrence_interval_unit) return undefined;
+  const unit = dict.workOrderDetail[UNIT_LABEL_KEYS[wo.recurrence_interval_unit]];
+  return format(dict.workOrderDetail.recurrence, { value: wo.recurrence_interval_value, unit });
+}
+
 export function WorkOrderListView({
   title,
   orders,
@@ -79,7 +92,9 @@ export function WorkOrderListView({
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <p className="flex items-center gap-1.5 font-medium text-ink">
                       {wo.recurrence_interval_value && (
-                        <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
+                        <span title={recurrenceLabel(wo, dict)} className="shrink-0">
+                          <Repeat className="size-3.5 text-ink-faint" strokeWidth={2} />
+                        </span>
                       )}
                       <span className="truncate">{wo.title}</span>
                     </p>

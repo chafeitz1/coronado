@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { DisplayMode } from "@/components/view-switcher";
 import { WorkOrderListView } from "./work-order-list-view";
 import { WorkOrderTableView } from "./work-order-table-view";
 import { WorkOrderCalendarView } from "./work-order-calendar-view";
+import { WorkOrderPanel } from "./work-order-panel";
 import { advanceDate, endOfWeek } from "@/lib/dates";
 import { useWorkOrdersFilters } from "./work-orders-filters-context";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -35,6 +36,10 @@ export function WorkOrdersListBody({
   const searchParams = useSearchParams();
   const display = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
   const { search, tab, taskType, dueBucket, priority, location } = useWorkOrdersFilters();
+  // List (table) view opens a task in a side panel instead of navigating
+  // away — the To Do view already shows detail inline in its own column,
+  // so its rows keep linking to the [id] route directly.
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
 
   const q = search.trim().toLowerCase();
   const endOfThisWeek = endOfWeek(today);
@@ -85,8 +90,9 @@ export function WorkOrdersListBody({
   const others = sorted.filter((wo) => wo.assigned_to !== currentUserId);
   const showGroups = mine.length > 0 && others.length > 0;
 
+  let content: React.ReactNode;
   if (display === "table") {
-    return (
+    content = (
       <WorkOrderTableView
         orders={sorted}
         today={today}
@@ -95,16 +101,13 @@ export function WorkOrdersListBody({
         currentUserId={currentUserId}
         isOwner={isOwner}
         emptyMessage={dict.workOrders.emptyView}
+        onSelect={setOpenTaskId}
       />
     );
-  }
-
-  if (display === "calendar") {
-    return <WorkOrderCalendarView orders={filtered} today={today} dict={dict} locale={locale} />;
-  }
-
-  if (showGroups) {
-    return (
+  } else if (display === "calendar") {
+    content = <WorkOrderCalendarView orders={filtered} today={today} dict={dict} locale={locale} />;
+  } else if (showGroups) {
+    content = (
       <>
         <WorkOrderListView
           title={dict.workOrders.assignedToMe}
@@ -126,17 +129,31 @@ export function WorkOrdersListBody({
         />
       </>
     );
+  } else {
+    content = (
+      <WorkOrderListView
+        orders={sorted}
+        today={today}
+        dict={dict}
+        locale={locale}
+        currentUserId={currentUserId}
+        isOwner={isOwner}
+        emptyMessage={dict.workOrders.emptyView}
+      />
+    );
   }
 
   return (
-    <WorkOrderListView
-      orders={sorted}
-      today={today}
-      dict={dict}
-      locale={locale}
-      currentUserId={currentUserId}
-      isOwner={isOwner}
-      emptyMessage={dict.workOrders.emptyView}
-    />
+    <>
+      {content}
+      <WorkOrderPanel
+        workOrderId={openTaskId}
+        onClose={() => setOpenTaskId(null)}
+        currentUserId={currentUserId}
+        isOwner={isOwner}
+        locale={locale}
+        dict={dict}
+      />
+    </>
   );
 }

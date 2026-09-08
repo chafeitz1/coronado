@@ -1,22 +1,34 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowUp, ArrowDown, Building2, ClipboardList, Repeat } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { PriorityBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { card, mutedText } from "@/lib/ui";
+import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { formatLongDate } from "@/lib/dates";
 import { isWorkOrderClosed } from "@/lib/types/database";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
 
 type SortKey = "title" | "status" | "priority" | "assignee" | "due_date" | "asset";
 
 const PRIORITY_RANK = { low: 0, medium: 1, high: 2 };
+
+const UNIT_LABEL_KEYS = {
+  days: "unitDays",
+  weeks: "unitWeeks",
+  months: "unitMonths",
+  years: "unitYears",
+} as const;
+
+function recurrenceLabel(wo: WorkOrderRow, dict: Dictionary) {
+  if (!wo.recurrence_interval_value || !wo.recurrence_interval_unit) return undefined;
+  const unit = dict.workOrderDetail[UNIT_LABEL_KEYS[wo.recurrence_interval_unit]];
+  return format(dict.workOrderDetail.recurrence, { value: wo.recurrence_interval_value, unit });
+}
 
 export function WorkOrderTableView({
   orders,
@@ -26,6 +38,7 @@ export function WorkOrderTableView({
   currentUserId,
   isOwner,
   emptyMessage,
+  onSelect,
 }: {
   orders: WorkOrderRow[];
   today: string;
@@ -34,8 +47,8 @@ export function WorkOrderTableView({
   currentUserId: string;
   isOwner: boolean;
   emptyMessage: string;
+  onSelect: (workOrderId: string) => void;
 }) {
-  const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey>("due_date");
   const [asc, setAsc] = useState(true);
 
@@ -102,13 +115,15 @@ export function WorkOrderTableView({
             return (
               <tr
                 key={wo.id}
-                onClick={() => router.push(`/work-orders/${wo.id}`)}
+                onClick={() => onSelect(wo.id)}
                 className="cursor-pointer transition-colors hover:bg-surface-hover active:bg-surface-hover"
               >
                 <td className="max-w-64 truncate px-4 py-2.5 font-medium text-ink">
                   <span className="flex items-center gap-1.5">
                     {wo.recurrence_interval_value && (
-                      <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
+                      <span title={recurrenceLabel(wo, dict)} className="shrink-0">
+                        <Repeat className="size-3.5 text-ink-faint" strokeWidth={2} />
+                      </span>
                     )}
                     <span className="truncate">{wo.title}</span>
                   </span>

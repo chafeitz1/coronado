@@ -115,8 +115,8 @@ export default async function WorkOrderDetailPage({
   return (
     <div className={`overflow-hidden ${card}`}>
       <div className="space-y-3 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-1">
             <h1 className={pageHeading}>{workOrder.title}</h1>
             {/* A recurring task is always requested by the owner — not
                 worth the line, same reasoning as the list row. One-off
@@ -125,20 +125,23 @@ export default async function WorkOrderDetailPage({
               <p className={mutedText}>{format(dict.workOrderDetail.createdBy, { name: creator?.full_name ?? "—" })}</p>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
-            {canChangeStatus ? (
-              <WorkOrderStatusButtons workOrderId={workOrder.id} status={workOrder.status} dict={dict} />
-            ) : (
-              <StatusBadge status={workOrder.status} locale={profile.locale} />
-            )}
-            <WorkOrderMenu
-              workOrderId={workOrder.id}
-              workOrderTitle={workOrder.title}
-              canEdit={isOwner}
-              canDelete={isOwner}
-              dict={dict}
-            />
-          </div>
+          {/* Its own row, aligned with the title, so wrapping status
+              buttons below (narrow screens: 4 buttons don't fit one line)
+              can't drag it along and leave it floating mid-block. */}
+          <WorkOrderMenu
+            workOrderId={workOrder.id}
+            workOrderTitle={workOrder.title}
+            canEdit={isOwner}
+            canDelete={isOwner}
+            dict={dict}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {canChangeStatus ? (
+            <WorkOrderStatusButtons workOrderId={workOrder.id} status={workOrder.status} dict={dict} />
+          ) : (
+            <StatusBadge status={workOrder.status} locale={profile.locale} />
+          )}
         </div>
         {(workOrder.recurrence_interval_value || workOrder.completed_at) && (
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-muted">

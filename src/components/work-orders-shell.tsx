@@ -40,7 +40,12 @@ export function WorkOrdersShell({
 
   return (
     <div className="space-y-4">
-      {header}
+      {/* On mobile, viewing a task's detail hides the list column entirely
+          (below) — the search/filter/tabs toolbar above it is about
+          browsing that list, so it's just as irrelevant there and hides
+          along with it. Desktop always shows both side by side, so the
+          toolbar stays relevant and stays visible. */}
+      <div className={isIndex ? "block" : "hidden md:block"}>{header}</div>
       <div className="flex flex-col md:flex-row md:items-start">
         <div
           className={`w-full shrink-0 md:w-96 md:border-r md:border-hairline md:pr-6 lg:w-[28rem] ${isIndex ? "block" : "hidden md:block"}`}

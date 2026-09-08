@@ -56,6 +56,11 @@ function LoginForm() {
       <button type="submit" disabled={pending} className={`w-full ${buttonPrimary}`}>
         {pending ? "Entrando..." : "Entrar"}
       </button>
+
+      <p className={`${mutedText} text-center text-xs`}>
+        ¿Sos staff o residente y no tenés contraseña? Pedile al dueño que te envíe (o reenvíe) tu link de acceso
+        desde el Directorio — no hace falta llenar este formulario.
+      </p>
     </form>
   );
 }

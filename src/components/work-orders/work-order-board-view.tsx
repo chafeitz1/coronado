@@ -129,14 +129,28 @@ export function WorkOrderBoardView({
                         overdue ? "pb-7" : ""
                       } ${card}`}
                     >
-                      <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
-                        {wo.recurrence_interval_value && (
-                          <span title={recurrenceLabel(wo, dict)} className="shrink-0">
-                            <Repeat className="size-3.5 text-ink-faint" strokeWidth={2} />
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-ink">
+                          {wo.recurrence_interval_value && (
+                            <span title={recurrenceLabel(wo, dict)} className="shrink-0">
+                              <Repeat className="size-3.5 text-ink-faint" strokeWidth={2} />
+                            </span>
+                          )}
+                          <span className="truncate">{wo.title}</span>
+                        </p>
+                        {wo.assignee ? (
+                          <span className="shrink-0">
+                            <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />
                           </span>
+                        ) : (
+                          wo.vendor && (
+                            <span className="flex min-w-0 shrink-0 items-center gap-1 text-xs text-ink-muted">
+                              <Building2 className="size-3.5 shrink-0" strokeWidth={2} />
+                              <span className="max-w-20 truncate">{wo.vendor.name}</span>
+                            </span>
+                          )
                         )}
-                        <span className="truncate">{wo.title}</span>
-                      </p>
+                      </div>
                       {wo.due_date && (
                         <p className={`truncate text-xs ${overdue ? "text-status-overdue-fg" : "text-ink-muted"}`}>
                           {overdue
@@ -144,18 +158,8 @@ export function WorkOrderBoardView({
                             : formatLongDate(wo.due_date, locale)}
                         </p>
                       )}
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center">
                         <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
-                        {wo.assignee ? (
-                          <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />
-                        ) : (
-                          wo.vendor && (
-                            <span className="flex min-w-0 items-center gap-1 text-xs text-ink-muted">
-                              <Building2 className="size-3.5 shrink-0" strokeWidth={2} />
-                              <span className="max-w-20 truncate">{wo.vendor.name}</span>
-                            </span>
-                          )
-                        )}
                       </div>
                       {overdue && (
                         <span className="absolute bottom-2 right-3">

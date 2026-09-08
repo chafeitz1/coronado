@@ -34,6 +34,19 @@ export default async function WorkOrderDetailPage({
 
   if (!workOrder) notFound();
 
+  // Every occurrence of a recurring task shares a series_id (pointing at
+  // the root task) — fetch the rest of that series so the detail page can
+  // show what happened on past cycles, not just this one occurrence.
+  const seriesId = workOrder.series_id ?? workOrder.id;
+  const { data: seriesRows } = workOrder.recurrence_interval_value
+    ? await supabase
+        .from("work_orders")
+        .select("id, due_date, status, completed_at, created_at")
+        .or(`id.eq.${seriesId},series_id.eq.${seriesId}`)
+        .neq("id", workOrder.id)
+        .order("due_date", { ascending: false, nullsFirst: false })
+    : { data: null };
+
   const { data: notes } = await supabase
     .from("work_order_notes")
     .select("id, body, notify_owner, created_at, author:profiles(full_name)")
@@ -286,6 +299,32 @@ export default async function WorkOrderDetailPage({
           ))}
         </ul>
       </section>
+
+      {seriesRows && seriesRows.length > 0 && (
+        <section className="space-y-3 border-t border-hairline p-5">
+          <h2 className={sectionHeading}>{dict.workOrderDetail.historyTitle}</h2>
+          <ul className="space-y-3">
+            {seriesRows.map((row) => (
+              <li key={row.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="flex items-center gap-1.5 text-ink-secondary">
+                  <Repeat className="size-3.5 text-ink-faint" />
+                  {row.due_date
+                    ? format(dict.workOrderDetail.historyDueDate, { date: formatLongDate(row.due_date, profile.locale) })
+                    : dict.workOrders.noDueDate}
+                </span>
+                <span className="flex items-center gap-3">
+                  {row.completed_at && (
+                    <span className={`text-xs ${mutedText}`}>
+                      {formatLongDate(row.completed_at.slice(0, 10), profile.locale)}
+                    </span>
+                  )}
+                  <StatusBadge status={row.status} locale={profile.locale} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

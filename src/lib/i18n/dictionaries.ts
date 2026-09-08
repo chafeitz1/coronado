@@ -176,6 +176,8 @@ const es = {
     fieldAssignee: "Asignado a",
     fieldVendor: "Vendor",
     fieldRecurrence: "Recurrencia",
+    historyTitle: "Historial de recurrencia",
+    historyDueDate: "Vencimiento: {date}",
   },
   assets: {
     title: "Activos",
@@ -687,6 +689,8 @@ const en: Dictionary = {
     fieldAssignee: "Assigned to",
     fieldVendor: "Vendor",
     fieldRecurrence: "Recurrence",
+    historyTitle: "Recurrence history",
+    historyDueDate: "Due: {date}",
   },
   assets: {
     title: "Assets",

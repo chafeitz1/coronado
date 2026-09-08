@@ -226,7 +226,7 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
     })
     .eq("id", workOrderId)
     .select(
-      "id, title, description, created_by, assigned_to, asset_id, vendor_id, priority, due_date, recurrence_interval_value, recurrence_interval_unit"
+      "id, title, description, created_by, assigned_to, asset_id, vendor_id, priority, due_date, recurrence_interval_value, recurrence_interval_unit, series_id"
     )
     .single();
 
@@ -272,6 +272,10 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
         source: "pm",
         recurrence_interval_value: workOrder.recurrence_interval_value,
         recurrence_interval_unit: workOrder.recurrence_interval_unit,
+        // Every occurrence points back to the root task of the series
+        // (not just its immediate predecessor), so the detail page can
+        // fetch the whole history with one query keyed on series_id.
+        series_id: workOrder.series_id ?? workOrder.id,
       })
       .select("id")
       .single();

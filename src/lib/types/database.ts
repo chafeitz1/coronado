@@ -139,6 +139,7 @@ export interface Database {
           source: WorkOrderSource;
           recurrence_interval_value: number | null;
           recurrence_interval_unit: IntervalUnit | null;
+          series_id: string | null;
           created_at: string;
           updated_at: string;
         };

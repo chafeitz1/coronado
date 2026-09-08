@@ -89,6 +89,7 @@ export function WorkOrdersListBody({
     return (
       <WorkOrderTableView
         orders={sorted}
+        today={today}
         dict={dict}
         locale={locale}
         currentUserId={currentUserId}

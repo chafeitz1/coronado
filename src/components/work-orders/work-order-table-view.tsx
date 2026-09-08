@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, ArrowDown, Building2, ClipboardList } from "lucide-react";
+import { ArrowUp, ArrowDown, Building2, ClipboardList, Repeat } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { PriorityBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { card, mutedText } from "@/lib/ui";
+import { formatLongDate } from "@/lib/dates";
+import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
@@ -18,6 +20,7 @@ const PRIORITY_RANK = { low: 0, medium: 1, high: 2 };
 
 export function WorkOrderTableView({
   orders,
+  today,
   dict,
   locale,
   currentUserId,
@@ -25,6 +28,7 @@ export function WorkOrderTableView({
   emptyMessage,
 }: {
   orders: WorkOrderRow[];
+  today: string;
   dict: Dictionary;
   locale: Locale;
   currentUserId: string;
@@ -94,13 +98,21 @@ export function WorkOrderTableView({
         <tbody className="divide-y divide-hairline">
           {sorted.map((wo) => {
             const canEdit = isOwner || wo.assigned_to === currentUserId;
+            const overdue = !isWorkOrderClosed(wo.status) && !!wo.due_date && wo.due_date < today;
             return (
               <tr
                 key={wo.id}
                 onClick={() => router.push(`/work-orders/${wo.id}`)}
                 className="cursor-pointer transition-colors hover:bg-surface-hover active:bg-surface-hover"
               >
-                <td className="max-w-64 truncate px-4 py-2.5 font-medium text-ink">{wo.title}</td>
+                <td className="max-w-64 truncate px-4 py-2.5 font-medium text-ink">
+                  <span className="flex items-center gap-1.5">
+                    {wo.recurrence_interval_value && (
+                      <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
+                    )}
+                    <span className="truncate">{wo.title}</span>
+                  </span>
+                </td>
                 <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
                   <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
                 </td>
@@ -122,7 +134,16 @@ export function WorkOrderTableView({
                     <span className={mutedText}>{dict.workOrders.unassigned}</span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-4 py-2.5">{wo.due_date ?? "—"}</td>
+                <td className="whitespace-nowrap px-4 py-2.5">
+                  <span className="flex items-center gap-2">
+                    {wo.due_date ? formatLongDate(wo.due_date, locale) : "—"}
+                    {overdue && (
+                      <span className="rounded-full bg-status-overdue-bg px-2 py-0.5 text-xs font-semibold text-status-overdue-fg">
+                        {dict.badges.overdue}
+                      </span>
+                    )}
+                  </span>
+                </td>
                 <td className="max-w-40 truncate px-4 py-2.5">{wo.asset?.name ?? "—"}</td>
               </tr>
             );

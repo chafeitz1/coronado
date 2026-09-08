@@ -9,7 +9,7 @@ import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { listCard, mutedText, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
-import { formatLongDate } from "@/lib/dates";
+import { daysUntil, formatLongDate } from "@/lib/dates";
 import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
@@ -25,6 +25,13 @@ function recurrenceLabel(wo: WorkOrderRow, dict: Dictionary) {
   if (!wo.recurrence_interval_value || !wo.recurrence_interval_unit) return undefined;
   const unit = dict.workOrderDetail[UNIT_LABEL_KEYS[wo.recurrence_interval_unit]];
   return format(dict.workOrderDetail.recurrence, { value: wo.recurrence_interval_value, unit });
+}
+
+// "Venció ayer" / "Venció hace {days} días" — how late a task is, not just
+// its due date, so an overdue row reads at a glance without doing the
+// date math yourself.
+function overdueRelativeLabel(daysLate: number, dict: Dictionary) {
+  return daysLate === 1 ? dict.workOrders.overdueYesterday : format(dict.workOrders.overdueDaysAgo, { days: daysLate });
 }
 
 export function WorkOrderListView({
@@ -71,21 +78,33 @@ export function WorkOrderListView({
             const canEdit = isOwner || wo.assigned_to === currentUserId;
             const isRecurring = !!wo.recurrence_interval_value;
 
-            // A recurring task is always requested by the owner — not
-            // worth the space. Show its due date there instead; a
+            // Overdue trumps the usual subtitle — how late it is matters
+            // more right now than who asked for it or the bare due date.
+            // Otherwise: a recurring task is always requested by the
+            // owner (not worth the space, show its due date instead); a
             // one-off is more useful shown by who asked for it.
-            const subtitleParts = [
-              isRecurring
-                ? wo.due_date && format(dict.workOrders.dueDate, { date: formatLongDate(wo.due_date, locale) })
-                : wo.creator && format(dict.workOrders.requestedBy, { name: wo.creator.full_name }),
-              wo.asset?.name,
-            ].filter(Boolean);
+            const subtitleParts = overdue
+              ? [
+                  wo.due_date &&
+                    `${format(dict.workOrders.dueDate, { date: formatLongDate(wo.due_date, locale) })} · ${overdueRelativeLabel(-daysUntil(wo.due_date), dict)}`,
+                  wo.asset?.name,
+                ].filter(Boolean)
+              : [
+                  isRecurring
+                    ? wo.due_date && format(dict.workOrders.dueDate, { date: formatLongDate(wo.due_date, locale) })
+                    : wo.creator && format(dict.workOrders.requestedBy, { name: wo.creator.full_name }),
+                  wo.asset?.name,
+                ].filter(Boolean);
 
             return (
               <li key={wo.id}>
                 <Link
                   href={`/work-orders/${wo.id}`}
-                  className="relative flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                  className={`relative flex items-start gap-3 px-4 py-3.5 transition-colors ${
+                    overdue
+                      ? "bg-status-overdue-bg hover:brightness-95 active:brightness-90"
+                      : "hover:bg-surface-hover active:bg-surface-hover"
+                  }`}
                 >
                   <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
                     <ClipboardList className="size-4" strokeWidth={2} />

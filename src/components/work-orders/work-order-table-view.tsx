@@ -8,7 +8,7 @@ import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { card, mutedText } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
-import { formatLongDate } from "@/lib/dates";
+import { daysUntil, formatLongDate } from "@/lib/dates";
 import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
@@ -26,6 +26,13 @@ function recurrenceLabel(wo: WorkOrderRow, dict: Dictionary) {
   if (!wo.recurrence_interval_value || !wo.recurrence_interval_unit) return undefined;
   const unit = dict.workOrderDetail[UNIT_LABEL_KEYS[wo.recurrence_interval_unit]];
   return format(dict.workOrderDetail.recurrence, { value: wo.recurrence_interval_value, unit });
+}
+
+// "Venció ayer" / "Venció hace {days} días" — how late a task is, not just
+// its due date, so an overdue row reads at a glance without doing the
+// date math yourself.
+function overdueRelativeLabel(daysLate: number, dict: Dictionary) {
+  return daysLate === 1 ? dict.workOrders.overdueYesterday : format(dict.workOrders.overdueDaysAgo, { days: daysLate });
 }
 
 export function WorkOrderTableView({
@@ -151,7 +158,20 @@ export function WorkOrderTableView({
                     <span className={mutedText}>{dict.workOrders.unassigned}</span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-4 py-2.5">{wo.due_date ? formatLongDate(wo.due_date, locale) : "—"}</td>
+                <td className="whitespace-nowrap px-4 py-2.5">
+                  {wo.due_date ? (
+                    overdue ? (
+                      <div className="text-status-overdue-fg">
+                        <p className="font-medium">{formatLongDate(wo.due_date, locale)}</p>
+                        <p className="text-xs">{overdueRelativeLabel(-daysUntil(wo.due_date), dict)}</p>
+                      </div>
+                    ) : (
+                      formatLongDate(wo.due_date, locale)
+                    )
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td className="max-w-40 truncate px-4 py-2.5">{wo.asset?.name ?? "—"}</td>
               </tr>
             );

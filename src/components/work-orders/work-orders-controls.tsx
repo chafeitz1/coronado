@@ -65,26 +65,28 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <FilterChip icon={CalendarIcon} label={dict.workOrders.filterDueDate} activeLabel={dueBucketLabel}>
-          <FilterChipOption active={dueBucket === "overdue_today"} onClick={() => setDueBucket("overdue_today")}>
-            {dict.workOrders.viewOverdueToday}
-          </FilterChipOption>
-          <FilterChipOption active={dueBucket === "overdue"} onClick={() => setDueBucket("overdue")}>
-            {dict.workOrders.viewOverdue}
-          </FilterChipOption>
-          <FilterChipOption active={dueBucket === "today"} onClick={() => setDueBucket("today")}>
-            {dict.workOrders.viewToday}
-          </FilterChipOption>
-          <FilterChipOption active={dueBucket === "this_week"} onClick={() => setDueBucket("this_week")}>
-            {dict.workOrders.viewThisWeek}
-          </FilterChipOption>
-          <FilterChipOption active={dueBucket === "next_week"} onClick={() => setDueBucket("next_week")}>
-            {dict.workOrders.viewNextWeek}
-          </FilterChipOption>
-          <FilterChipOption active={dueBucket === "all"} onClick={() => setDueBucket("all")}>
-            {dict.workOrders.viewUpcoming}
-          </FilterChipOption>
-        </FilterChip>
+        {display !== "board" && (
+          <FilterChip icon={CalendarIcon} label={dict.workOrders.filterDueDate} activeLabel={dueBucketLabel}>
+            <FilterChipOption active={dueBucket === "overdue_today"} onClick={() => setDueBucket("overdue_today")}>
+              {dict.workOrders.viewOverdueToday}
+            </FilterChipOption>
+            <FilterChipOption active={dueBucket === "overdue"} onClick={() => setDueBucket("overdue")}>
+              {dict.workOrders.viewOverdue}
+            </FilterChipOption>
+            <FilterChipOption active={dueBucket === "today"} onClick={() => setDueBucket("today")}>
+              {dict.workOrders.viewToday}
+            </FilterChipOption>
+            <FilterChipOption active={dueBucket === "this_week"} onClick={() => setDueBucket("this_week")}>
+              {dict.workOrders.viewThisWeek}
+            </FilterChipOption>
+            <FilterChipOption active={dueBucket === "next_week"} onClick={() => setDueBucket("next_week")}>
+              {dict.workOrders.viewNextWeek}
+            </FilterChipOption>
+            <FilterChipOption active={dueBucket === "all"} onClick={() => setDueBucket("all")}>
+              {dict.workOrders.viewUpcoming}
+            </FilterChipOption>
+          </FilterChip>
+        )}
 
         {locations.length > 0 && (
           <FilterChip
@@ -116,7 +118,7 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
         </FilterChip>
       </div>
 
-      {display !== "calendar" && (
+      {display !== "calendar" && display !== "board" && (
         <div className="flex gap-5 border-b border-hairline">
           <button type="button" onClick={() => setTab("to_do")} className={tabClass(tab === "to_do")}>
             {dict.workOrders.tabToDo}

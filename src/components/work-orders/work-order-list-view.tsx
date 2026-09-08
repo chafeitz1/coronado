@@ -115,7 +115,9 @@ export function WorkOrderListView({
                       <span className="truncate">{wo.title}</span>
                     </p>
                     {subtitleParts.length > 0 && (
-                      <p className={`${mutedText} truncate`}>{subtitleParts.join(" · ")}</p>
+                      <p className={`truncate ${overdue ? "text-status-overdue-fg" : mutedText}`}>
+                        {subtitleParts.join(" · ")}
+                      </p>
                     )}
                     <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
                       <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />

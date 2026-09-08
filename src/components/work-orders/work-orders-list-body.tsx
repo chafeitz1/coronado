@@ -6,6 +6,7 @@ import type { DisplayMode } from "@/components/view-switcher";
 import { WorkOrderListView } from "./work-order-list-view";
 import { WorkOrderTableView } from "./work-order-table-view";
 import { WorkOrderCalendarView } from "./work-order-calendar-view";
+import { WorkOrderBoardView } from "./work-order-board-view";
 import { WorkOrderPanel } from "./work-order-panel";
 import { advanceDate, endOfWeek } from "@/lib/dates";
 import { useWorkOrdersFilters } from "./work-orders-filters-context";
@@ -46,7 +47,10 @@ export function WorkOrdersListBody({
   const startOfNextWeek = advanceDate(endOfThisWeek, "days", 1);
   const endOfNextWeek = advanceDate(endOfThisWeek, "days", 7);
 
-  const filtered = useMemo(() => {
+  // Everything except the due-date bucket — the Board view needs every open
+  // task split across its own four columns at once, so it can't be pinned
+  // to whichever single bucket happens to be selected in the filter chip.
+  const baseFiltered = useMemo(() => {
     return orders.filter((wo) => {
       if (q && !wo.title.toLowerCase().includes(q) && !wo.asset?.name?.toLowerCase().includes(q)) return false;
       if (tab === "to_do" && isWorkOrderClosed(wo.status)) return false;
@@ -54,6 +58,12 @@ export function WorkOrdersListBody({
       if (taskType === "recurring" && !wo.recurrence_interval_value) return false;
       if (taskType === "one_time" && wo.recurrence_interval_value) return false;
       if (location && wo.asset?.location !== location) return false;
+      return true;
+    });
+  }, [orders, q, tab, taskType, location]);
+
+  const filtered = useMemo(() => {
+    return baseFiltered.filter((wo) => {
       // The due-date bucket only makes sense for open tasks — a Done task
       // is never "overdue" by definition, so applying it there would just
       // hide the whole tab. Completed tasks keep showing regardless of
@@ -70,7 +80,7 @@ export function WorkOrdersListBody({
       }
       return true;
     });
-  }, [orders, q, tab, taskType, location, dueBucket, today, endOfThisWeek, startOfNextWeek, endOfNextWeek]);
+  }, [baseFiltered, tab, dueBucket, today, endOfThisWeek, startOfNextWeek, endOfNextWeek]);
 
   // No user-facing sort control anymore — a fixed order instead: soonest
   // due date first, undated tasks last.
@@ -100,6 +110,19 @@ export function WorkOrdersListBody({
     );
   } else if (display === "calendar") {
     content = <WorkOrderCalendarView orders={filtered} today={today} dict={dict} locale={locale} />;
+  } else if (display === "board") {
+    content = (
+      <WorkOrderBoardView
+        orders={baseFiltered}
+        today={today}
+        dict={dict}
+        locale={locale}
+        currentUserId={currentUserId}
+        isOwner={isOwner}
+        onSelect={setOpenTaskId}
+        emptyMessage={dict.workOrders.emptyView}
+      />
+    );
   } else if (showGroups) {
     content = (
       <>

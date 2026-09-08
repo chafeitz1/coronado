@@ -49,6 +49,7 @@ export default async function WorkOrdersLayout({ children }: { children: React.R
     { key: "list", label: dict.workOrders.viewListDisplay },
     { key: "table", label: dict.workOrders.viewTable },
     { key: "calendar", label: dict.workOrders.viewCalendar },
+    { key: "board", label: dict.workOrders.viewBoard },
   ];
 
   const header = (

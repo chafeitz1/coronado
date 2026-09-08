@@ -21,6 +21,7 @@ export async function Sidebar() {
   const workLinks: SidebarLink[] = [
     { href: "/", label: dict.sidebar.home, icon: "home" },
     { href: "/work-orders", label: dict.sidebar.tasks, icon: "tasks", badge: overdueCount ?? 0 },
+    { href: "/purchases", label: dict.sidebar.purchases, icon: "purchases" },
     { href: "/assets", label: dict.sidebar.assets, icon: "assets" },
     { href: "/directory", label: dict.sidebar.directory, icon: "directory" },
   ];

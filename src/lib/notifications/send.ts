@@ -10,6 +10,7 @@ const EVENT_LABELS: Record<NotificationEventType, string> = {
   due_soon: "Tarea por vencer",
   overdue: "Tarea vencida",
   note_flagged: "Nota importante",
+  purchase_urgent: "Compra urgente",
 };
 
 let vapidConfigured = false;

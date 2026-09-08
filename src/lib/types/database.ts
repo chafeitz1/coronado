@@ -22,8 +22,11 @@ export type NotificationEventType =
   | "status_changed"
   | "due_soon"
   | "overdue"
-  | "note_flagged";
+  | "note_flagged"
+  | "purchase_urgent";
 export type NotificationChannel = "push" | "email";
+export type PurchaseItemListType = "groceries" | "urgent";
+export type PurchaseItemStatus = "pending" | "purchased";
 // Free-form tags the owner types in, not a fixed list — the exact words
 // people already recognize a vendor by ("Bomba Agua Tanque Reserva",
 // "Mulita", "Vecino"...) matter more here than a tidy fixed taxonomy.
@@ -185,6 +188,25 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["attachments"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["attachments"]["Insert"]>;
+      };
+      purchase_items: {
+        Row: {
+          id: string;
+          title: string;
+          quantity: string | null;
+          notes: string | null;
+          list_type: PurchaseItemListType;
+          status: PurchaseItemStatus;
+          requested_by: string;
+          purchased_by: string | null;
+          purchased_at: string | null;
+          created_at: string;
+        };
+        Insert: Omit<
+          Database["public"]["Tables"]["purchase_items"]["Row"],
+          "id" | "status" | "purchased_by" | "purchased_at" | "created_at"
+        >;
+        Update: Partial<Database["public"]["Tables"]["purchase_items"]["Insert"]>;
       };
       notification_preferences: {
         Row: {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ClipboardList, Wrench, BookUser, DollarSign, Search, ChevronRight, LogOut } from "lucide-react";
+import { Home, ClipboardList, ShoppingCart, Wrench, BookUser, DollarSign, Search, ChevronRight, LogOut } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { CommandPalette, OPEN_COMMAND_PALETTE_EVENT } from "@/components/command-palette";
@@ -13,6 +13,7 @@ import type { Locale } from "@/lib/types/database";
 const ICONS = {
   home: Home,
   tasks: ClipboardList,
+  purchases: ShoppingCart,
   assets: Wrench,
   directory: BookUser,
   finance: DollarSign,

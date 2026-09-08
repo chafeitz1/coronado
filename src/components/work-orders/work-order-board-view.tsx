@@ -3,11 +3,13 @@
 import { AlertCircle, ArrowRight, Building2, CalendarClock, CalendarRange, ClipboardList, Repeat } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { OverdueBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { card, mutedText } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
-import { endOfWeek, formatLongDate } from "@/lib/dates";
+import { daysUntil, endOfWeek, formatLongDate } from "@/lib/dates";
+import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
 
@@ -22,6 +24,13 @@ function recurrenceLabel(wo: WorkOrderRow, dict: Dictionary) {
   if (!wo.recurrence_interval_value || !wo.recurrence_interval_unit) return undefined;
   const unit = dict.workOrderDetail[UNIT_LABEL_KEYS[wo.recurrence_interval_unit]];
   return format(dict.workOrderDetail.recurrence, { value: wo.recurrence_interval_value, unit });
+}
+
+// "Venció ayer" / "Venció hace {days} días" — how late a task is, not just
+// its due date, so an overdue card reads at a glance without doing the
+// date math yourself. Same helper as the To Do card and List views.
+function overdueRelativeLabel(daysLate: number, dict: Dictionary) {
+  return daysLate === 1 ? dict.workOrders.overdueYesterday : format(dict.workOrders.overdueDaysAgo, { days: daysLate });
 }
 
 // Colored per column so the board reads at a glance — same red the Overdue
@@ -106,6 +115,7 @@ export function WorkOrderBoardView({
               ) : (
                 col.rows.map((wo) => {
                   const canEdit = isOwner || wo.assigned_to === currentUserId;
+                  const overdue = !isWorkOrderClosed(wo.status) && !!wo.due_date && wo.due_date < today;
                   return (
                     <div
                       key={wo.id}
@@ -115,7 +125,9 @@ export function WorkOrderBoardView({
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") onSelect(wo.id);
                       }}
-                      className={`flex cursor-pointer flex-col gap-2 p-3 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover ${card}`}
+                      className={`relative flex cursor-pointer flex-col gap-2 p-3 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover ${
+                        overdue ? "pb-7" : ""
+                      } ${card}`}
                     >
                       <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
                         {wo.recurrence_interval_value && (
@@ -125,6 +137,13 @@ export function WorkOrderBoardView({
                         )}
                         <span className="truncate">{wo.title}</span>
                       </p>
+                      {wo.due_date && (
+                        <p className={`truncate text-xs ${overdue ? "text-status-overdue-fg" : "text-ink-muted"}`}>
+                          {overdue
+                            ? `${formatLongDate(wo.due_date, locale)} · ${overdueRelativeLabel(-daysUntil(wo.due_date), dict)}`
+                            : formatLongDate(wo.due_date, locale)}
+                        </p>
+                      )}
                       <div className="flex items-center justify-between gap-2">
                         <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
                         {wo.assignee ? (
@@ -138,7 +157,11 @@ export function WorkOrderBoardView({
                           )
                         )}
                       </div>
-                      {wo.due_date && <p className={`${mutedText} text-xs`}>{formatLongDate(wo.due_date, locale)}</p>}
+                      {overdue && (
+                        <span className="absolute bottom-2 right-3">
+                          <OverdueBadge locale={locale} />
+                        </span>
+                      )}
                     </div>
                   );
                 })

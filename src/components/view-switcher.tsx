@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { LayoutPanelLeft, Table2, CalendarDays, LayoutGrid, Kanban } from "lucide-react";
+import { LayoutPanelLeft, Table2, CalendarDays, LayoutGrid, Columns3 } from "lucide-react";
 
 export type DisplayMode = "list" | "table" | "calendar" | "gallery" | "board";
 
@@ -10,7 +10,7 @@ const ICONS: Record<DisplayMode, typeof LayoutPanelLeft> = {
   table: Table2,
   calendar: CalendarDays,
   gallery: LayoutGrid,
-  board: Kanban,
+  board: Columns3,
 };
 
 // A segmented toggle — every option visible and one click away, instead of

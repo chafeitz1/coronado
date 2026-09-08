@@ -7,7 +7,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { OverdueBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
-import { listCard, mutedText, sectionHeading } from "@/lib/ui";
+import { listCard, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { daysUntil, formatLongDate } from "@/lib/dates";
 import { isWorkOrderClosed } from "@/lib/types/database";
@@ -115,7 +115,7 @@ export function WorkOrderListView({
                       <span className="truncate">{wo.title}</span>
                     </p>
                     {subtitleParts.length > 0 && (
-                      <p className={`truncate ${overdue ? "text-status-overdue-fg" : mutedText}`}>
+                      <p className={`truncate text-sm ${overdue ? "text-status-overdue-fg" : "text-ink-muted"}`}>
                         {subtitleParts.join(" · ")}
                       </p>
                     )}

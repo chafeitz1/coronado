@@ -9,7 +9,7 @@ import { WorkOrderMenu } from "@/components/work-order-menu";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
-import { formatLongDate } from "@/lib/dates";
+import { daysUntil, formatLongDate } from "@/lib/dates";
 import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Locale, WorkOrderStatus } from "@/lib/types/database";
 
@@ -47,6 +47,13 @@ export type WorkOrderDetailData = {
 function single<T>(value: T | T[] | null | undefined): T | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
+}
+
+// "Venció ayer" / "Venció hace {days} días" — how late a task is, not just
+// its due date, so an overdue detail view reads at a glance without doing
+// the date math yourself.
+function overdueRelativeLabel(daysLate: number, dict: Dictionary) {
+  return daysLate === 1 ? dict.workOrders.overdueYesterday : format(dict.workOrders.overdueDaysAgo, { days: daysLate });
 }
 
 // The full task view — status, meta grid, attachments, notes, activity log,
@@ -199,9 +206,18 @@ export function WorkOrderDetailContent({
       <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-hairline p-5">
         <div className="space-y-1">
           <p className={sectionHeading}>{dict.workOrderForm.dueDateLabel}</p>
-          <p className="text-sm text-ink">
-            {workOrder.due_date ? formatLongDate(workOrder.due_date, locale) : dict.workOrders.noDueDate}
-          </p>
+          {workOrder.due_date ? (
+            overdue ? (
+              <div className="text-status-overdue-fg">
+                <p className="text-sm font-medium">{formatLongDate(workOrder.due_date, locale)}</p>
+                <p className="text-xs">{overdueRelativeLabel(-daysUntil(workOrder.due_date), dict)}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-ink">{formatLongDate(workOrder.due_date, locale)}</p>
+            )
+          ) : (
+            <p className="text-sm text-ink">{dict.workOrders.noDueDate}</p>
+          )}
         </div>
         <div className="space-y-1">
           <p className={sectionHeading}>{dict.workOrderDetail.assignedToLabel}</p>

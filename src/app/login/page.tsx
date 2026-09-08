@@ -2,9 +2,10 @@
 
 import { Suspense, useActionState, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { login, sendMagicLink } from "@/app/actions/auth";
 import { Field } from "@/components/ui/field";
-import { buttonPrimary, card, input, mutedText } from "@/lib/ui";
+import { buttonPrimary, input, mutedText } from "@/lib/ui";
 
 type Mode = "password" | "link";
 
@@ -81,7 +82,7 @@ function LoginCard() {
   const [mode, setMode] = useState<Mode>(expiredNotice ? "link" : "password");
 
   return (
-    <div className={`w-full max-w-sm space-y-5 p-7 ${card}`}>
+    <div className="w-full max-w-sm space-y-5 rounded-2xl border border-white/20 bg-surface/90 p-8 shadow-2xl backdrop-blur-xl">
       <div className="space-y-1 text-center">
         <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-base font-bold text-on-primary">
           C
@@ -112,7 +113,15 @@ function LoginCard() {
 
 export default function LoginPage() {
   return (
-    <div className="flex flex-1 items-center justify-center p-6">
+    <div className="relative flex flex-1 items-center justify-center overflow-hidden p-6">
+      {/* Fixed (not absolute) so it fills the whole viewport regardless of
+          this page sitting inside <main>'s own padding — the photo should
+          bleed to every edge, not just the space left by the layout. */}
+      <div className="fixed inset-0 -z-10">
+        <Image src="/login-bg.jpg" alt="" fill priority sizes="100vw" className="object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/55" />
+      </div>
+
       <Suspense fallback={null}>
         <LoginCard />
       </Suspense>

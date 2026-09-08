@@ -49,7 +49,7 @@ function single<T>(value: T | T[] | null | undefined): T | null {
   return value ?? null;
 }
 
-// "Venció ayer" / "Venció hace {days} días" — how late a task is, not just
+// "Venció ayer" / "hace {days} días" — how late a task is, not just
 // its due date, so an overdue detail view reads at a glance without doing
 // the date math yourself.
 function overdueRelativeLabel(daysLate: number, dict: Dictionary) {

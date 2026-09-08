@@ -28,7 +28,7 @@ function recurrenceLabel(wo: WorkOrderRow, dict: Dictionary) {
   return format(dict.workOrderDetail.recurrence, { value: wo.recurrence_interval_value, unit });
 }
 
-// "Venció ayer" / "Venció hace {days} días" — how late a task is, not just
+// "Venció ayer" / "hace {days} días" — how late a task is, not just
 // its due date, so an overdue row reads at a glance without doing the
 // date math yourself.
 function overdueRelativeLabel(daysLate: number, dict: Dictionary) {

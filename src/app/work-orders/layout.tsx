@@ -54,13 +54,13 @@ export default async function WorkOrdersLayout({ children }: { children: React.R
   const header = (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className={pageHeading}>{dict.workOrders.title}</h1>
+        <h1 className={pageHeading}>{dict.workOrders.title}</h1>
+        <div className="flex items-center gap-3">
           <ViewSwitcher options={viewOptions} />
+          <Link href="/work-orders/new" className={buttonPrimary}>
+            <Plus className="size-4" /> {dict.workOrders.newTask}
+          </Link>
         </div>
-        <Link href="/work-orders/new" className={buttonPrimary}>
-          <Plus className="size-4" /> {dict.workOrders.newTask}
-        </Link>
       </div>
       <WorkOrdersControls orders={orders} dict={dict} />
     </div>

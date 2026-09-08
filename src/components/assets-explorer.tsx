@@ -9,7 +9,7 @@ import { AssetPanel, type AssetPanelMode } from "@/components/asset-panel";
 import { OverdueBadge } from "@/components/ui/badge";
 import { Pill } from "@/components/ui/pill";
 import { ViewSwitcher, type DisplayMode } from "@/components/view-switcher";
-import { card, input, mutedText, sectionHeading } from "@/lib/ui";
+import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
@@ -166,35 +166,40 @@ export function AssetsExplorer({
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={dict.assets.searchPlaceholder}
-            className={`${input} pl-9`}
-          />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className={pageHeading}>{dict.assets.title}</h1>
+          <p className={mutedText}>{format(dict.assets.subtitleCount, { count: assets.length })}</p>
         </div>
-        <ViewSwitcher
-          options={[
-            { key: "gallery", label: dict.assets.viewGallery },
-            { key: "list", label: dict.assets.viewList },
-          ]}
-          defaultMode="gallery"
+        <div className="flex items-center gap-3">
+          <ViewSwitcher
+            options={[
+              { key: "gallery", label: dict.assets.viewGallery },
+              { key: "list", label: dict.assets.viewList },
+            ]}
+            defaultMode="gallery"
+          />
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => setPanelState({ mode: "create", assetId: null })}
+              className={buttonPrimary}
+            >
+              <Plus className="size-4" /> {dict.assets.newAsset}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={dict.assets.searchPlaceholder}
+          className={`${input} pl-9`}
         />
-        {isOwner && (
-          <button
-            type="button"
-            onClick={() => setPanelState({ mode: "create", assetId: null })}
-            aria-label={dict.assets.newAsset}
-            title={dict.assets.newAsset}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-active active:bg-primary-active"
-          >
-            <Plus className="size-5" />
-          </button>
-        )}
       </div>
 
       {maintenanceDue.length > 0 && (

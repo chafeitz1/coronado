@@ -7,15 +7,18 @@ type Phase = "idle" | "loading" | "complete" | "fading";
 
 // Tuning: SHOW_DELAY avoids flashing on already-prefetched, near-instant
 // navigations. "loading" crawls toward LOADING_TARGET over LOADING_DURATION_MS
-// — a plain CSS transition, not a JS ticker — since almost every real
-// navigation lands well before that finishes on its own. "complete" then
+// at a *linear* rate — a plain CSS transition, not a JS ticker — since
+// almost every real navigation lands well before that finishes on its own.
+// Linear matters: an eased crawl decelerates hard near its own target, so
+// within a normal 1-3s load the bar looks like it's stalled well short of
+// LOADING_TARGET even though it's technically still moving. "complete" then
 // snaps the rest of the way to 100% quickly so the bar visibly *reaches the
 // end* instead of just vanishing wherever the crawl happened to be, holds
 // there briefly, and "fading" fades it out.
 const SHOW_DELAY_MS = 150;
-const LOADING_TARGET = 80;
-const LOADING_DURATION_MS = 8000;
-const COMPLETE_DURATION_MS = 250;
+const LOADING_TARGET = 90;
+const LOADING_DURATION_MS = 4000;
+const COMPLETE_DURATION_MS = 200;
 const FADE_DELAY_MS = 150;
 const FADE_DURATION_MS = 300;
 
@@ -94,7 +97,12 @@ export function RouteProgressBar() {
   if (phase === "idle") return null;
 
   const width = phase === "loading" ? LOADING_TARGET : 100;
-  const widthDuration = phase === "loading" ? LOADING_DURATION_MS : COMPLETE_DURATION_MS;
+  // Linear while crawling (constant, visibly continuous speed toward a
+  // target it's not meant to reach on its own); a quick ease-out only for
+  // the short final snap to 100%, where a bit of deceleration reads as
+  // "arriving" rather than stalling.
+  const widthTransition =
+    phase === "loading" ? `width ${LOADING_DURATION_MS}ms linear` : `width ${COMPLETE_DURATION_MS}ms ease-out`;
 
   return (
     <div className="fixed inset-x-0 top-0 z-[100] h-0.5" aria-hidden>
@@ -103,7 +111,7 @@ export function RouteProgressBar() {
         style={{
           width: `${width}%`,
           opacity: phase === "fading" ? 0 : 1,
-          transition: `width ${widthDuration}ms ease-out, opacity ${FADE_DURATION_MS}ms ease-out`,
+          transition: `${widthTransition}, opacity ${FADE_DURATION_MS}ms ease-out`,
         }}
       />
     </div>

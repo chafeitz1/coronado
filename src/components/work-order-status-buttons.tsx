@@ -48,13 +48,10 @@ export function WorkOrderStatusButtons({
   const [pending, startTransition] = useTransition();
 
   return (
-    // Mobile: one row of 4 big tappable boxes (icon stacked over label) —
-    // status is the single most important action on this page from a phone,
-    // so it gets real thumb-sized targets instead of the compact pill row,
-    // but still as one line rather than wrapping into a 2x2 grid. Desktop
-    // keeps the original inline pill row, which already fits fine next to
-    // the title there.
-    <div className="grid grid-cols-4 gap-1.5 sm:flex sm:flex-wrap sm:gap-1.5">
+    // One row of 4 big tappable boxes (icon stacked over label) — same
+    // treatment on desktop as mobile now, rather than shrinking back down
+    // to a compact pill row above sm.
+    <div className="grid grid-cols-4 gap-1.5">
       {ORDER.map((s) => {
         const Icon = ICONS[s];
         const active = s === status;
@@ -69,13 +66,13 @@ export function WorkOrderStatusButtons({
                 updateWorkOrderStatus(workOrderId, s);
               });
             }}
-            className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-xs font-semibold transition-colors disabled:opacity-60 sm:flex-row sm:gap-1.5 sm:rounded-full sm:px-3 sm:py-1.5 ${
+            className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
               active
                 ? `${ACTIVE_STYLES[s]} hover:brightness-95 active:brightness-90`
                 : `bg-canvas-soft text-ink-muted ${HOVER_STYLES[s]}`
             }`}
           >
-            <Icon className="size-4 sm:size-3.5" strokeWidth={2.5} />
+            <Icon className="size-4" strokeWidth={2.5} />
             {dict.statuses[s]}
           </button>
         );

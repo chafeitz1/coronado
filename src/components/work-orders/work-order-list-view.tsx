@@ -100,11 +100,7 @@ export function WorkOrderListView({
               <li key={wo.id}>
                 <Link
                   href={`/work-orders/${wo.id}`}
-                  className={`relative flex items-start gap-3 px-4 py-3.5 transition-colors ${
-                    overdue
-                      ? "bg-status-overdue-bg hover:brightness-95 active:brightness-90"
-                      : "hover:bg-surface-hover active:bg-surface-hover"
-                  }`}
+                  className="relative flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                 >
                   <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
                     <ClipboardList className="size-4" strokeWidth={2} />

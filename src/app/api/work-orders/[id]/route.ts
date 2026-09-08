@@ -65,6 +65,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }));
 
   return NextResponse.json({
+    today: new Date().toISOString().slice(0, 10),
     workOrder,
     asset: single(workOrder.assets),
     vendor: single(workOrder.vendors),

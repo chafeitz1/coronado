@@ -30,15 +30,15 @@ export function WorkOrderPanel({
   // — `loaded` below only reads it back out when the id still matches,
   // without needing a synchronous setData(null) in the effect body just to
   // clear the previous task while the new one loads.
-  const [data, setData] = useState<{ id: string; detail: WorkOrderDetailData } | null>(null);
+  const [data, setData] = useState<{ id: string; detail: WorkOrderDetailData; today: string } | null>(null);
 
   useEffect(() => {
     if (!workOrderId) return;
     let cancelled = false;
     fetch(`/api/work-orders/${workOrderId}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("failed to load"))))
-      .then((json: WorkOrderDetailData) => {
-        if (!cancelled) setData({ id: workOrderId, detail: json });
+      .then((json: WorkOrderDetailData & { today: string }) => {
+        if (!cancelled) setData({ id: workOrderId, detail: json, today: json.today });
       })
       .catch(() => {
         if (!cancelled) setData(null);
@@ -48,7 +48,7 @@ export function WorkOrderPanel({
     };
   }, [workOrderId]);
 
-  const loaded = data && data.id === workOrderId ? data.detail : null;
+  const loaded = data && data.id === workOrderId ? data : null;
 
   return (
     // The floating close "X" only needs hiding once the content has its
@@ -57,7 +57,8 @@ export function WorkOrderPanel({
     <SidePanel open={!!workOrderId} onClose={onClose} hideClose={!!loaded}>
       {loaded ? (
         <WorkOrderDetailContent
-          data={loaded}
+          data={loaded.detail}
+          today={loaded.today}
           currentUserId={currentUserId}
           isOwner={isOwner}
           locale={locale}

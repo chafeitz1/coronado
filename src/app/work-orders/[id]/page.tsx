@@ -62,6 +62,8 @@ export default async function WorkOrderDetailPage({
 
   const isOwner = profile.role === "owner";
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const attachments = (attachmentRows ?? []).map((row) => ({
     id: row.id,
     storagePath: row.storage_path,
@@ -83,6 +85,7 @@ export default async function WorkOrderDetailPage({
         activityRows: activityRows ?? [],
         seriesRows: seriesRows ?? [],
       }}
+      today={today}
       currentUserId={profile.id}
       isOwner={isOwner}
       locale={profile.locale}

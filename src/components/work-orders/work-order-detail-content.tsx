@@ -10,6 +10,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { formatLongDate } from "@/lib/dates";
+import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Locale, WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
 
 type Person = { full_name: string; avatar_url?: string | null } | null;
@@ -57,6 +58,7 @@ function single<T>(value: T | T[] | null | undefined): T | null {
 // List (table) view, which can't render a Server Component itself.
 export function WorkOrderDetailContent({
   data,
+  today,
   currentUserId,
   isOwner,
   locale,
@@ -64,6 +66,11 @@ export function WorkOrderDetailContent({
   onClose,
 }: {
   data: WorkOrderDetailData;
+  // ISO date string ("YYYY-MM-DD") — needed to tell whether this task is
+  // overdue. Passed in rather than computed here since this component
+  // renders both server-side (the [id] route) and client-side (the List
+  // view's panel), and "now" belongs to whichever fetched the data.
+  today: string;
   currentUserId: string;
   isOwner: boolean;
   locale: Locale;
@@ -77,6 +84,7 @@ export function WorkOrderDetailContent({
 }) {
   const { workOrder, asset, vendor, assignee, creator, attachments, notes, activityRows, seriesRows } = data;
   const canChangeStatus = isOwner || workOrder.assigned_to === currentUserId;
+  const overdue = !isWorkOrderClosed(workOrder.status) && !!workOrder.due_date && workOrder.due_date < today;
 
   const unitLabels: Record<string, string> = {
     days: dict.workOrderDetail.unitDays,
@@ -162,6 +170,11 @@ export function WorkOrderDetailContent({
             <WorkOrderStatusButtons workOrderId={workOrder.id} status={workOrder.status} dict={dict} />
           ) : (
             <StatusBadge status={workOrder.status} locale={locale} />
+          )}
+          {overdue && (
+            <span className="rounded-full bg-status-overdue-bg px-2.5 py-1 text-xs font-semibold text-status-overdue-fg">
+              {dict.badges.overdue}
+            </span>
           )}
         </div>
         {(workOrder.recurrence_interval_value || workOrder.completed_at) && (

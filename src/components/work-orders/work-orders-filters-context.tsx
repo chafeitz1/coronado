@@ -3,8 +3,12 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import type { WorkOrderPriority } from "@/lib/types/database";
 
-export type DueBucket = "all" | "overdue" | "due_soon" | "none";
-export type SortKey = "priority" | "due_date";
+// "overdue_today" (the default) shows what's overdue plus what's due
+// today together — the working set someone actually needs to look at
+// right now. The rest are single-bucket views for digging further out.
+// "all" ("Todas a futuro") drops the due-date restriction entirely,
+// same role the old plain "all" bucket served.
+export type DueBucket = "overdue_today" | "overdue" | "today" | "this_week" | "next_week" | "all";
 export type TabKey = "to_do" | "done";
 // "recurring" = has a maintenance schedule (recurrence_interval_value
 // set) — a one-off report/repair never does, regardless of whether it
@@ -24,8 +28,6 @@ type WorkOrdersFiltersValue = {
   setPriority: (v: WorkOrderPriority | null) => void;
   location: string | null;
   setLocation: (v: string | null) => void;
-  sortKey: SortKey;
-  setSortKey: (v: SortKey) => void;
 };
 
 const WorkOrdersFiltersContext = createContext<WorkOrdersFiltersValue | null>(null);
@@ -40,10 +42,9 @@ export function WorkOrdersFiltersProvider({ children }: { children: React.ReactN
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<TabKey>("to_do");
   const [taskType, setTaskType] = useState<TaskType>("all");
-  const [dueBucket, setDueBucket] = useState<DueBucket>("all");
+  const [dueBucket, setDueBucket] = useState<DueBucket>("overdue_today");
   const [priority, setPriority] = useState<WorkOrderPriority | null>(null);
   const [location, setLocation] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("priority");
 
   const value = useMemo(
     () => ({
@@ -59,10 +60,8 @@ export function WorkOrdersFiltersProvider({ children }: { children: React.ReactN
       setPriority,
       location,
       setLocation,
-      sortKey,
-      setSortKey,
     }),
-    [search, tab, taskType, dueBucket, priority, location, sortKey]
+    [search, tab, taskType, dueBucket, priority, location]
   );
 
   return <WorkOrdersFiltersContext.Provider value={value}>{children}</WorkOrdersFiltersContext.Provider>;

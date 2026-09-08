@@ -31,8 +31,6 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
     setPriority,
     location,
     setLocation,
-    sortKey,
-    setSortKey,
   } = useWorkOrdersFilters();
 
   const locations = useMemo(() => {
@@ -41,19 +39,21 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
     return [...set].sort();
   }, [orders]);
 
-  const dueBucketLabel =
-    dueBucket === "overdue"
-      ? dict.workOrders.viewOverdue
-      : dueBucket === "due_soon"
-        ? dict.workOrders.viewDueSoon
-        : dueBucket === "none"
-          ? dict.workOrders.noDueDate
-          : null;
+  // Always has a label — there's no "unfiltered" state anymore, the
+  // default (overdue_today) is itself a meaningful filter, so the chip
+  // shows what's currently applied rather than a generic placeholder.
+  const dueBucketLabel = {
+    overdue_today: dict.workOrders.viewOverdueToday,
+    overdue: dict.workOrders.viewOverdue,
+    today: dict.workOrders.viewToday,
+    this_week: dict.workOrders.viewThisWeek,
+    next_week: dict.workOrders.viewNextWeek,
+    all: dict.workOrders.viewUpcoming,
+  }[dueBucket];
 
   const priorityLabel = priority ? dict.priorities[priority] : null;
   const taskTypeLabel =
     taskType === "recurring" ? dict.workOrders.typeRecurring : taskType === "one_time" ? dict.workOrders.typeOneTime : null;
-  const sortLabel = sortKey === "priority" ? dict.workOrders.sortPriority : dict.workOrders.sortDueDate;
 
   return (
     <div className="space-y-4">
@@ -69,20 +69,24 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <FilterChip
-          icon={CalendarIcon}
-          label={dict.workOrders.filterDueDate}
-          activeLabel={dueBucketLabel}
-          onClear={() => setDueBucket("all")}
-        >
+        <FilterChip icon={CalendarIcon} label={dict.workOrders.filterDueDate} activeLabel={dueBucketLabel}>
+          <FilterChipOption active={dueBucket === "overdue_today"} onClick={() => setDueBucket("overdue_today")}>
+            {dict.workOrders.viewOverdueToday}
+          </FilterChipOption>
           <FilterChipOption active={dueBucket === "overdue"} onClick={() => setDueBucket("overdue")}>
             {dict.workOrders.viewOverdue}
           </FilterChipOption>
-          <FilterChipOption active={dueBucket === "due_soon"} onClick={() => setDueBucket("due_soon")}>
-            {dict.workOrders.viewDueSoon}
+          <FilterChipOption active={dueBucket === "today"} onClick={() => setDueBucket("today")}>
+            {dict.workOrders.viewToday}
           </FilterChipOption>
-          <FilterChipOption active={dueBucket === "none"} onClick={() => setDueBucket("none")}>
-            {dict.workOrders.noDueDate}
+          <FilterChipOption active={dueBucket === "this_week"} onClick={() => setDueBucket("this_week")}>
+            {dict.workOrders.viewThisWeek}
+          </FilterChipOption>
+          <FilterChipOption active={dueBucket === "next_week"} onClick={() => setDueBucket("next_week")}>
+            {dict.workOrders.viewNextWeek}
+          </FilterChipOption>
+          <FilterChipOption active={dueBucket === "all"} onClick={() => setDueBucket("all")}>
+            {dict.workOrders.viewUpcoming}
           </FilterChipOption>
         </FilterChip>
 
@@ -130,27 +134,13 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
       </div>
 
       {display !== "calendar" && (
-        <div className="flex flex-wrap items-center gap-4 border-b border-hairline">
-          <div className="flex gap-5">
-            <button type="button" onClick={() => setTab("to_do")} className={tabClass(tab === "to_do")}>
-              {dict.workOrders.tabToDo}
-            </button>
-            <button type="button" onClick={() => setTab("done")} className={tabClass(tab === "done")}>
-              {dict.workOrders.tabDone}
-            </button>
-          </div>
-          {/* Right next to the tabs (which sit at the top of the list
-              column) instead of pushed to the far right of the shared
-              toolbar, where it ends up floating near the detail panel
-              instead of the list it actually sorts. */}
-          <FilterChip label={dict.workOrders.sortLabel} activeLabel={sortLabel}>
-            <FilterChipOption active={sortKey === "priority"} onClick={() => setSortKey("priority")}>
-              {dict.workOrders.sortPriority}
-            </FilterChipOption>
-            <FilterChipOption active={sortKey === "due_date"} onClick={() => setSortKey("due_date")}>
-              {dict.workOrders.sortDueDate}
-            </FilterChipOption>
-          </FilterChip>
+        <div className="flex gap-5 border-b border-hairline">
+          <button type="button" onClick={() => setTab("to_do")} className={tabClass(tab === "to_do")}>
+            {dict.workOrders.tabToDo}
+          </button>
+          <button type="button" onClick={() => setTab("done")} className={tabClass(tab === "done")}>
+            {dict.workOrders.tabDone}
+          </button>
         </div>
       )}
     </div>

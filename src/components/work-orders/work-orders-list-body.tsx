@@ -6,7 +6,7 @@ import type { DisplayMode } from "@/components/view-switcher";
 import { WorkOrderListView } from "./work-order-list-view";
 import { WorkOrderTableView } from "./work-order-table-view";
 import { WorkOrderCalendarView } from "./work-order-calendar-view";
-import { isoDateOffset } from "@/lib/dates";
+import { advanceDate, endOfWeek } from "@/lib/dates";
 import { useWorkOrdersFilters } from "./work-orders-filters-context";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { isWorkOrderClosed } from "@/lib/types/database";
@@ -34,10 +34,12 @@ export function WorkOrdersListBody({
 }) {
   const searchParams = useSearchParams();
   const display = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
-  const { search, tab, taskType, dueBucket, priority, location, sortKey } = useWorkOrdersFilters();
+  const { search, tab, taskType, dueBucket, priority, location } = useWorkOrdersFilters();
 
-  const in7Days = isoDateOffset(7);
   const q = search.trim().toLowerCase();
+  const endOfThisWeek = endOfWeek(today);
+  const startOfNextWeek = advanceDate(endOfThisWeek, "days", 1);
+  const endOfNextWeek = advanceDate(endOfThisWeek, "days", 7);
 
   const filtered = useMemo(() => {
     return orders.filter((wo) => {
@@ -48,22 +50,36 @@ export function WorkOrdersListBody({
       if (taskType === "one_time" && wo.recurrence_interval_value) return false;
       if (priority && wo.priority !== priority) return false;
       if (location && wo.asset?.location !== location) return false;
-      if (dueBucket === "overdue" && !(wo.due_date && wo.due_date < today && !isWorkOrderClosed(wo.status))) return false;
-      if (dueBucket === "due_soon" && !(wo.due_date && wo.due_date >= today && wo.due_date <= in7Days)) return false;
-      if (dueBucket === "none" && wo.due_date) return false;
+      // The due-date bucket only makes sense for open tasks — a Done task
+      // is never "overdue" by definition, so applying it there would just
+      // hide the whole tab. Completed tasks keep showing regardless of
+      // which bucket is selected.
+      if (tab === "to_do") {
+        const overdue = !!wo.due_date && wo.due_date < today;
+        if (dueBucket === "overdue_today" && !(overdue || wo.due_date === today)) return false;
+        if (dueBucket === "overdue" && !overdue) return false;
+        if (dueBucket === "today" && wo.due_date !== today) return false;
+        if (dueBucket === "this_week" && !(wo.due_date && wo.due_date >= today && wo.due_date <= endOfThisWeek))
+          return false;
+        if (dueBucket === "next_week" && !(wo.due_date && wo.due_date >= startOfNextWeek && wo.due_date <= endOfNextWeek))
+          return false;
+      }
       return true;
     });
-  }, [orders, q, tab, taskType, priority, location, dueBucket, today, in7Days]);
+  }, [orders, q, tab, taskType, priority, location, dueBucket, today, endOfThisWeek, startOfNextWeek, endOfNextWeek]);
 
+  // No user-facing sort control anymore — a fixed order instead: soonest
+  // due date first (undated tasks last), priority breaking ties.
   const sorted = useMemo(() => {
     const rows = [...filtered];
     const rank: Record<string, number> = { low: 0, medium: 1, high: 2 };
     rows.sort((a, b) => {
-      if (sortKey === "priority") return rank[b.priority] - rank[a.priority];
-      return (a.due_date ?? "9999-99-99").localeCompare(b.due_date ?? "9999-99-99");
+      const dueCmp = (a.due_date ?? "9999-99-99").localeCompare(b.due_date ?? "9999-99-99");
+      if (dueCmp !== 0) return dueCmp;
+      return rank[b.priority] - rank[a.priority];
     });
     return rows;
-  }, [filtered, sortKey]);
+  }, [filtered]);
 
   const mine = sorted.filter((wo) => wo.assigned_to === currentUserId);
   const others = sorted.filter((wo) => wo.assigned_to !== currentUserId);

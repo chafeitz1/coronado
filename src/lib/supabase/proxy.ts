@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login"];
+// /auth/confirm has to be public: it's where a magic-link/invite email lands
+// before the person has a session — gating it behind auth would bounce them
+// straight to /login without ever getting to verify the link.
+const PUBLIC_PATHS = ["/login", "/auth/confirm"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

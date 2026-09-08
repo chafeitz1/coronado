@@ -82,7 +82,7 @@ function LoginCard() {
   const [mode, setMode] = useState<Mode>(expiredNotice ? "link" : "password");
 
   return (
-    <div className="w-full max-w-sm space-y-5 rounded-2xl border border-white/20 bg-surface/90 p-8 shadow-2xl backdrop-blur-xl">
+    <div className="w-full max-w-sm space-y-5 rounded-2xl border border-white/30 bg-surface/45 p-8 shadow-2xl backdrop-blur-2xl backdrop-saturate-150">
       <div className="space-y-1 text-center">
         <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-base font-bold text-on-primary">
           C

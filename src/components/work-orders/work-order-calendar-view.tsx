@@ -9,12 +9,6 @@ import { getMonthGrid, isoDate } from "@/lib/dates";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { WorkOrderRow } from "./types";
 
-const PRIORITY_DOT = {
-  low: "bg-ink-faint",
-  medium: "bg-status-progress-fg",
-  high: "bg-status-overdue-fg",
-};
-
 export function WorkOrderCalendarView({
   orders,
   today,
@@ -130,7 +124,6 @@ export function WorkOrderCalendarView({
                       href={`/work-orders/${wo.id}`}
                       className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
                     >
-                      <span className={`size-1.5 shrink-0 rounded-full ${PRIORITY_DOT[wo.priority]}`} />
                       <span className="truncate">{wo.title}</span>
                     </Link>
                   ))}

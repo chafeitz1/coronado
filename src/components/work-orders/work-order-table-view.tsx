@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowUp, ArrowDown, Building2, ClipboardList, Repeat } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
-import { PriorityBadge } from "@/components/ui/badge";
+import { OverdueBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { card, mutedText } from "@/lib/ui";
@@ -13,9 +13,7 @@ import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
 
-type SortKey = "title" | "status" | "priority" | "assignee" | "due_date" | "asset";
-
-const PRIORITY_RANK = { low: 0, medium: 1, high: 2 };
+type SortKey = "title" | "status" | "assignee" | "due_date" | "asset";
 
 const UNIT_LABEL_KEYS = {
   days: "unitDays",
@@ -58,7 +56,6 @@ export function WorkOrderTableView({
       let cmp = 0;
       if (sortKey === "title") cmp = a.title.localeCompare(b.title);
       else if (sortKey === "status") cmp = a.status.localeCompare(b.status);
-      else if (sortKey === "priority") cmp = PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
       else if (sortKey === "assignee")
         cmp = (a.assignee?.full_name ?? a.vendor?.name ?? "").localeCompare(b.assignee?.full_name ?? b.vendor?.name ?? "");
       else if (sortKey === "asset") cmp = (a.asset?.name ?? "").localeCompare(b.asset?.name ?? "");
@@ -83,7 +80,6 @@ export function WorkOrderTableView({
   const columns: { key: SortKey; label: string }[] = [
     { key: "title", label: dict.workOrderForm.titleLabel },
     { key: "status", label: dict.workOrders.statusHeader },
-    { key: "priority", label: dict.workOrderForm.priorityLabel },
     { key: "assignee", label: dict.workOrderForm.assignLabel },
     { key: "due_date", label: dict.workOrderForm.dueDateLabel },
     { key: "asset", label: dict.workOrderForm.assetLabel },
@@ -126,13 +122,15 @@ export function WorkOrderTableView({
                       </span>
                     )}
                     <span className="truncate">{wo.title}</span>
+                    {overdue && (
+                      <span className="shrink-0">
+                        <OverdueBadge locale={locale} />
+                      </span>
+                    )}
                   </span>
                 </td>
                 <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
                   <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
-                </td>
-                <td className="px-4 py-2.5">
-                  <PriorityBadge priority={wo.priority} locale={locale} />
                 </td>
                 <td className="px-4 py-2.5">
                   {wo.assignee ? (
@@ -149,16 +147,7 @@ export function WorkOrderTableView({
                     <span className={mutedText}>{dict.workOrders.unassigned}</span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-4 py-2.5">
-                  <span className="flex items-center gap-2">
-                    {wo.due_date ? formatLongDate(wo.due_date, locale) : "—"}
-                    {overdue && (
-                      <span className="rounded-full bg-status-overdue-bg px-2 py-0.5 text-xs font-semibold text-status-overdue-fg">
-                        {dict.badges.overdue}
-                      </span>
-                    )}
-                  </span>
-                </td>
+                <td className="whitespace-nowrap px-4 py-2.5">{wo.due_date ? formatLongDate(wo.due_date, locale) : "—"}</td>
                 <td className="max-w-40 truncate px-4 py-2.5">{wo.asset?.name ?? "—"}</td>
               </tr>
             );

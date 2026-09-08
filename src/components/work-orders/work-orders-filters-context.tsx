@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState } from "react";
-import type { WorkOrderPriority } from "@/lib/types/database";
 
 // "overdue_today" (the default) shows what's overdue plus what's due
 // today together — the working set someone actually needs to look at
@@ -24,8 +23,6 @@ type WorkOrdersFiltersValue = {
   setTaskType: (v: TaskType) => void;
   dueBucket: DueBucket;
   setDueBucket: (v: DueBucket) => void;
-  priority: WorkOrderPriority | null;
-  setPriority: (v: WorkOrderPriority | null) => void;
   location: string | null;
   setLocation: (v: string | null) => void;
 };
@@ -43,7 +40,6 @@ export function WorkOrdersFiltersProvider({ children }: { children: React.ReactN
   const [tab, setTab] = useState<TabKey>("to_do");
   const [taskType, setTaskType] = useState<TaskType>("all");
   const [dueBucket, setDueBucket] = useState<DueBucket>("overdue_today");
-  const [priority, setPriority] = useState<WorkOrderPriority | null>(null);
   const [location, setLocation] = useState<string | null>(null);
 
   const value = useMemo(
@@ -56,12 +52,10 @@ export function WorkOrdersFiltersProvider({ children }: { children: React.ReactN
       setTaskType,
       dueBucket,
       setDueBucket,
-      priority,
-      setPriority,
       location,
       setLocation,
     }),
-    [search, tab, taskType, dueBucket, priority, location]
+    [search, tab, taskType, dueBucket, location]
   );
 
   return <WorkOrdersFiltersContext.Provider value={value}>{children}</WorkOrdersFiltersContext.Provider>;

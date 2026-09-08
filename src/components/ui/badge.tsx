@@ -1,5 +1,5 @@
 import { Lock, RefreshCw, CheckCircle2, PowerOff, SkipForward } from "lucide-react";
-import type { AssetStatus, Locale, WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
+import type { AssetStatus, Locale, WorkOrderStatus } from "@/lib/types/database";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 const baseClass = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide";
@@ -18,12 +18,6 @@ const STATUS_ICONS: Record<WorkOrderStatus, typeof Lock> = {
   skipped: SkipForward,
 };
 
-const PRIORITY_STYLES: Record<WorkOrderPriority, string> = {
-  low: "bg-canvas-soft text-ink-muted",
-  medium: "bg-status-open-bg text-status-open-fg",
-  high: "bg-status-overdue-bg text-status-overdue-fg",
-};
-
 export function StatusBadge({ status, locale }: { status: WorkOrderStatus | string; locale: Locale }) {
   const s = status as WorkOrderStatus;
   const dict = getDictionary(locale);
@@ -32,16 +26,6 @@ export function StatusBadge({ status, locale }: { status: WorkOrderStatus | stri
     <span className={`${baseClass} ${STATUS_STYLES[s] ?? STATUS_STYLES.open}`}>
       <Icon className="size-3" strokeWidth={2.5} />
       {dict.statuses[s] ?? status}
-    </span>
-  );
-}
-
-export function PriorityBadge({ priority, locale }: { priority: WorkOrderPriority | string; locale: Locale }) {
-  const p = priority as WorkOrderPriority;
-  const dict = getDictionary(locale);
-  return (
-    <span className={`${baseClass} ${PRIORITY_STYLES[p] ?? PRIORITY_STYLES.medium}`}>
-      {dict.priorities[p] ?? priority}
     </span>
   );
 }

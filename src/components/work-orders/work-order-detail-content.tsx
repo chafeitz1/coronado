@@ -1,6 +1,6 @@
 import { Bell, MessageSquare, Wrench, Building2, Repeat, CalendarCheck, History, X } from "lucide-react";
 import { addWorkOrderNote } from "@/app/actions/work-orders";
-import { StatusBadge, PriorityBadge } from "@/components/ui/badge";
+import { StatusBadge, OverdueBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Avatar } from "@/components/ui/avatar";
 import { WorkOrderAttachments } from "@/components/work-order-attachments";
@@ -11,7 +11,7 @@ import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } fr
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { formatLongDate } from "@/lib/dates";
 import { isWorkOrderClosed } from "@/lib/types/database";
-import type { Locale, WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
+import type { Locale, WorkOrderStatus } from "@/lib/types/database";
 
 type Person = { full_name: string; avatar_url?: string | null } | null;
 
@@ -21,7 +21,6 @@ export type WorkOrderDetailData = {
     title: string;
     description: string | null;
     status: WorkOrderStatus;
-    priority: WorkOrderPriority;
     due_date: string | null;
     completed_at: string | null;
     recurrence_interval_value: number | null;
@@ -96,7 +95,6 @@ export function WorkOrderDetailContent({
   const fieldLabels: Record<string, string> = {
     title: dict.workOrderDetail.fieldTitle,
     description: dict.workOrderDetail.fieldDescription,
-    priority: dict.workOrderDetail.fieldPriority,
     due_date: dict.workOrderDetail.fieldDueDate,
     asset_id: dict.workOrderDetail.fieldAsset,
     assigned_to: dict.workOrderDetail.fieldAssignee,
@@ -135,7 +133,10 @@ export function WorkOrderDetailContent({
       <div className="space-y-3 p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-1">
-            <h1 className={pageHeading}>{workOrder.title}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className={pageHeading}>{workOrder.title}</h1>
+              {overdue && <OverdueBadge locale={locale} />}
+            </div>
             {/* A recurring task is always requested by the owner — not
                 worth the line, same reasoning as the list row. One-off
                 tasks keep it, since who asked is actually useful there. */}
@@ -171,11 +172,6 @@ export function WorkOrderDetailContent({
           ) : (
             <StatusBadge status={workOrder.status} locale={locale} />
           )}
-          {overdue && (
-            <span className="rounded-full bg-status-overdue-bg px-2.5 py-1 text-xs font-semibold text-status-overdue-fg">
-              {dict.badges.overdue}
-            </span>
-          )}
         </div>
         {(workOrder.recurrence_interval_value || workOrder.completed_at) && (
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-muted">
@@ -200,16 +196,12 @@ export function WorkOrderDetailContent({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-hairline p-5 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-hairline p-5">
         <div className="space-y-1">
           <p className={sectionHeading}>{dict.workOrderForm.dueDateLabel}</p>
           <p className="text-sm text-ink">
             {workOrder.due_date ? formatLongDate(workOrder.due_date, locale) : dict.workOrders.noDueDate}
           </p>
-        </div>
-        <div className="space-y-1">
-          <p className={sectionHeading}>{dict.workOrderForm.priorityLabel}</p>
-          <PriorityBadge priority={workOrder.priority} locale={locale} />
         </div>
         <div className="space-y-1">
           <p className={sectionHeading}>{dict.workOrderDetail.assignedToLabel}</p>

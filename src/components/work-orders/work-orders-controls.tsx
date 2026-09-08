@@ -2,13 +2,12 @@
 
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Calendar as CalendarIcon, MapPin, Flag, Repeat } from "lucide-react";
+import { Search, Calendar as CalendarIcon, MapPin, Repeat } from "lucide-react";
 import type { DisplayMode } from "@/components/view-switcher";
 import { FilterChip, FilterChipOption } from "@/components/ui/filter-chip";
 import { useWorkOrdersFilters } from "./work-orders-filters-context";
 import { input } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import type { WorkOrderPriority } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
 
 // The filter chip row + To Do/Done tabs, shown once above the split
@@ -27,8 +26,6 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
     setTaskType,
     dueBucket,
     setDueBucket,
-    priority,
-    setPriority,
     location,
     setLocation,
   } = useWorkOrdersFilters();
@@ -51,7 +48,6 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
     all: dict.workOrders.viewUpcoming,
   }[dueBucket];
 
-  const priorityLabel = priority ? dict.priorities[priority] : null;
   const taskTypeLabel =
     taskType === "recurring" ? dict.workOrders.typeRecurring : taskType === "one_time" ? dict.workOrders.typeOneTime : null;
 
@@ -104,19 +100,6 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
             ))}
           </FilterChip>
         )}
-
-        <FilterChip
-          icon={Flag}
-          label={dict.workOrders.filterPriority}
-          activeLabel={priorityLabel}
-          onClear={() => setPriority(null)}
-        >
-          {(["high", "medium", "low"] as WorkOrderPriority[]).map((p) => (
-            <FilterChipOption key={p} active={priority === p} onClick={() => setPriority(p)}>
-              {dict.priorities[p]}
-            </FilterChipOption>
-          ))}
-        </FilterChip>
 
         <FilterChip
           icon={Repeat}

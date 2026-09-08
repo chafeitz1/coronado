@@ -45,19 +45,9 @@ export default async function EditWorkOrderPage({
           <textarea name="description" rows={3} defaultValue={workOrder.description ?? ""} className={input} />
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label={dict.workOrderForm.priorityLabel}>
-            <select name="priority" defaultValue={workOrder.priority} className={input}>
-              <option value="low">{dict.priorities.low}</option>
-              <option value="medium">{dict.priorities.medium}</option>
-              <option value="high">{dict.priorities.high}</option>
-            </select>
-          </Field>
-
-          <Field label={dict.workOrderForm.dueDateLabel}>
-            <input type="date" name="due_date" defaultValue={workOrder.due_date ?? ""} className={input} />
-          </Field>
-        </div>
+        <Field label={dict.workOrderForm.dueDateLabel}>
+          <input type="date" name="due_date" defaultValue={workOrder.due_date ?? ""} className={input} />
+        </Field>
 
         <Field label={dict.workOrderForm.assetLabel}>
           <Combobox

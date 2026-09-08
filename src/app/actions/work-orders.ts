@@ -7,7 +7,7 @@ import { requireUser, requireOwner } from "@/lib/auth";
 import { notifyUser } from "@/lib/notifications/send";
 import { advanceDate, isoDateOffset } from "@/lib/dates";
 import { uploadAttachment } from "@/lib/attachments-server";
-import { isWorkOrderClosed, type Database, type IntervalUnit, type WorkOrderPriority } from "@/lib/types/database";
+import { isWorkOrderClosed, type Database, type IntervalUnit } from "@/lib/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -38,7 +38,6 @@ async function insertWorkOrder(supabase: SupabaseClient, profile: Profile, formD
   if (!title) throw new Error("El título es obligatorio.");
 
   const description = String(formData.get("description") ?? "").trim() || null;
-  const priority = (String(formData.get("priority") ?? "medium") as WorkOrderPriority);
   const assetId = String(formData.get("asset_id") ?? "") || null;
   const dueDate = String(formData.get("due_date") ?? "") || null;
   // Residents and staff can only create one-time orders unassigned to
@@ -62,7 +61,6 @@ async function insertWorkOrder(supabase: SupabaseClient, profile: Profile, formD
     .insert({
       title,
       description,
-      priority,
       asset_id: assetId,
       due_date: dueDate,
       assigned_to: assignedTo,
@@ -139,7 +137,7 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   const { data: existing } = await supabase
     .from("work_orders")
     .select(
-      "title, description, priority, asset_id, due_date, assigned_to, vendor_id, recurrence_interval_value, recurrence_interval_unit"
+      "title, description, asset_id, due_date, assigned_to, vendor_id, recurrence_interval_value, recurrence_interval_unit"
     )
     .eq("id", workOrderId)
     .single();
@@ -150,7 +148,6 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   if (!title) throw new Error("El título es obligatorio.");
 
   const description = String(formData.get("description") ?? "").trim() || null;
-  const priority = String(formData.get("priority") ?? "medium") as WorkOrderPriority;
   const assetId = String(formData.get("asset_id") ?? "") || null;
   const dueDate = String(formData.get("due_date") ?? "") || null;
   const assignedTo = String(formData.get("assigned_to") ?? "") || null;
@@ -163,7 +160,6 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   const update = {
     title,
     description,
-    priority,
     asset_id: assetId,
     due_date: dueDate,
     assigned_to: assignedTo,
@@ -178,7 +174,6 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   const changed: string[] = [];
   if (existing.title !== title) changed.push("title");
   if ((existing.description ?? null) !== description) changed.push("description");
-  if (existing.priority !== priority) changed.push("priority");
   if ((existing.asset_id ?? null) !== assetId) changed.push("asset_id");
   if ((existing.due_date ?? null) !== dueDate) changed.push("due_date");
   if ((existing.assigned_to ?? null) !== assignedTo) changed.push("assigned_to");

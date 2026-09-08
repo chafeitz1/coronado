@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ClipboardList, Repeat, Building2, ChevronUp, ChevronDown as ChevronDownIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { OverdueBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { listCard, mutedText, sectionHeading } from "@/lib/ui";
@@ -84,7 +85,7 @@ export function WorkOrderListView({
               <li key={wo.id}>
                 <Link
                   href={`/work-orders/${wo.id}`}
-                  className="relative flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                  className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                 >
                   <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
                     <ClipboardList className="size-4" strokeWidth={2} />
@@ -97,6 +98,11 @@ export function WorkOrderListView({
                         </span>
                       )}
                       <span className="truncate">{wo.title}</span>
+                      {overdue && (
+                        <span className="shrink-0">
+                          <OverdueBadge locale={locale} />
+                        </span>
+                      )}
                     </p>
                     {subtitleParts.length > 0 && (
                       <p className={`${mutedText} truncate`}>{subtitleParts.join(" · ")}</p>
@@ -117,14 +123,6 @@ export function WorkOrderListView({
                       )
                     )}
                   </div>
-                  {/* Pinned to the card's bottom-right corner rather than
-                      inline with the status chip, so it reads as a badge on
-                      the card itself instead of crowding the status row. */}
-                  {overdue && (
-                    <span className="absolute bottom-2 right-3 rounded-full bg-status-overdue-bg px-2.5 py-1 text-xs font-semibold text-status-overdue-fg">
-                      {dict.badges.overdue}
-                    </span>
-                  )}
                 </Link>
               </li>
             );

@@ -1,10 +1,9 @@
-import type { IntervalUnit, WorkOrderPriority, WorkOrderStatus } from "@/lib/types/database";
+import type { IntervalUnit, WorkOrderStatus } from "@/lib/types/database";
 
 export type WorkOrderRow = {
   id: string;
   title: string;
   status: WorkOrderStatus;
-  priority: WorkOrderPriority;
   due_date: string | null;
   completed_at: string | null;
   recurrence_interval_value: number | null;

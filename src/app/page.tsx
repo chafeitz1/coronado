@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ClipboardList, AlertTriangle, Clock, CheckCircle2, PartyPopper, Plus, Repeat } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/ui/badge";
+import { StatusBadge, OverdueBadge } from "@/components/ui/badge";
 import { buttonPrimary, card, listCard, listRow, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { isoDateOffset, isoDateTimeOffset } from "@/lib/dates";
 import { getDictionary, format, type Dictionary } from "@/lib/i18n/dictionaries";
@@ -13,7 +13,6 @@ type OrderRow = {
   id: string;
   title: string;
   status: string;
-  priority: string;
   due_date: string | null;
   completed_at: string | null;
   recurrence_interval_value: number | null;
@@ -28,7 +27,7 @@ export default async function HomePage() {
   const { data: workOrders } = await supabase
     .from("work_orders")
     .select(
-      "id, title, status, priority, due_date, completed_at, recurrence_interval_value, profiles!work_orders_assigned_to_fkey(full_name)"
+      "id, title, status, due_date, completed_at, recurrence_interval_value, profiles!work_orders_assigned_to_fkey(full_name)"
     )
     .order("created_at", { ascending: false });
 
@@ -185,7 +184,6 @@ function UrgentSection({
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <PriorityBadge priority={wo.priority} locale={locale} />
                   {tone === "danger" ? <OverdueBadge locale={locale} /> : <StatusBadge status={wo.status} locale={locale} />}
                 </div>
               </Link>

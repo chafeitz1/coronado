@@ -35,7 +35,7 @@ export function WorkOrdersListBody({
 }) {
   const searchParams = useSearchParams();
   const display = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
-  const { search, tab, taskType, dueBucket, priority, location } = useWorkOrdersFilters();
+  const { search, tab, taskType, dueBucket, location } = useWorkOrdersFilters();
   // List (table) view opens a task in a side panel instead of navigating
   // away — the To Do view already shows detail inline in its own column,
   // so its rows keep linking to the [id] route directly.
@@ -53,7 +53,6 @@ export function WorkOrdersListBody({
       if (tab === "done" && !isWorkOrderClosed(wo.status)) return false;
       if (taskType === "recurring" && !wo.recurrence_interval_value) return false;
       if (taskType === "one_time" && wo.recurrence_interval_value) return false;
-      if (priority && wo.priority !== priority) return false;
       if (location && wo.asset?.location !== location) return false;
       // The due-date bucket only makes sense for open tasks — a Done task
       // is never "overdue" by definition, so applying it there would just
@@ -71,18 +70,13 @@ export function WorkOrdersListBody({
       }
       return true;
     });
-  }, [orders, q, tab, taskType, priority, location, dueBucket, today, endOfThisWeek, startOfNextWeek, endOfNextWeek]);
+  }, [orders, q, tab, taskType, location, dueBucket, today, endOfThisWeek, startOfNextWeek, endOfNextWeek]);
 
   // No user-facing sort control anymore — a fixed order instead: soonest
-  // due date first (undated tasks last), priority breaking ties.
+  // due date first, undated tasks last.
   const sorted = useMemo(() => {
     const rows = [...filtered];
-    const rank: Record<string, number> = { low: 0, medium: 1, high: 2 };
-    rows.sort((a, b) => {
-      const dueCmp = (a.due_date ?? "9999-99-99").localeCompare(b.due_date ?? "9999-99-99");
-      if (dueCmp !== 0) return dueCmp;
-      return rank[b.priority] - rank[a.priority];
-    });
+    rows.sort((a, b) => (a.due_date ?? "9999-99-99").localeCompare(b.due_date ?? "9999-99-99"));
     return rows;
   }, [filtered]);
 

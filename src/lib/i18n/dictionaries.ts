@@ -611,7 +611,7 @@ const en: Dictionary = {
     typeRecurring: "Recurring maintenance",
     typeOneTime: "One-time",
     noDueDate: "No due date",
-    tabToDo: "To do",
+    tabToDo: "To Do",
     tabDone: "Done",
     sortLabel: "Sort by",
     sortPriority: "Priority: highest first",

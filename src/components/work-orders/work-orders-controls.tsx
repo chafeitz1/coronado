@@ -130,7 +130,7 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
       </div>
 
       {display !== "calendar" && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline">
+        <div className="flex flex-wrap items-center gap-4 border-b border-hairline">
           <div className="flex gap-5">
             <button type="button" onClick={() => setTab("to_do")} className={tabClass(tab === "to_do")}>
               {dict.workOrders.tabToDo}
@@ -139,6 +139,10 @@ export function WorkOrdersControls({ orders, dict }: { orders: WorkOrderRow[]; d
               {dict.workOrders.tabDone}
             </button>
           </div>
+          {/* Right next to the tabs (which sit at the top of the list
+              column) instead of pushed to the far right of the shared
+              toolbar, where it ends up floating near the detail panel
+              instead of the list it actually sorts. */}
           <FilterChip label={dict.workOrders.sortLabel} activeLabel={sortLabel}>
             <FilterChipOption active={sortKey === "priority"} onClick={() => setSortKey("priority")}>
               {dict.workOrders.sortPriority}

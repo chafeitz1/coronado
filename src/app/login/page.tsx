@@ -5,9 +5,15 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { login, sendMagicLink } from "@/app/actions/auth";
 import { Field } from "@/components/ui/field";
-import { buttonPrimary, input, mutedText } from "@/lib/ui";
+import { buttonPrimary, mutedText } from "@/lib/ui";
 
 type Mode = "password" | "link";
+
+// Local override of lib/ui's `input` — that one is solid (bg-surface) by
+// design for the rest of the app; here it needs to stay translucent to
+// read as part of the glass card instead of a cutout of solid color.
+const glassInput =
+  "w-full rounded-md border border-white/25 bg-white/10 px-3 py-2 text-sm text-ink outline-none backdrop-blur-sm transition-colors placeholder:text-ink-faint/70 focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 function PasswordForm() {
   const [state, action, pending] = useActionState(login, undefined);
@@ -15,7 +21,7 @@ function PasswordForm() {
   return (
     <form action={action} className="space-y-4">
       <Field label="Email">
-        <input id="email" name="email" type="email" required autoComplete="email" className={input} />
+        <input id="email" name="email" type="email" required autoComplete="email" className={glassInput} />
       </Field>
 
       <Field label="Contraseña">
@@ -25,7 +31,7 @@ function PasswordForm() {
           type="password"
           required
           autoComplete="current-password"
-          className={input}
+          className={glassInput}
         />
       </Field>
 
@@ -62,7 +68,7 @@ function MagicLinkForm({ expiredNotice }: { expiredNotice: boolean }) {
       )}
 
       <Field label="Email">
-        <input name="email" type="email" required autoComplete="email" className={input} />
+        <input name="email" type="email" required autoComplete="email" className={glassInput} />
       </Field>
 
       {state && !state.ok && (
@@ -82,7 +88,7 @@ function LoginCard() {
   const [mode, setMode] = useState<Mode>(expiredNotice ? "link" : "password");
 
   return (
-    <div className="w-full max-w-sm space-y-5 rounded-2xl border border-white/30 bg-surface/45 p-8 shadow-2xl backdrop-blur-2xl backdrop-saturate-150">
+    <div className="w-full max-w-sm space-y-5 rounded-2xl border border-white/25 bg-surface/25 p-8 shadow-2xl backdrop-blur-2xl backdrop-saturate-150">
       <div className="space-y-1 text-center">
         <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-base font-bold text-on-primary">
           C
@@ -91,14 +97,14 @@ function LoginCard() {
         <p className={mutedText}>Inicia sesión para ver tus tareas.</p>
       </div>
 
-      <div className="inline-flex w-full rounded-md border border-hairline bg-canvas-soft p-1">
+      <div className="inline-flex w-full rounded-md border border-white/20 bg-white/10 p-1 backdrop-blur-sm">
         {(["password", "link"] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => setMode(m)}
             className={`flex-1 rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-              mode === m ? "bg-surface text-ink shadow-[var(--shadow-soft)]" : "text-ink-muted"
+              mode === m ? "bg-white/25 text-ink shadow-[var(--shadow-soft)]" : "text-ink-muted"
             }`}
           >
             {m === "password" ? "Contraseña" : "Link mágico"}

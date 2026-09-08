@@ -125,6 +125,29 @@ export async function createMaintenanceTask(
   return { ok: true };
 }
 
+// Same form as the standalone /work-orders/new page, but for the side
+// panel opened from List/Calendar/Board view — those views take over the
+// whole page (no split detail column), so navigating to /work-orders/new
+// would drop the current ?display= and land back on the To Do split view.
+// Stays on the current view and closes the panel instead of redirecting.
+export async function createWorkOrderPanel(
+  _prevState: MaintenanceTaskState,
+  formData: FormData
+): Promise<MaintenanceTaskState> {
+  const profile = await requireUser();
+  const supabase = await createClient();
+
+  try {
+    await insertWorkOrder(supabase, profile, formData);
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "No se pudo crear la tarea." };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/work-orders", "layout");
+  return { ok: true };
+}
+
 // Diff-based so the "Actividad" section can list which fields an edit
 // touched instead of just "se editó la tarea" — compared against the row
 // as it was before this update, not against the submitted form itself.

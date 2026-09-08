@@ -1,14 +1,13 @@
-import Link from "next/link";
-import { Plus } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { WorkOrdersShell } from "@/components/work-orders-shell";
 import { WorkOrdersFiltersProvider } from "@/components/work-orders/work-orders-filters-context";
 import { WorkOrdersControls } from "@/components/work-orders/work-orders-controls";
 import { WorkOrdersListBody } from "@/components/work-orders/work-orders-list-body";
+import { NewTaskButton } from "@/components/work-orders/new-task-button";
 import { ViewSwitcher, type DisplayMode } from "@/components/view-switcher";
 import type { WorkOrderRow } from "@/components/work-orders/types";
-import { buttonPrimary, pageHeading } from "@/lib/ui";
+import { pageHeading } from "@/lib/ui";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 function single<T>(value: T | T[] | null): T | null {
@@ -58,9 +57,7 @@ export default async function WorkOrdersLayout({ children }: { children: React.R
         <h1 className={pageHeading}>{dict.workOrders.title}</h1>
         <div className="flex items-center gap-3">
           <ViewSwitcher options={viewOptions} />
-          <Link href="/work-orders/new" className={buttonPrimary}>
-            <Plus className="size-4" /> {dict.workOrders.newTask}
-          </Link>
+          <NewTaskButton dict={dict} isOwner={profile.role === "owner"} />
         </div>
       </div>
       <WorkOrdersControls orders={orders} dict={dict} />

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Plus, ShoppingCart, AlertCircle, Copy, Check } from "lucide-react";
-import { WhatsappIcon } from "@/components/ui/whatsapp-icon";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { PurchaseItemRow } from "./purchase-item-row";
 import { NewPurchaseItemPanel } from "./new-purchase-item-panel";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -109,7 +109,7 @@ export function PurchasesView({
                     {copied ? dict.purchases.copied : dict.purchases.copyList}
                   </button>
                   <button type="button" onClick={sendWhatsapp} className={buttonSecondary}>
-                    <WhatsappIcon className="size-3.5" />
+                    <WhatsAppIcon className="size-3.5" />
                     {dict.purchases.sendWhatsapp}
                   </button>
                 </div>

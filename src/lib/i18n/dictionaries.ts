@@ -12,6 +12,7 @@ const es = {
     assets: "Activos",
     directory: "Directorio",
     finance: "Finanzas",
+    manuals: "Manuales",
     more: "Más",
     logout: "Salir",
   },
@@ -206,6 +207,10 @@ const es = {
     deleteConfirm: '¿Eliminar "{title}" de la lista?',
     markPurchased: "Marcar como comprado",
     unmarkPurchased: "Marcar como pendiente",
+  },
+  manuals: {
+    title: "Manuales",
+    comingSoon: "Estamos preparando esta sección — pronto vas a poder consultar manuales de los equipos de la casa aquí.",
   },
   assets: {
     title: "Activos",
@@ -553,6 +558,7 @@ const en: Dictionary = {
     assets: "Assets",
     directory: "Directory",
     finance: "Finance",
+    manuals: "Manuals",
     more: "More",
     logout: "Log out",
   },
@@ -747,6 +753,10 @@ const en: Dictionary = {
     deleteConfirm: 'Remove "{title}" from the list?',
     markPurchased: "Mark as purchased",
     unmarkPurchased: "Mark as pending",
+  },
+  manuals: {
+    title: "Manuals",
+    comingSoon: "This section is coming soon — you'll be able to look up manuals for the house's equipment here.",
   },
   assets: {
     title: "Assets",

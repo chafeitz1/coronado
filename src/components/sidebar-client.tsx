@@ -10,6 +10,7 @@ import {
   Wrench,
   BookUser,
   DollarSign,
+  BookOpen,
   Search,
   ChevronRight,
   LogOut,
@@ -28,6 +29,7 @@ const ICONS = {
   assets: Wrench,
   directory: BookUser,
   finance: DollarSign,
+  manuals: BookOpen,
 };
 
 export type SidebarLink = {
@@ -57,9 +59,10 @@ export function SidebarClient({
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   // The bottom tab bar only has room for a handful of icons before it feels
-  // cramped — directory and finance are lower-frequency than the other four,
-  // so they move into a "More" sheet instead of sitting in the bar itself.
-  const OVERFLOW_ICONS = ["directory", "finance"] as const;
+  // cramped — these are lower-frequency than the other four, so they move
+  // into a "More" sheet instead of sitting in the bar itself. Add new
+  // lower-frequency sections here as they show up (e.g. important dates).
+  const OVERFLOW_ICONS = ["directory", "finance", "manuals"] as const;
   const primaryLinks = workLinks.filter((link) => !(OVERFLOW_ICONS as readonly string[]).includes(link.icon));
   const overflowLinks = workLinks.filter((link) => (OVERFLOW_ICONS as readonly string[]).includes(link.icon));
   const overflowActive = overflowLinks.some((link) => isActive(link.href));
@@ -97,8 +100,11 @@ export function SidebarClient({
         </div>
       </div>
 
-      {/* Overflow sheet for directory/finance — backdrop closes it, sits
-          above the bottom nav (which is z-20). */}
+      {/* Overflow sheet for lower-frequency sections — backdrop closes it,
+          sits above the bottom nav (which is z-20). Tiles rather than list
+          rows since this is meant to grow (manuals, important dates, ...):
+          a grid reads better than a long list once there are more than a
+          couple of entries. */}
       {moreOpen && (
         <>
           <button
@@ -108,7 +114,7 @@ export function SidebarClient({
             className="fixed inset-0 z-30 bg-black/20 md:hidden"
           />
           <div
-            className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 space-y-1 rounded-2xl border border-hairline bg-surface p-2 shadow-2xl md:hidden"
+            className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 grid grid-cols-3 gap-2 rounded-2xl border border-hairline bg-surface p-3 shadow-2xl md:hidden"
             role="menu"
           >
             {overflowLinks.map((link) => {
@@ -120,14 +126,16 @@ export function SidebarClient({
                   href={link.href}
                   role="menuitem"
                   onClick={() => setMoreOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    active ? "bg-primary-soft text-primary" : "text-ink-secondary hover:bg-surface-hover"
+                  className={`relative flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center text-xs font-medium transition-colors ${
+                    active
+                      ? "border-primary/30 bg-primary-soft text-primary"
+                      : "border-hairline text-ink-secondary hover:bg-surface-hover"
                   }`}
                 >
                   <Icon className="size-5 shrink-0" strokeWidth={2} />
                   {link.label}
                   {!!link.badge && (
-                    <span className="ml-auto rounded-full bg-status-overdue-fg px-1.5 py-0.5 text-xs font-semibold text-white">
+                    <span className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-status-overdue-fg text-[10px] font-semibold text-white">
                       {link.badge}
                     </span>
                   )}

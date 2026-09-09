@@ -11,6 +11,8 @@ const EVENT_LABELS: Record<NotificationEventType, string> = {
   overdue: "Tarea vencida",
   note_flagged: "Nota importante",
   purchase_urgent: "Compra urgente",
+  daily_digest: "Resumen del día",
+  maintenance_reminder: "Mantenimiento próximo",
 };
 
 let vapidConfigured = false;
@@ -32,6 +34,11 @@ export interface NotifyPayload {
   title?: string;
   body: string;
   url?: string;
+  // Push notifications and the plain-text `body` above can't carry a
+  // multi-item list (the daily digest, say) — when set, the email uses
+  // this instead of wrapping `body` in a single <p>. Push always uses
+  // `body`, since a push notification is a short line, not a document.
+  emailHtml?: string;
 }
 
 /**
@@ -127,7 +134,7 @@ async function sendEmailToUser(userId: string, title: string, payload: NotifyPay
     from: process.env.NOTIFICATIONS_FROM_EMAIL ?? "Casa Coronado <notificaciones@resend.dev>",
     to: email,
     subject: title,
-    html: `<p>${payload.body}</p>${
+    html: `${payload.emailHtml ?? `<p>${payload.body}</p>`}${
       payload.url
         ? `<p><a href="${process.env.NEXT_PUBLIC_APP_URL ?? ""}${payload.url}">Ver en Casa Coronado</a></p>`
         : ""

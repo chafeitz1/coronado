@@ -23,7 +23,9 @@ export type NotificationEventType =
   | "due_soon"
   | "overdue"
   | "note_flagged"
-  | "purchase_urgent";
+  | "purchase_urgent"
+  | "daily_digest"
+  | "maintenance_reminder";
 export type NotificationChannel = "push" | "email";
 export type PurchaseItemListType = "groceries" | "urgent";
 export type PurchaseItemStatus = "pending" | "purchased";
@@ -143,6 +145,7 @@ export interface Database {
           recurrence_interval_value: number | null;
           recurrence_interval_unit: IntervalUnit | null;
           series_id: string | null;
+          maintenance_reminder_sent_at: string | null;
           created_at: string;
           updated_at: string;
         };

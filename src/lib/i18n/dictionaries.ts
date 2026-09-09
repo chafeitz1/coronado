@@ -12,6 +12,7 @@ const es = {
     assets: "Activos",
     directory: "Directorio",
     finance: "Finanzas",
+    more: "Más",
     logout: "Salir",
   },
   roles: {
@@ -552,6 +553,7 @@ const en: Dictionary = {
     assets: "Assets",
     directory: "Directory",
     finance: "Finance",
+    more: "More",
     logout: "Log out",
   },
   roles: {

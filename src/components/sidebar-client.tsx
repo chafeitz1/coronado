@@ -1,8 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ClipboardList, ShoppingCart, Wrench, BookUser, DollarSign, Search, ChevronRight, LogOut } from "lucide-react";
+import {
+  Home,
+  ClipboardList,
+  ShoppingCart,
+  Wrench,
+  BookUser,
+  DollarSign,
+  Search,
+  ChevronRight,
+  LogOut,
+  MoreHorizontal,
+} from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { CommandPalette, OPEN_COMMAND_PALETTE_EVENT } from "@/components/command-palette";
 import { Avatar } from "@/components/ui/avatar";
@@ -40,8 +52,17 @@ export function SidebarClient({
 }) {
   const pathname = usePathname();
   const dict = getDictionary(locale);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+
+  // The bottom tab bar only has room for a handful of icons before it feels
+  // cramped — directory and finance are lower-frequency than the other four,
+  // so they move into a "More" sheet instead of sitting in the bar itself.
+  const OVERFLOW_ICONS = ["directory", "finance"] as const;
+  const primaryLinks = workLinks.filter((link) => !(OVERFLOW_ICONS as readonly string[]).includes(link.icon));
+  const overflowLinks = workLinks.filter((link) => (OVERFLOW_ICONS as readonly string[]).includes(link.icon));
+  const overflowActive = overflowLinks.some((link) => isActive(link.href));
 
   return (
     <>
@@ -76,6 +97,47 @@ export function SidebarClient({
         </div>
       </div>
 
+      {/* Overflow sheet for directory/finance — backdrop closes it, sits
+          above the bottom nav (which is z-20). */}
+      {moreOpen && (
+        <>
+          <button
+            type="button"
+            aria-label={dict.sidebar.more}
+            onClick={() => setMoreOpen(false)}
+            className="fixed inset-0 z-30 bg-black/20 md:hidden"
+          />
+          <div
+            className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 space-y-1 rounded-2xl border border-hairline bg-surface p-2 shadow-2xl md:hidden"
+            role="menu"
+          >
+            {overflowLinks.map((link) => {
+              const Icon = ICONS[link.icon];
+              const active = isActive(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  role="menuitem"
+                  onClick={() => setMoreOpen(false)}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    active ? "bg-primary-soft text-primary" : "text-ink-secondary hover:bg-surface-hover"
+                  }`}
+                >
+                  <Icon className="size-5 shrink-0" strokeWidth={2} />
+                  {link.label}
+                  {!!link.badge && (
+                    <span className="ml-auto rounded-full bg-status-overdue-fg px-1.5 py-0.5 text-xs font-semibold text-white">
+                      {link.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      )}
+
       {/* Mobile bottom tab bar. Standalone (installed) mode has no browser
           chrome to keep content off the rounded corners/home indicator, so
           all three safe-area insets are padded explicitly — bottom for the
@@ -85,7 +147,7 @@ export function SidebarClient({
         className="fixed inset-x-0 bottom-0 z-20 flex border-t border-hairline bg-canvas pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] md:hidden"
         aria-label={dict.sidebar.workSection}
       >
-        {workLinks.map((link) => {
+        {primaryLinks.map((link) => {
           const Icon = ICONS[link.icon];
           const active = isActive(link.href);
           return (
@@ -106,6 +168,19 @@ export function SidebarClient({
             </Link>
           );
         })}
+        {overflowLinks.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setMoreOpen((open) => !open)}
+            aria-expanded={moreOpen}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+              overflowActive || moreOpen ? "text-primary" : "text-ink-muted"
+            }`}
+          >
+            <MoreHorizontal className="size-5" strokeWidth={2} />
+            {dict.sidebar.more}
+          </button>
+        )}
       </nav>
 
       {/* Desktop sidebar */}

@@ -31,6 +31,12 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0075de",
+  // Without this, env(safe-area-inset-*) resolves to 0 on iOS — fine in a
+  // regular Safari tab (the browser's own chrome keeps content off the
+  // rounded corners/home indicator), but an installed standalone PWA has no
+  // such chrome, so content bleeds right into them unless we opt in here and
+  // pad for the insets ourselves.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

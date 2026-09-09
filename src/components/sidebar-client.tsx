@@ -70,9 +70,13 @@ export function SidebarClient({
         </div>
       </div>
 
-      {/* Mobile bottom tab bar */}
+      {/* Mobile bottom tab bar. Standalone (installed) mode has no browser
+          chrome to keep content off the rounded corners/home indicator, so
+          all three safe-area insets are padded explicitly — bottom for the
+          home indicator, left/right so the outer icons aren't cut off by
+          the screen's rounded corners. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-hairline bg-canvas pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-hairline bg-canvas pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] md:hidden"
         aria-label={dict.sidebar.workSection}
       >
         {workLinks.map((link) => {

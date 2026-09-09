@@ -47,8 +47,14 @@ export function SidebarClient({
     <>
       <CommandPalette locale={locale} />
 
-      {/* Mobile top bar: logo left, search + profile right */}
-      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hairline bg-canvas px-4 py-3 md:hidden">
+      {/* Mobile top bar: logo left, search + profile right. Padded for
+          safe-area-inset-top explicitly rather than relying on
+          apple-mobile-web-app-status-bar-style to reserve the space itself
+          — that meta tag's behavior varies by how the app was added to the
+          home screen, whereas env(safe-area-inset-top) is 0 whenever the
+          browser already reserves the space, so this is a no-op in that
+          case and a real fix when it doesn't. */}
+      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hairline bg-canvas px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
         <Link href="/" className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">
             C

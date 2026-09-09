@@ -22,10 +22,18 @@ export const metadata: Metadata = {
   // iOS ignores manifest.json's install-related fields — these meta tags are
   // what actually let Safari treat an "Add to Home Screen" launch as a
   // standalone app instead of just a bookmark that opens in the browser.
+  //
+  // statusBarStyle is deliberately "default", not "black-translucent":
+  // translucent makes iOS draw content *underneath* the status bar instead
+  // of reserving space for it, which requires every fixed/sticky top
+  // element in the app to add its own env(safe-area-inset-top) padding or
+  // it collides with the status bar (this is what clipped the top nav bar
+  // after installing). "default" makes iOS reserve that space itself, so
+  // nothing else needs to account for it.
   appleWebApp: {
     capable: true,
     title: "Coronado",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
   },
 };
 

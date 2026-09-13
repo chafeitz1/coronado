@@ -100,6 +100,11 @@ body {
   background: var(--canvas-soft);
   color: var(--ink);
   font-family: var(--font-sans), Inter, ui-sans-serif, system-ui, sans-serif;
+  /* Our own pull-to-refresh (components/pull-to-refresh.tsx) handles the
+     "pull down at the top" gesture — without this, a regular (non-installed)
+     mobile browser tab would also trigger its own native bounce/refresh on
+     top of ours, showing two indicators at once. */
+  overscroll-behavior-y: contain;
 }
 
 /* Mobile browsers draw their own gray/blue tap-highlight box on any tapped

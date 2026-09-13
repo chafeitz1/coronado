@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { Sidebar } from "@/components/sidebar";
 import { RouteProgressBar } from "@/components/ui/route-progress-bar";
 import { InstallPrompt } from "@/components/install-prompt";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import "./globals.css";
 
 const inter = Inter({
@@ -58,6 +59,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <RouteProgressBar />
         </Suspense>
+        <PullToRefresh />
         <div className="flex min-h-screen flex-col md:flex-row">
           <Sidebar />
           <main className="w-full flex-1 px-4 pb-24 pt-6 md:px-8 md:py-8">{children}</main>

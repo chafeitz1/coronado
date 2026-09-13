@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Image from "next/image";
+import { ImagePlus, X } from "lucide-react";
 import { SidePanel } from "@/components/ui/side-panel";
 import { Field } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { createPurchaseItem } from "@/app/actions/purchase-items";
-import { buttonPrimary, input } from "@/lib/ui";
+import { buttonPrimary, buttonSecondary, input } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { PurchaseItemListType } from "@/lib/types/database";
 
@@ -23,6 +25,13 @@ export function NewPurchaseItemPanel({ dict, onClose }: { dict: Dictionary; onCl
   const [notes, setNotes] = useState("");
   const [addedCount, setAddedCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function clearImage() {
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -31,6 +40,7 @@ export function NewPurchaseItemPanel({ dict, onClose }: { dict: Dictionary; onCl
       setTitle("");
       setQuantity("");
       setNotes("");
+      clearImage();
       setAddedCount((n) => n + 1);
     } else if (result && !result.ok) {
       setError(result.error);
@@ -79,6 +89,39 @@ export function NewPurchaseItemPanel({ dict, onClose }: { dict: Dictionary; onCl
 
         <Field label={dict.purchases.notesLabel}>
           <textarea name="notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} className={input} />
+        </Field>
+
+        <Field label={dict.purchases.imageLabel}>
+          <div className="flex items-center gap-3">
+            {imagePreview ? (
+              <div className="relative size-16 shrink-0 overflow-hidden rounded-lg border border-hairline">
+                <Image src={imagePreview} alt="" fill unoptimized className="object-cover" />
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  aria-label={dict.purchases.removePhoto}
+                  className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => fileInputRef.current?.click()} className={buttonSecondary}>
+                <ImagePlus className="size-4" /> {dict.purchases.addPhoto}
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              name="image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                setImagePreview(file ? URL.createObjectURL(file) : null);
+              }}
+            />
+          </div>
         </Field>
 
         {error && <p className="text-sm text-status-overdue-fg">{error}</p>}

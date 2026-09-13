@@ -11,6 +11,8 @@ export type PurchaseItemRow = {
   purchased_by: string | null;
   purchased_at: string | null;
   created_at: string;
+  image_path: string | null;
+  imageUrl: string | null;
   requester: { full_name: string } | null;
   buyer: { full_name: string } | null;
 };

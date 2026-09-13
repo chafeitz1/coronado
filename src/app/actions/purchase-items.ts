@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { notifyUser } from "@/lib/notifications/send";
+import { MAX_ATTACHMENT_BYTES, ALLOWED_ATTACHMENT_TYPES } from "@/app/actions/attachments";
 import type { PurchaseItemListType, PurchaseItemStatus } from "@/lib/types/database";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -14,6 +15,45 @@ async function getOwnerId(supabase: SupabaseClient) {
 }
 
 export type PurchaseItemState = { ok: true } | { ok: false; error: string } | null;
+
+// Same brand shell every "amigable" email should read as — kept local since
+// this is currently the only email that needs one; if a second email wants
+// it, pull it out into lib/notifications then.
+function urgentPurchaseEmailHtml(params: {
+  title: string;
+  quantity: string | null;
+  notes: string | null;
+  requesterName: string;
+  imageUrl: string | null;
+  otherPending: { title: string; quantity: string | null }[];
+}) {
+  const { title, quantity, notes, requesterName, imageUrl, otherPending } = params;
+  return `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;">
+      <div style="background-color:#0075de;padding:18px 24px;border-radius:12px 12px 0 0;text-align:center;">
+        <span style="display:inline-block;width:26px;height:26px;line-height:26px;background:#ffffff;color:#0075de;border-radius:6px;font-weight:700;font-size:13px;text-align:center;vertical-align:middle;">C</span>
+        <span style="color:#ffffff;font-weight:600;font-size:15px;vertical-align:middle;margin-left:8px;">Casa Coronado</span>
+      </div>
+      <div style="background:#ffffff;border:1px solid #e7e5e4;border-top:none;border-radius:0 0 12px 12px;padding:24px;">
+        <p style="margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#dc2626;">🛒 Compra urgente</p>
+        <h1 style="margin:0 0 14px;font-size:20px;line-height:1.3;color:#18181b;">${title}</h1>
+        ${imageUrl ? `<img src="${imageUrl}" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:14px;display:block;" />` : ""}
+        <div style="background:#fdeaea;border-radius:8px;padding:12px 16px;${otherPending.length ? "margin-bottom:20px;" : ""}">
+          <p style="margin:0;font-size:14px;color:#18181b;">Pedido por <strong>${requesterName}</strong>${quantity ? ` · ${quantity}` : ""}</p>
+          ${notes ? `<p style="margin:6px 0 0;font-size:13px;color:#78716c;">${notes}</p>` : ""}
+        </div>
+        ${
+          otherPending.length
+            ? `<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#78716c;">Otras compras urgentes pendientes (${otherPending.length}):</p>
+               <ul style="margin:0;padding-left:18px;font-size:14px;color:#18181b;">
+                 ${otherPending.map((i) => `<li style="margin-bottom:4px;">${i.title}${i.quantity ? ` · ${i.quantity}` : ""}</li>`).join("")}
+               </ul>`
+            : ""
+        }
+      </div>
+    </div>
+  `;
+}
 
 // "groceries" items just join the accumulating list. "urgent" ones also
 // ping the owner right away — same notifyUser mechanism as task_assigned —
@@ -32,22 +72,66 @@ export async function createPurchaseItem(
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const listType = (String(formData.get("list_type") ?? "groceries") || "groceries") as PurchaseItemListType;
 
-  const { error } = await supabase.from("purchase_items").insert({
-    title,
-    quantity,
-    notes,
-    list_type: listType,
-    requested_by: profile.id,
-  });
+  let imagePath: string | null = null;
+  const image = formData.get("image");
+  if (image instanceof File && image.size > 0) {
+    if (!ALLOWED_ATTACHMENT_TYPES.includes(image.type)) {
+      return { ok: false, error: "La imagen debe ser JPG, PNG o WEBP." };
+    }
+    if (image.size > MAX_ATTACHMENT_BYTES) {
+      return { ok: false, error: "La imagen es demasiado grande (máx. 5MB)." };
+    }
+    const safeName = image.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+    const path = `purchases/${profile.id}/${Date.now()}-${safeName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("attachments")
+      .upload(path, image, { contentType: image.type });
+    if (uploadError) return { ok: false, error: "No se pudo subir la imagen." };
+    imagePath = path;
+  }
 
-  if (error) return { ok: false, error: error.message };
+  const { data: inserted, error } = await supabase
+    .from("purchase_items")
+    .insert({
+      title,
+      quantity,
+      notes,
+      list_type: listType,
+      requested_by: profile.id,
+      image_path: imagePath,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    if (imagePath) await supabase.storage.from("attachments").remove([imagePath]);
+    return { ok: false, error: error.message };
+  }
 
   if (listType === "urgent") {
     const ownerId = await getOwnerId(supabase);
     if (ownerId && ownerId !== profile.id) {
+      const { data: otherPending } = await supabase
+        .from("purchase_items")
+        .select("title, quantity")
+        .eq("list_type", "urgent")
+        .eq("status", "pending")
+        .neq("id", inserted.id)
+        .order("created_at", { ascending: true });
+
+      const imageUrl = imagePath ? supabase.storage.from("attachments").getPublicUrl(imagePath).data.publicUrl : null;
+
       await notifyUser(ownerId, "purchase_urgent", {
         body: `${profile.full_name} pidió comprar: ${title}`,
         url: "/purchases",
+        emailHtml: urgentPurchaseEmailHtml({
+          title,
+          quantity,
+          notes,
+          requesterName: profile.full_name,
+          imageUrl,
+          otherPending: otherPending ?? [],
+        }),
       });
     }
   }
@@ -74,9 +158,10 @@ export async function togglePurchaseItemStatus(itemId: string, nextStatus: Purch
   revalidatePath("/purchases");
 }
 
-export async function deletePurchaseItem(itemId: string) {
+export async function deletePurchaseItem(itemId: string, imagePath: string | null) {
   await requireUser();
   const supabase = await createClient();
   await supabase.from("purchase_items").delete().eq("id", itemId);
+  if (imagePath) await supabase.storage.from("attachments").remove([imagePath]);
   revalidatePath("/purchases");
 }

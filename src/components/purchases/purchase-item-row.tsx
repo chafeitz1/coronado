@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Image from "next/image";
 import { Check, Trash2 } from "lucide-react";
 import { togglePurchaseItemStatus, deletePurchaseItem } from "@/app/actions/purchase-items";
 import { mutedText } from "@/lib/ui";
@@ -53,6 +54,12 @@ export function PurchaseItemRow({
         {purchased && <Check className="size-3.5" strokeWidth={3} />}
       </button>
 
+      {item.imageUrl && (
+        <a href={item.imageUrl} target="_blank" rel="noreferrer" className="relative size-10 shrink-0 overflow-hidden rounded-md border border-hairline">
+          <Image src={item.imageUrl} alt="" fill unoptimized className="object-cover" />
+        </a>
+      )}
+
       <div className="min-w-0 flex-1">
         <p className={`truncate font-medium ${purchased ? "text-ink-faint line-through" : "text-ink"}`}>
           {item.title}
@@ -70,7 +77,7 @@ export function PurchaseItemRow({
           onClick={() => {
             if (window.confirm(format(dict.purchases.deleteConfirm, { title: item.title }))) {
               startTransition(() => {
-                deletePurchaseItem(item.id);
+                deletePurchaseItem(item.id, item.image_path);
               });
             }
           }}

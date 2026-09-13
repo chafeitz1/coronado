@@ -7,8 +7,10 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export type AttachmentFormState = { error?: string; success?: boolean } | undefined;
 
-const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+// Exported for reuse by any other "upload a photo" flow that shares the
+// same attachments bucket (e.g. the optional photo on a purchase item).
+export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+export const ALLOWED_ATTACHMENT_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function uploadAssetAttachment(
   assetId: string,
@@ -22,7 +24,7 @@ export async function uploadAssetAttachment(
   if (!(file instanceof File) || file.size === 0) {
     return { error: dict.attachments.errorMissing };
   }
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
     return { error: dict.attachments.errorType };
   }
   if (file.size > MAX_ATTACHMENT_BYTES) {

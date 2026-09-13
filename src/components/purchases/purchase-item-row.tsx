@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Image from "next/image";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Trash2, Truck } from "lucide-react";
 import { togglePurchaseItemStatus, toggleOrderedStatus, deletePurchaseItem } from "@/app/actions/purchase-items";
 import { mutedText } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
@@ -41,23 +41,47 @@ export function PurchaseItemRow({
   // already ordered (waiting to arrive) versus what still needs ordering.
   const showOrderedControl = item.list_type === "urgent" && !purchased;
 
+  const orderedTitle = item.ordered_at
+    ? (item.orderer ? format(dict.purchases.orderedBy, { name: item.orderer.full_name }) + " · " : "") +
+      formatLongDate(item.ordered_at.slice(0, 10), locale)
+    : dict.purchases.markOrdered;
+
   return (
     <li className="flex items-start gap-3 px-4 py-3">
-      <button
-        type="button"
-        disabled={pending}
-        aria-label={purchased ? dict.purchases.unmarkPurchased : dict.purchases.markPurchased}
-        onClick={() =>
-          startTransition(() => {
-            togglePurchaseItemStatus(item.id, purchased ? "pending" : "purchased");
-          })
-        }
-        className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border transition-colors disabled:opacity-50 ${
-          purchased ? "border-primary bg-primary text-on-primary" : "border-hairline hover:border-primary"
-        }`}
-      >
-        {purchased && <Check className="size-3.5" strokeWidth={3} />}
-      </button>
+      <div className="mt-0.5 flex shrink-0 flex-col items-center gap-1.5">
+        <button
+          type="button"
+          disabled={pending}
+          aria-label={purchased ? dict.purchases.unmarkPurchased : dict.purchases.markPurchased}
+          onClick={() =>
+            startTransition(() => {
+              togglePurchaseItemStatus(item.id, purchased ? "pending" : "purchased");
+            })
+          }
+          className={`flex size-5 shrink-0 items-center justify-center rounded border transition-colors disabled:opacity-50 ${
+            purchased ? "border-primary bg-primary text-on-primary" : "border-hairline hover:border-primary"
+          }`}
+        >
+          {purchased && <Check className="size-3.5" strokeWidth={3} />}
+        </button>
+
+        {showOrderedControl && (
+          <button
+            type="button"
+            disabled={pending}
+            title={orderedTitle}
+            aria-label={item.ordered_at ? dict.purchases.unmarkOrdered : dict.purchases.markOrdered}
+            onClick={() => startTransition(() => toggleOrderedStatus(item.id, !item.ordered_at))}
+            className={`flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors disabled:opacity-50 ${
+              item.ordered_at
+                ? "border-primary bg-primary-soft text-primary"
+                : "border-hairline text-ink-faint hover:border-primary hover:text-primary"
+            }`}
+          >
+            <Truck className="size-3" strokeWidth={2.5} />
+          </button>
+        )}
+      </div>
 
       {item.imageUrl && (
         <a href={item.imageUrl} target="_blank" rel="noreferrer" className="relative size-10 shrink-0 overflow-hidden rounded-md border border-hairline">
@@ -72,35 +96,6 @@ export function PurchaseItemRow({
         </p>
         {item.notes && <p className={`${mutedText} truncate`}>{item.notes}</p>}
         {subtitle && <p className={`${mutedText} truncate`}>{subtitle}</p>}
-
-        {showOrderedControl && (
-          <div className="mt-1.5">
-            {item.ordered_at ? (
-              <p className="flex items-center gap-1.5 text-xs text-ink-muted">
-                {item.orderer
-                  ? format(dict.purchases.orderedBy, { name: item.orderer.full_name }) + " · " + formatLongDate(item.ordered_at.slice(0, 10), locale)
-                  : formatLongDate(item.ordered_at.slice(0, 10), locale)}
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => startTransition(() => toggleOrderedStatus(item.id, false))}
-                  className="text-primary hover:underline disabled:opacity-50"
-                >
-                  {dict.purchases.unmarkOrdered}
-                </button>
-              </p>
-            ) : (
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => startTransition(() => toggleOrderedStatus(item.id, true))}
-                className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
-              >
-                {dict.purchases.markOrdered}
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       {canDelete && (

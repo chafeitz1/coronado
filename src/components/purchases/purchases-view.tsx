@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, ShoppingCart, AlertCircle, Copy, Check } from "lucide-react";
+import { Plus, ShoppingCart, AlertCircle, Copy, Check, Package, Truck } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { PurchaseItemRow } from "./purchase-item-row";
 import { NewPurchaseItemPanel } from "./new-purchase-item-panel";
@@ -92,31 +92,37 @@ export function PurchasesView({
                 <AlertCircle className="size-3.5" /> {dict.purchases.urgentListTitle} ({pendingUrgent.length})
               </h2>
 
-              {pendingUrgentToOrder.length > 0 && (
-                <div className="space-y-1.5">
-                  <p className={`px-1 ${mutedText}`}>
-                    {dict.purchases.toOrderGroupTitle} ({pendingUrgentToOrder.length})
-                  </p>
+              {/* Both group headers stay visible even when a group is empty —
+                  a fixed two-zone layout reads at a glance ("top zone is
+                  always what's still to order") without having to check
+                  which label is which every time. */}
+              <div className="space-y-1.5">
+                <p className={`flex items-center gap-1.5 px-1 ${mutedText}`}>
+                  <Package className="size-3.5" />
+                  {dict.purchases.toOrderGroupTitle} ({pendingUrgentToOrder.length})
+                </p>
+                {pendingUrgentToOrder.length > 0 && (
                   <ul className={listCard}>
                     {pendingUrgentToOrder.map((item) => (
                       <PurchaseItemRow key={item.id} item={item} dict={dict} locale={locale} canDelete={canDelete(item)} />
                     ))}
                   </ul>
-                </div>
-              )}
+                )}
+              </div>
 
-              {pendingUrgentOrdered.length > 0 && (
-                <div className="space-y-1.5">
-                  <p className={`px-1 ${mutedText}`}>
-                    {dict.purchases.orderedGroupTitle} ({pendingUrgentOrdered.length})
-                  </p>
+              <div className="space-y-1.5">
+                <p className={`flex items-center gap-1.5 px-1 ${mutedText}`}>
+                  <Truck className="size-3.5 text-primary" />
+                  {dict.purchases.orderedGroupTitle} ({pendingUrgentOrdered.length})
+                </p>
+                {pendingUrgentOrdered.length > 0 && (
                   <ul className={listCard}>
                     {pendingUrgentOrdered.map((item) => (
                       <PurchaseItemRow key={item.id} item={item} dict={dict} locale={locale} canDelete={canDelete(item)} />
                     ))}
                   </ul>
-                </div>
-              )}
+                )}
+              </div>
             </section>
           )}
 

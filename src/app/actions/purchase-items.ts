@@ -158,6 +158,23 @@ export async function togglePurchaseItemStatus(itemId: string, nextStatus: Purch
   revalidatePath("/purchases");
 }
 
+// Middle step for urgent items, between "requested" and "purchased": the
+// owner marks it here once they've placed the order (often remotely, e.g.
+// Amazon), so staff on-site — and the owner themself — can tell at a glance
+// what's already on its way versus what still needs to be ordered. Anyone
+// can toggle it, same as the purchased status; it doesn't gate anything.
+export async function toggleOrderedStatus(itemId: string, ordered: boolean) {
+  const profile = await requireUser();
+  const supabase = await createClient();
+
+  await supabase
+    .from("purchase_items")
+    .update(ordered ? { ordered_at: new Date().toISOString(), ordered_by: profile.id } : { ordered_at: null, ordered_by: null })
+    .eq("id", itemId);
+
+  revalidatePath("/purchases");
+}
+
 export async function deletePurchaseItem(itemId: string, imagePath: string | null) {
   await requireUser();
   const supabase = await createClient();

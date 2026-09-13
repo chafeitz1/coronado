@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import Image from "next/image";
 import { Check, Trash2 } from "lucide-react";
-import { togglePurchaseItemStatus, deletePurchaseItem } from "@/app/actions/purchase-items";
+import { togglePurchaseItemStatus, toggleOrderedStatus, deletePurchaseItem } from "@/app/actions/purchase-items";
 import { mutedText } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { formatLongDate } from "@/lib/dates";
@@ -36,6 +36,11 @@ export function PurchaseItemRow({
         formatLongDate(item.created_at.slice(0, 10), locale)
       : null;
 
+  // Middle step between "requested" and "purchased" — only meaningful for
+  // urgent items still pending, so staff/owner can see at a glance what's
+  // already ordered (waiting to arrive) versus what still needs ordering.
+  const showOrderedControl = item.list_type === "urgent" && !purchased;
+
   return (
     <li className="flex items-start gap-3 px-4 py-3">
       <button
@@ -67,6 +72,35 @@ export function PurchaseItemRow({
         </p>
         {item.notes && <p className={`${mutedText} truncate`}>{item.notes}</p>}
         {subtitle && <p className={`${mutedText} truncate`}>{subtitle}</p>}
+
+        {showOrderedControl && (
+          <div className="mt-1.5">
+            {item.ordered_at ? (
+              <p className="flex items-center gap-1.5 text-xs text-ink-muted">
+                {item.orderer
+                  ? format(dict.purchases.orderedBy, { name: item.orderer.full_name }) + " · " + formatLongDate(item.ordered_at.slice(0, 10), locale)
+                  : formatLongDate(item.ordered_at.slice(0, 10), locale)}
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => startTransition(() => toggleOrderedStatus(item.id, false))}
+                  className="text-primary hover:underline disabled:opacity-50"
+                >
+                  {dict.purchases.unmarkOrdered}
+                </button>
+              </p>
+            ) : (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => startTransition(() => toggleOrderedStatus(item.id, true))}
+                className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+              >
+                {dict.purchases.markOrdered}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {canDelete && (

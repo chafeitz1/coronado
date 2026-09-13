@@ -203,11 +203,14 @@ export interface Database {
           requested_by: string;
           purchased_by: string | null;
           purchased_at: string | null;
+          image_path: string | null;
+          ordered_at: string | null;
+          ordered_by: string | null;
           created_at: string;
         };
         Insert: Omit<
           Database["public"]["Tables"]["purchase_items"]["Row"],
-          "id" | "status" | "purchased_by" | "purchased_at" | "created_at"
+          "id" | "status" | "purchased_by" | "purchased_at" | "ordered_at" | "ordered_by" | "created_at"
         >;
         Update: Partial<Database["public"]["Tables"]["purchase_items"]["Insert"]>;
       };

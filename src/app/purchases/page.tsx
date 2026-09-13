@@ -17,7 +17,7 @@ export default async function PurchasesPage() {
   const { data: rows } = await supabase
     .from("purchase_items")
     .select(
-      "id, title, quantity, notes, list_type, status, requested_by, purchased_by, purchased_at, created_at, image_path, requester:profiles!purchase_items_requested_by_fkey(full_name), buyer:profiles!purchase_items_purchased_by_fkey(full_name)"
+      "id, title, quantity, notes, list_type, status, requested_by, purchased_by, purchased_at, created_at, image_path, ordered_at, requester:profiles!purchase_items_requested_by_fkey(full_name), buyer:profiles!purchase_items_purchased_by_fkey(full_name), orderer:profiles!purchase_items_ordered_by_fkey(full_name)"
     )
     .order("created_at", { ascending: false });
 
@@ -34,8 +34,10 @@ export default async function PurchasesPage() {
     created_at: row.created_at,
     image_path: row.image_path,
     imageUrl: row.image_path ? supabase.storage.from("attachments").getPublicUrl(row.image_path).data.publicUrl : null,
+    ordered_at: row.ordered_at,
     requester: single(row.requester),
     buyer: single(row.buyer),
+    orderer: single(row.orderer),
   }));
 
   return (

@@ -31,6 +31,8 @@ export function PurchasesView({
   const [copied, setCopied] = useState(false);
 
   const pendingUrgent = items.filter((i) => i.status === "pending" && i.list_type === "urgent");
+  const pendingUrgentToOrder = pendingUrgent.filter((i) => !i.ordered_at);
+  const pendingUrgentOrdered = pendingUrgent.filter((i) => i.ordered_at);
   const pendingGroceries = items.filter((i) => i.status === "pending" && i.list_type === "groceries");
   const purchased = useMemo(
     () =>
@@ -85,15 +87,36 @@ export function PurchasesView({
       {tab === "pending" ? (
         <div className="space-y-6">
           {pendingUrgent.length > 0 && (
-            <section className="space-y-2">
+            <section className="space-y-3">
               <h2 className={`flex items-center gap-1.5 ${sectionHeading} text-status-overdue-fg`}>
                 <AlertCircle className="size-3.5" /> {dict.purchases.urgentListTitle} ({pendingUrgent.length})
               </h2>
-              <ul className={listCard}>
-                {pendingUrgent.map((item) => (
-                  <PurchaseItemRow key={item.id} item={item} dict={dict} locale={locale} canDelete={canDelete(item)} />
-                ))}
-              </ul>
+
+              {pendingUrgentToOrder.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className={`px-1 ${mutedText}`}>
+                    {dict.purchases.toOrderGroupTitle} ({pendingUrgentToOrder.length})
+                  </p>
+                  <ul className={listCard}>
+                    {pendingUrgentToOrder.map((item) => (
+                      <PurchaseItemRow key={item.id} item={item} dict={dict} locale={locale} canDelete={canDelete(item)} />
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {pendingUrgentOrdered.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className={`px-1 ${mutedText}`}>
+                    {dict.purchases.orderedGroupTitle} ({pendingUrgentOrdered.length})
+                  </p>
+                  <ul className={listCard}>
+                    {pendingUrgentOrdered.map((item) => (
+                      <PurchaseItemRow key={item.id} item={item} dict={dict} locale={locale} canDelete={canDelete(item)} />
+                    ))}
+                  </ul>
+                </div>
+              )}
             </section>
           )}
 

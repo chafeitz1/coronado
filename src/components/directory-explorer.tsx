@@ -218,7 +218,7 @@ export function DirectoryExplorer({
               className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
                 emergencyOnly
                   ? "border-status-overdue-fg bg-status-overdue-fg text-white"
-                  : "border-status-overdue-fg/40 bg-status-overdue-bg text-status-overdue-fg hover:bg-status-overdue-fg/15"
+                  : "border-status-overdue-fg/40 bg-status-overdue-bg text-status-overdue-fg hover:bg-status-overdue-fg/15 active:bg-status-overdue-fg/15"
               }`}
             >
               <Siren className="size-3.5" /> {dict.directory.filterEmergency} · {emergencyCount}

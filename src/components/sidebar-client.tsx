@@ -129,7 +129,7 @@ export function SidebarClient({
                   className={`relative flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center text-xs font-medium transition-colors ${
                     active
                       ? "border-primary/30 bg-primary-soft text-primary"
-                      : "border-hairline text-ink-secondary hover:bg-surface-hover"
+                      : "border-hairline text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
                   }`}
                 >
                   <Icon className="size-5 shrink-0" strokeWidth={2} />
@@ -162,7 +162,7 @@ export function SidebarClient({
             <Link
               key={link.href}
               href={link.href}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-[color,opacity] active:opacity-60 ${
                 active ? "text-primary" : "text-ink-muted"
               }`}
             >
@@ -181,7 +181,7 @@ export function SidebarClient({
             type="button"
             onClick={() => setMoreOpen((open) => !open)}
             aria-expanded={moreOpen}
-            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-[color,opacity] active:opacity-60 ${
               overflowActive || moreOpen ? "text-primary" : "text-ink-muted"
             }`}
           >

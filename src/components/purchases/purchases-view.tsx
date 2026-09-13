@@ -174,6 +174,6 @@ export function PurchasesView({
 
 function tabClass(active: boolean) {
   return `-mb-px border-b-2 px-1 pb-2.5 text-sm font-medium transition-colors ${
-    active ? "border-primary text-primary" : "border-transparent text-ink-muted hover:text-ink"
+    active ? "border-primary text-primary" : "border-transparent text-ink-muted hover:text-ink active:text-ink"
   }`;
 }

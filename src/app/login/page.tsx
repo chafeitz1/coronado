@@ -104,7 +104,7 @@ function LoginCard() {
             type="button"
             onClick={() => setMode(m)}
             className={`flex-1 rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-              mode === m ? "bg-white/25 text-ink shadow-[var(--shadow-soft)]" : "text-ink-muted"
+              mode === m ? "bg-white/25 text-ink shadow-[var(--shadow-soft)]" : "text-ink-muted hover:text-ink active:text-ink"
             }`}
           >
             {m === "password" ? "Contraseña" : "Link mágico"}

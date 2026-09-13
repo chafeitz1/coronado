@@ -184,7 +184,7 @@ export function AssetPanel({
                       onClick={handleDelete}
                       disabled={deletePending}
                       title={dict.assetDetail.delete}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-status-overdue-bg hover:text-status-overdue-fg disabled:pointer-events-none disabled:opacity-50"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-status-overdue-bg active:bg-status-overdue-bg hover:text-status-overdue-fg active:text-status-overdue-fg disabled:pointer-events-none disabled:opacity-50"
                     >
                       <Trash2 className="size-3.5" />
                     </button>
@@ -392,7 +392,7 @@ function AssetStatusChip({
       onClick={onToggle}
       disabled={pending}
       title={isActive ? dict.assetDetail.markInactive : dict.assetDetail.markActive}
-      className={`${baseClass} transition-opacity hover:opacity-80 disabled:opacity-60`}
+      className={`${baseClass} transition-opacity hover:opacity-80 active:opacity-80 disabled:opacity-60`}
     >
       <Icon className="size-3" strokeWidth={2.5} /> {label}
     </button>

@@ -41,7 +41,7 @@ export function AssetAttachments({
                 <form action={deleteAttachment.bind(null, a.id, a.storagePath)} className="absolute right-1 top-1">
                   <ConfirmSubmitButton
                     confirmMessage={dict.assetDetail.deletePhotoConfirm}
-                    className="flex size-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    className="flex size-6 items-center justify-center rounded-full bg-black/60 text-white opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
                   >
                     <Trash2 className="size-3.5" />
                   </ConfirmSubmitButton>

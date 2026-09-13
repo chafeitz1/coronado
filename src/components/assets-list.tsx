@@ -88,7 +88,7 @@ function AssetsGallery({ assets, isOwner, dict, locale, onSelect, onEdit }: View
         // (for the photo's rounded corners) never clips it again.
         <div key={asset.id} className={`group relative flex h-full flex-col ${card}`}>
           {isOwner && (
-            <div className="absolute right-1.5 top-1.5 z-10 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+            <div className="absolute right-1.5 top-1.5 z-10 opacity-100 transition-opacity focus-within:opacity-100 md:opacity-0 md:group-hover:opacity-100">
               <AssetRowMenu
                 assetId={asset.id}
                 assetName={asset.name}
@@ -236,6 +236,6 @@ function AssetThumb({ url }: { url?: string }) {
 
 function tabClass(active: boolean) {
   return `-mb-px border-b-2 px-1 pb-2 text-sm font-medium transition-colors ${
-    active ? "border-primary text-primary" : "border-transparent text-ink-muted hover:text-ink"
+    active ? "border-primary text-primary" : "border-transparent text-ink-muted hover:text-ink active:text-ink"
   }`;
 }

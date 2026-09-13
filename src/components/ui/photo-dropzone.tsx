@@ -38,7 +38,7 @@ export function PhotoDropzone({ name, label }: { name: string; label: string }) 
             type="button"
             onClick={clear}
             aria-label="Quitar foto"
-            className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/75"
+            className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/75 active:bg-black/75"
           >
             <X className="size-4" />
           </button>
@@ -66,7 +66,7 @@ export function PhotoDropzone({ name, label }: { name: string; label: string }) 
           className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-10 text-sm font-medium transition-colors ${
             dragOver
               ? "border-primary bg-primary-soft text-primary"
-              : "border-primary/30 bg-primary-soft/40 text-primary hover:bg-primary-soft/60"
+              : "border-primary/30 bg-primary-soft/40 text-primary hover:bg-primary-soft/60 active:bg-primary-soft/60"
           }`}
         >
           <Camera className="size-5" />

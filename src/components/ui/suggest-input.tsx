@@ -66,7 +66,7 @@ export function SuggestInput({
                 className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                   option === value
                     ? "bg-primary text-on-primary"
-                    : "bg-canvas-soft text-ink-secondary hover:bg-primary-soft hover:text-primary"
+                    : "bg-canvas-soft text-ink-secondary hover:bg-primary-soft hover:text-primary active:bg-primary-soft active:text-primary"
                 }`}
               >
                 {option}

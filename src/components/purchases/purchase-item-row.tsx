@@ -59,7 +59,7 @@ export function PurchaseItemRow({
             })
           }
           className={`flex size-5 shrink-0 items-center justify-center rounded border transition-colors disabled:opacity-50 ${
-            purchased ? "border-primary bg-primary text-on-primary" : "border-hairline hover:border-primary"
+            purchased ? "border-primary bg-primary text-on-primary" : "border-hairline hover:border-primary active:border-primary"
           }`}
         >
           {purchased && <Check className="size-3.5" strokeWidth={3} />}
@@ -75,7 +75,7 @@ export function PurchaseItemRow({
             className={`flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors disabled:opacity-50 ${
               item.ordered_at
                 ? "border-primary bg-primary-soft text-primary"
-                : "border-hairline text-ink-faint hover:border-primary hover:text-primary"
+                : "border-hairline text-ink-faint hover:border-primary hover:text-primary active:border-primary active:text-primary"
             }`}
           >
             <Truck className="size-3" strokeWidth={2.5} />
@@ -110,7 +110,7 @@ export function PurchaseItemRow({
               });
             }
           }}
-          className="shrink-0 rounded-md p-1.5 text-ink-faint transition-colors hover:bg-surface-hover hover:text-status-overdue-fg active:bg-surface-hover disabled:opacity-50"
+          className="shrink-0 rounded-md p-1.5 text-ink-faint transition-colors hover:bg-surface-hover hover:text-status-overdue-fg active:bg-surface-hover active:text-status-overdue-fg disabled:opacity-50"
         >
           <Trash2 className="size-4" />
         </button>

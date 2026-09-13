@@ -66,7 +66,7 @@ export function TagInput({
               <button
                 type="button"
                 onClick={() => removeTag(tag)}
-                className="rounded-full p-0.5 hover:bg-primary/15"
+                className="rounded-full p-0.5 transition-colors hover:bg-primary/15 active:bg-primary/15"
               >
                 <X className="size-3" />
               </button>
@@ -104,7 +104,7 @@ export function TagInput({
                 key={option}
                 type="button"
                 onClick={() => addTag(option)}
-                className="rounded-full bg-canvas-soft px-2.5 py-1 text-xs font-medium text-ink-secondary transition-colors hover:bg-primary-soft hover:text-primary"
+                className="rounded-full bg-canvas-soft px-2.5 py-1 text-xs font-medium text-ink-secondary transition-colors hover:bg-primary-soft hover:text-primary active:bg-primary-soft active:text-primary"
               >
                 {option}
               </button>

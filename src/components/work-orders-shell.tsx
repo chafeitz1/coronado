@@ -56,7 +56,7 @@ export function WorkOrdersShell({
           {!isIndex && (
             <Link
               href="/work-orders"
-              className="mb-4 inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink md:hidden"
+              className="mb-4 inline-flex items-center gap-1 text-sm text-ink-muted transition-colors hover:text-ink active:text-ink md:hidden"
             >
               <ArrowLeft className="size-4" /> {dict.workOrders.backToList}
             </Link>

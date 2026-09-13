@@ -102,7 +102,7 @@ export function WorkOrderTableView({
                 <button
                   type="button"
                   onClick={() => toggleSort(col.key)}
-                  className="inline-flex items-center gap-1 hover:text-ink-secondary"
+                  className="inline-flex items-center gap-1 transition-colors hover:text-ink-secondary active:text-ink-secondary"
                 >
                   {col.label}
                   {sortKey === col.key && (asc ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />)}

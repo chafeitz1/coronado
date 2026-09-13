@@ -139,7 +139,11 @@ export function CommandPalette({ locale }: { locale: Locale }) {
             placeholder={dict.commandPalette.placeholder}
             className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint"
           />
-          <button type="button" onClick={() => setOpen(false)} className="text-ink-faint hover:text-ink">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded p-0.5 text-ink-faint transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover active:text-ink"
+          >
             <X className="size-4" />
           </button>
         </div>
@@ -160,7 +164,7 @@ export function CommandPalette({ locale }: { locale: Locale }) {
                     type="button"
                     onClick={() => go(item)}
                     onMouseEnter={() => setActiveIndex(globalIndex)}
-                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm ${
+                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors active:bg-primary-soft active:text-primary ${
                       globalIndex === activeIndex ? "bg-primary-soft text-primary" : "text-ink-secondary"
                     }`}
                   >

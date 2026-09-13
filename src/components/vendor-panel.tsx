@@ -155,7 +155,7 @@ export function VendorPanel({
                   className="group relative flex size-14 shrink-0 items-center justify-center rounded-full disabled:pointer-events-none"
                 >
                   <VendorAvatar avatarUrl={vendor.avatar_url} size="lg" />
-                  <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white">
+                  <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white group-active:bg-black/40 group-active:text-white">
                     <Camera className="size-4" />
                   </span>
                 </button>
@@ -184,7 +184,7 @@ export function VendorPanel({
                       onClick={handleDelete}
                       disabled={deletePending}
                       title={dict.vendorDetail.delete}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-status-overdue-bg hover:text-status-overdue-fg disabled:pointer-events-none disabled:opacity-50"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-status-overdue-bg active:bg-status-overdue-bg hover:text-status-overdue-fg active:text-status-overdue-fg disabled:pointer-events-none disabled:opacity-50"
                     >
                       <Trash2 className="size-3.5" />
                     </button>

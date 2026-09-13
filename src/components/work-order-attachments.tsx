@@ -51,7 +51,7 @@ export function WorkOrderAttachments({
                 <form action={deleteWorkOrderAttachment.bind(null, a.id, a.storagePath, workOrderId)} className="absolute right-1 top-1">
                   <ConfirmSubmitButton
                     confirmMessage={dict.attachments.deleteConfirm}
-                    className="flex size-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    className="flex size-6 items-center justify-center rounded-full bg-black/60 text-white opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
                   >
                     <Trash2 className="size-3.5" />
                   </ConfirmSubmitButton>
@@ -73,7 +73,7 @@ export function WorkOrderAttachments({
                 href={a.publicUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-w-0 flex-1 truncate text-sm font-medium text-ink hover:underline"
+                className="min-w-0 flex-1 truncate text-sm font-medium text-ink hover:underline active:underline"
               >
                 {a.fileName}
               </a>
@@ -81,7 +81,7 @@ export function WorkOrderAttachments({
                 <form action={deleteWorkOrderAttachment.bind(null, a.id, a.storagePath, workOrderId)}>
                   <ConfirmSubmitButton
                     confirmMessage={dict.attachments.deleteConfirm}
-                    className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-status-overdue-bg hover:text-status-overdue-fg"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-status-overdue-bg active:bg-status-overdue-bg hover:text-status-overdue-fg active:text-status-overdue-fg"
                   >
                     <Trash2 className="size-3.5" />
                   </ConfirmSubmitButton>

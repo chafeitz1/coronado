@@ -62,7 +62,7 @@ export function WorkOrderMenu({
             <form action={deleteWorkOrder.bind(null, workOrderId)}>
               <ConfirmSubmitButton
                 confirmMessage={format(dict.workOrderDetail.deleteConfirm, { title: workOrderTitle })}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-status-overdue-fg hover:bg-status-overdue-bg"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-status-overdue-fg hover:bg-status-overdue-bg active:bg-status-overdue-bg"
               >
                 <Trash2 className="size-3.5" /> {dict.workOrderDetail.delete}
               </ConfirmSubmitButton>

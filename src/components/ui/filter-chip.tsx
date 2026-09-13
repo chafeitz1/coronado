@@ -53,7 +53,7 @@ export function FilterChip({
               e.stopPropagation();
               onClear();
             }}
-            className="rounded-full hover:bg-primary/15"
+            className="rounded-full transition-colors hover:bg-primary/15 active:bg-primary/15"
           >
             <X className="size-3" />
           </span>

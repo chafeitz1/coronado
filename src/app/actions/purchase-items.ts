@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { notifyUser } from "@/lib/notifications/send";
-import { MAX_ATTACHMENT_BYTES, ALLOWED_ATTACHMENT_TYPES } from "@/app/actions/attachments";
+import { MAX_ATTACHMENT_BYTES, ALLOWED_ATTACHMENT_TYPES } from "@/lib/attachments";
 import type { PurchaseItemListType, PurchaseItemStatus } from "@/lib/types/database";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;

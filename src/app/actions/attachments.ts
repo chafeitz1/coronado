@@ -4,13 +4,9 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { MAX_ATTACHMENT_BYTES, ALLOWED_ATTACHMENT_TYPES } from "@/lib/attachments";
 
 export type AttachmentFormState = { error?: string; success?: boolean } | undefined;
-
-// Exported for reuse by any other "upload a photo" flow that shares the
-// same attachments bucket (e.g. the optional photo on a purchase item).
-export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
-export const ALLOWED_ATTACHMENT_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function uploadAssetAttachment(
   assetId: string,

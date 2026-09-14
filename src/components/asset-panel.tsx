@@ -41,6 +41,7 @@ export function AssetPanel({
   existingCategories,
   existingLocations,
   isOwner,
+  currentUserId,
   dict,
   locale,
   onClose,
@@ -52,6 +53,7 @@ export function AssetPanel({
   existingCategories: string[];
   existingLocations: string[];
   isOwner: boolean;
+  currentUserId: string;
   dict: Dictionary;
   locale: Locale;
   onClose: () => void;
@@ -259,7 +261,12 @@ export function AssetPanel({
 
           <div className="space-y-2">
             <h3 className={sectionHeading}>{dict.assetDetail.photosTitle}</h3>
-            <AssetAttachments assetId={asset.id} attachments={asset.attachments} dict={dict} />
+            <AssetAttachments
+              assetId={asset.id}
+              currentUserId={currentUserId}
+              attachments={asset.attachments}
+              dict={dict}
+            />
           </div>
 
           <div className="space-y-2">

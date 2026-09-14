@@ -1,9 +1,11 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FileText, Paperclip, Trash2 } from "lucide-react";
-import { uploadWorkOrderAttachment, deleteWorkOrderAttachment } from "@/app/actions/work-orders";
+import { saveWorkOrderAttachment, deleteWorkOrderAttachment } from "@/app/actions/work-orders";
+import { uploadAttachmentToStorage } from "@/lib/attachments-client";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { buttonSecondary } from "@/lib/ui";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -25,20 +27,47 @@ function isPdf(fileName: string) {
 // can't render as an image thumbnail.
 export function WorkOrderAttachments({
   workOrderId,
+  currentUserId,
   attachments,
   dict,
 }: {
   workOrderId: string;
+  currentUserId: string;
   attachments: AttachmentItem[];
   dict: Dictionary;
 }) {
-  const uploadAction = uploadWorkOrderAttachment.bind(null, workOrderId);
-  const [state, formAction] = useActionState(uploadAction, undefined);
-  const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const photos = attachments.filter((a) => !isPdf(a.fileName));
   const documents = attachments.filter((a) => isPdf(a.fileName));
+
+  // Two async steps (upload to Storage, then save the DB row) — kept
+  // outside startTransition so `pending` covers the whole thing, not just
+  // the second half.
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (inputRef.current) inputRef.current.value = "";
+    if (!file) return;
+
+    setError(null);
+    const result = await uploadAttachmentToStorage({ workOrderId }, currentUserId, file);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+
+    startTransition(async () => {
+      const saveResult = await saveWorkOrderAttachment(workOrderId, result.path, file.name);
+      if (saveResult?.error) {
+        setError(saveResult.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
 
   return (
     <div className="space-y-3">
@@ -92,21 +121,24 @@ export function WorkOrderAttachments({
         </ul>
       )}
 
-      <form ref={formRef} action={formAction} className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
         <input
           ref={inputRef}
-          name="file"
           type="file"
           accept="image/jpeg,image/png,image/webp,application/pdf"
-          required
           className="hidden"
-          onChange={() => formRef.current?.requestSubmit()}
+          onChange={handleFileChange}
         />
-        <button type="button" onClick={() => inputRef.current?.click()} className={buttonSecondary}>
-          <Paperclip className="size-4" /> {dict.workOrderDetail.addAttachment}
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => inputRef.current?.click()}
+          className={`${buttonSecondary} disabled:pointer-events-none disabled:opacity-50`}
+        >
+          <Paperclip className="size-4" /> {pending ? dict.workOrderForm.submitPending : dict.workOrderDetail.addAttachment}
         </button>
-        {state?.error && <p className="text-sm text-status-overdue-fg">{state.error}</p>}
-      </form>
+        {error && <p className="text-sm text-status-overdue-fg">{error}</p>}
+      </div>
     </div>
   );
 }

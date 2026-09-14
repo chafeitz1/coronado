@@ -128,6 +128,7 @@ export default async function AssetsPage() {
         vendors={vendors ?? []}
         staff={staff ?? []}
         isOwner={isOwner}
+        currentUserId={profile.id}
         dict={dict}
         locale={profile.locale}
       />

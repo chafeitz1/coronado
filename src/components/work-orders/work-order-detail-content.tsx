@@ -258,7 +258,12 @@ export function WorkOrderDetailContent({
 
       <section className="space-y-3 border-t border-hairline p-5">
         <h2 className={sectionHeading}>{dict.workOrderDetail.attachmentsTitle}</h2>
-        <WorkOrderAttachments workOrderId={workOrder.id} attachments={attachments} dict={dict} />
+        <WorkOrderAttachments
+          workOrderId={workOrder.id}
+          currentUserId={currentUserId}
+          attachments={attachments}
+          dict={dict}
+        />
       </section>
 
       <section className="space-y-4 border-t border-hairline p-5">

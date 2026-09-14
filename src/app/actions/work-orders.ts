@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser, requireOwner } from "@/lib/auth";
 import { notifyUser } from "@/lib/notifications/send";
 import { advanceDate, isoDateOffset } from "@/lib/dates";
-import { uploadAttachment } from "@/lib/attachments-server";
+import { uploadAttachment, saveAttachmentRecord } from "@/lib/attachments-server";
 import { isWorkOrderClosed, type Database, type IntervalUnit } from "@/lib/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -350,23 +350,19 @@ export async function addWorkOrderNote(formData: FormData) {
 
 export type WorkOrderAttachmentState = { error?: string } | undefined;
 
-export async function uploadWorkOrderAttachment(
-  workOrderId: string,
-  _prevState: WorkOrderAttachmentState,
-  formData: FormData
-): Promise<WorkOrderAttachmentState> {
+// The file itself is already sitting in Storage by the time this runs — see
+// components/work-order-attachments.tsx, which uploads directly from the
+// browser (lib/attachments-client.ts) before calling this to save the DB
+// row. Keeps a big PDF/photo's bytes off this Server Action's request body,
+// which Vercel caps well under what a scanned multi-page report needs.
+export async function saveWorkOrderAttachment(workOrderId: string, path: string, fileName: string) {
   const profile = await requireUser();
   const supabase = await createClient();
 
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "Elige un archivo primero." };
-  }
-
   try {
-    await uploadAttachment(supabase, { workOrderId }, profile.id, file);
+    await saveAttachmentRecord(supabase, { workOrderId }, profile.id, path, fileName);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "No se pudo subir el archivo." };
+    return { error: e instanceof Error ? e.message : "No se pudo guardar el archivo." };
   }
 
   revalidatePath(`/work-orders/${workOrderId}`);

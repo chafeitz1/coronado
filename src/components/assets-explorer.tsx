@@ -24,6 +24,7 @@ export function AssetsExplorer({
   vendors,
   staff,
   isOwner,
+  currentUserId,
   dict,
   locale,
 }: {
@@ -31,6 +32,7 @@ export function AssetsExplorer({
   vendors: { id: string; name: string }[];
   staff: { id: string; full_name: string }[];
   isOwner: boolean;
+  currentUserId: string;
   dict: Dictionary;
   locale: Locale;
 }) {
@@ -305,6 +307,7 @@ export function AssetsExplorer({
           existingCategories={existingCategories}
           existingLocations={existingLocations}
           isOwner={isOwner}
+          currentUserId={currentUserId}
           dict={dict}
           locale={locale}
           onClose={() => setPanelState(null)}

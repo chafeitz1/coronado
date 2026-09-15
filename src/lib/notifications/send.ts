@@ -144,7 +144,9 @@ async function sendEmailToUser(userId: string, title: string, payload: NotifyPay
     subject: title,
     html: `${payload.emailHtml ?? `<p>${payload.body}</p>`}${
       payload.url
-        ? `<p><a href="${process.env.NEXT_PUBLIC_APP_URL ?? ""}${payload.url}">Ver en Casa Coronado</a></p>`
+        ? `<div style="max-width:480px;margin:16px auto 0;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+             <a href="${process.env.NEXT_PUBLIC_APP_URL ?? ""}${payload.url}" style="display:inline-block;background-color:#0075de;color:#ffffff;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none;">Ver en Casa Coronado</a>
+           </div>`
         : ""
     }`,
   });

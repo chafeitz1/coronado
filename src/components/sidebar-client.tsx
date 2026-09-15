@@ -150,9 +150,15 @@ export function SidebarClient({
           chrome to keep content off the rounded corners/home indicator, so
           all three safe-area insets are padded explicitly — bottom for the
           home indicator, left/right so the outer icons aren't cut off by
-          the screen's rounded corners. */}
+          the screen's rounded corners.
+
+          `[transform:translateZ(0)]` forces this onto its own compositing
+          layer — without it, iOS Safari can let a `fixed` element scroll
+          along with the page during momentum/inertial scrolling on long
+          lists (Directory, Tasks) before it snaps back, instead of staying
+          pinned to the viewport the whole time. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-hairline bg-canvas pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-hairline bg-canvas pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] [transform:translateZ(0)] md:hidden"
         aria-label={dict.sidebar.workSection}
       >
         {primaryLinks.map((link) => {

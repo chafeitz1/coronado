@@ -73,7 +73,10 @@ export async function notifyUser(
 
 async function sendPushToUser(userId: string, title: string, payload: NotifyPayload) {
   configureVapid();
-  if (!vapidConfigured) return;
+  if (!vapidConfigured) {
+    console.error("[push] not sent: VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY missing from server env");
+    return;
+  }
 
   const admin = createAdminClient();
   const { data: subs } = await admin
@@ -81,7 +84,10 @@ async function sendPushToUser(userId: string, title: string, payload: NotifyPayl
     .select("*")
     .eq("user_id", userId);
 
-  if (!subs?.length) return;
+  if (!subs?.length) {
+    console.error(`[push] not sent: no push_subscriptions row for user ${userId}`);
+    return;
+  }
 
   const body = JSON.stringify({ title, body: payload.body, url: payload.url ?? "/" });
 
@@ -98,6 +104,8 @@ async function sendPushToUser(userId: string, title: string, payload: NotifyPayl
       } catch (err: unknown) {
         // Expired/invalid subscription: clean it up so we stop retrying it.
         const statusCode = (err as { statusCode?: number })?.statusCode;
+        const errBody = (err as { body?: string })?.body;
+        console.error(`[push] send failed for subscription ${sub.id} (status ${statusCode}): ${errBody ?? err}`);
         if (statusCode === 404 || statusCode === 410) {
           await admin.from("push_subscriptions").delete().eq("id", sub.id);
         }

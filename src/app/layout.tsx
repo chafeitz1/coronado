@@ -15,6 +15,13 @@ import "./globals.css";
 // render-blocking script that mutates the DOM directly. The #app-splash
 // div it targets is emitted hidden in the same server-rendered HTML, right
 // before this script tag, so the node already exists by the time this runs.
+//
+// This mutates a subtree React also renders, ahead of hydration — same
+// escape hatch a dark-mode flicker-prevention script uses, and it needs the
+// same care: never remove or restructure the node (only ever flip style
+// properties), and pair it with suppressHydrationWarning on that node in
+// the JSX below, so React treats the pre-hydration style change as expected
+// instead of a mismatch to reconcile or bail out on.
 const SPLASH_SCRIPT = `(function () {
   try {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -32,7 +39,9 @@ const SPLASH_SCRIPT = `(function () {
       el.style.transition = "opacity .3s";
       el.style.opacity = "0";
       setTimeout(function () {
-        el.remove();
+        el.style.display = "none";
+        el.style.pointerEvents = "none";
+        video.pause();
       }, 300);
     }
     video.addEventListener("ended", hide);
@@ -93,8 +102,20 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full bg-canvas-soft text-ink">
-        <div id="app-splash" className="fixed inset-0 z-50" style={{ display: "none", background: "#F1ECE5" }}>
-          <video id="app-splash-video" autoPlay muted playsInline className="h-full w-full object-cover">
+        <div
+          id="app-splash"
+          className="fixed inset-0 z-50"
+          style={{ display: "none", background: "#F1ECE5" }}
+          suppressHydrationWarning
+        >
+          <video
+            id="app-splash-video"
+            autoPlay
+            muted
+            playsInline
+            className="h-full w-full object-cover"
+            suppressHydrationWarning
+          >
             <source src="/splash.webm" type="video/webm" />
             <source src="/splash.mp4" type="video/mp4" />
           </video>

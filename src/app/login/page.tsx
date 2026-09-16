@@ -103,9 +103,8 @@ function LoginCard() {
         <img
           src="/brand/bonsai-logo-principal-bronce.svg"
           alt="Bonsai"
-          className="mx-auto h-24 w-auto [filter:drop-shadow(0_0_3px_rgba(255,255,255,0.9))_drop-shadow(0_0_10px_rgba(255,255,255,0.7))]"
+          className="mx-auto h-32 w-auto [filter:drop-shadow(0_0_3px_rgba(255,255,255,0.9))_drop-shadow(0_0_10px_rgba(255,255,255,0.7))]"
         />
-        <p className={mutedText}>Inicia sesión para ver tus tareas.</p>
       </div>
 
       <div className="inline-flex w-full rounded-md border border-white/20 bg-white/10 p-1 backdrop-blur-sm">
@@ -137,6 +136,12 @@ export default function LoginPage() {
       <div className="fixed inset-0 -z-10">
         <Image src="/login-bg.jpg" alt="" fill priority sizes="100vw" className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/55" />
+        {/* iOS's reserved status-bar strip (appleWebApp.statusBarStyle:
+            "default" in layout.tsx) sits physically above this div and is
+            always opaque white — not something a page can repaint. Fading
+            this photo's own top edge to white makes that hard native cutoff
+            read as one deliberate composition instead of a broken seam. */}
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/80 to-transparent md:hidden" />
       </div>
 
       <Suspense fallback={null}>

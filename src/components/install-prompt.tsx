@@ -91,7 +91,7 @@ export function InstallPrompt() {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, not a Next/Image candidate */}
-          <img src="/icons/icon-192.png" alt="" className="size-9 shrink-0 rounded-lg" />
+          <img src="/icons/icon-512.png" alt="" className="size-9 shrink-0 rounded-lg" />
           <div>
             <p className="text-sm font-semibold text-ink">Agregá Bonsai a tu pantalla de inicio</p>
             <p className={`text-xs ${mutedText}`}>

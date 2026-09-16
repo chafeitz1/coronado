@@ -6,7 +6,7 @@ import { buttonPrimary, buttonGhost, card, mutedText } from "@/lib/ui";
 
 const DISMISSED_KEY = "install-prompt-dismissed";
 
-function isStandalone() {
+export function isStandalone() {
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
     // iOS has no display-mode media query support pre-installation; Safari

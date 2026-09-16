@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { RouteProgressBar } from "@/components/ui/route-progress-bar";
 import { InstallPrompt } from "@/components/install-prompt";
 import { PullToRefresh } from "@/components/pull-to-refresh";
+import { AppSplash } from "@/components/app-splash";
 import "./globals.css";
 
 const inter = Inter({
@@ -42,7 +43,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1F1D1A",
+  themeColor: "#F1ECE5",
   // Without this, env(safe-area-inset-*) resolves to 0 on iOS — fine in a
   // regular Safari tab (the browser's own chrome keeps content off the
   // rounded corners/home indicator), but an installed standalone PWA has no
@@ -62,6 +63,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <RouteProgressBar />
         </Suspense>
+        <AppSplash />
         <PullToRefresh />
         <div className="flex min-h-screen flex-col md:flex-row">
           <Sidebar />

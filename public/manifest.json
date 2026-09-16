@@ -4,8 +4,8 @@
   "description": "Bonsai · Casa de playa",
   "start_url": "/?source=pwa",
   "display": "standalone",
-  "background_color": "#1F1D1A",
-  "theme_color": "#1F1D1A",
+  "background_color": "#F1ECE5",
+  "theme_color": "#F1ECE5",
   "icons": [
     {
       "src": "/icons/icon-192.png",

@@ -197,7 +197,7 @@ export function SidebarClient({
 
       {/* Desktop sidebar */}
       <aside className="hidden shrink-0 flex-col border-r border-hairline bg-canvas md:sticky md:top-0 md:flex md:h-screen md:w-64">
-        <div className="flex items-center px-4 py-6">
+        <div className="flex items-center justify-center px-4 py-3">
           <Link href="/" className="flex items-center">
             <Logo className="h-24 w-auto" />
           </Link>

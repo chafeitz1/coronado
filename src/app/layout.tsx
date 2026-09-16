@@ -5,8 +5,41 @@ import { Sidebar } from "@/components/sidebar";
 import { RouteProgressBar } from "@/components/ui/route-progress-bar";
 import { InstallPrompt } from "@/components/install-prompt";
 import { PullToRefresh } from "@/components/pull-to-refresh";
-import { AppSplash } from "@/components/app-splash";
 import "./globals.css";
+
+// Runs the instant the parser reaches it — well before React hydrates —
+// so the splash appears with no gap after the native OS splash instead of
+// waiting on the JS bundle to load/parse/hydrate first. That wait (a few
+// hundred ms, more on a slow phone) is exactly the blank-screen flash this
+// exists to avoid, so this can't be a React effect: it has to be a plain,
+// render-blocking script that mutates the DOM directly. The #app-splash
+// div it targets is emitted hidden in the same server-rendered HTML, right
+// before this script tag, so the node already exists by the time this runs.
+const SPLASH_SCRIPT = `(function () {
+  try {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var standalone =
+      window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    if (!standalone) return;
+    var el = document.getElementById("app-splash");
+    var video = document.getElementById("app-splash-video");
+    if (!el || !video) return;
+    el.style.display = "block";
+    var hidden = false;
+    function hide() {
+      if (hidden) return;
+      hidden = true;
+      el.style.transition = "opacity .3s";
+      el.style.opacity = "0";
+      setTimeout(function () {
+        el.remove();
+      }, 300);
+    }
+    video.addEventListener("ended", hide);
+    video.addEventListener("error", hide);
+    setTimeout(hide, 6000);
+  } catch (e) {}
+})();`;
 
 const inter = Inter({
   variable: "--font-inter",
@@ -60,10 +93,16 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full bg-canvas-soft text-ink">
+        <div id="app-splash" className="fixed inset-0 z-50" style={{ display: "none", background: "#F1ECE5" }}>
+          <video id="app-splash-video" autoPlay muted playsInline className="h-full w-full object-cover">
+            <source src="/splash.webm" type="video/webm" />
+            <source src="/splash.mp4" type="video/mp4" />
+          </video>
+        </div>
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
         <Suspense fallback={null}>
           <RouteProgressBar />
         </Suspense>
-        <AppSplash />
         <PullToRefresh />
         <div className="flex min-h-screen flex-col md:flex-row">
           <Sidebar />

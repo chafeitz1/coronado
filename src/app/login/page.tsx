@@ -4,7 +4,6 @@ import { Suspense, useActionState, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { login, sendMagicLink } from "@/app/actions/auth";
-import { Logo } from "@/components/logo";
 import { Field } from "@/components/ui/field";
 import { buttonPrimary, mutedText } from "@/lib/ui";
 
@@ -94,8 +93,18 @@ function LoginCard() {
         {/* The card sits over a photo, so a plain bronze mark can wash out
             depending on what's behind the glass at any given scroll/crop —
             a soft white halo (not a background chip, which would fight the
-            glass look) keeps it legible over both light and dark patches. */}
-        <Logo className="mx-auto h-24 w-auto [filter:drop-shadow(0_0_3px_rgba(255,255,255,0.9))_drop-shadow(0_0_10px_rgba(255,255,255,0.7))]" />
+            glass look) keeps it legible over both light and dark patches.
+            Always the bronze mark here (not the <Logo> component's
+            theme-swapped white version) — the halo already solves
+            legibility across the photo regardless of OS color scheme, and
+            swapping to a flat white mark on top of a light patch would
+            undo that. */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, not a Next/Image candidate */}
+        <img
+          src="/brand/bonsai-logo-principal-bronce.svg"
+          alt="Bonsai"
+          className="mx-auto h-24 w-auto [filter:drop-shadow(0_0_3px_rgba(255,255,255,0.9))_drop-shadow(0_0_10px_rgba(255,255,255,0.7))]"
+        />
         <p className={mutedText}>Inicia sesión para ver tus tareas.</p>
       </div>
 

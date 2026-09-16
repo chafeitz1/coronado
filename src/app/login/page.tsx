@@ -91,7 +91,11 @@ function LoginCard() {
   return (
     <div className="w-full max-w-sm space-y-5 rounded-2xl border border-white/25 bg-surface/25 p-8 shadow-2xl backdrop-blur-2xl backdrop-saturate-150">
       <div className="space-y-2 text-center">
-        <Logo className="mx-auto h-10 w-auto" />
+        {/* The card sits over a photo, so a plain bronze mark can wash out
+            depending on what's behind the glass at any given scroll/crop —
+            a soft white halo (not a background chip, which would fight the
+            glass look) keeps it legible over both light and dark patches. */}
+        <Logo className="mx-auto h-12 w-auto [filter:drop-shadow(0_0_3px_rgba(255,255,255,0.9))_drop-shadow(0_0_10px_rgba(255,255,255,0.7))]" />
         <p className={mutedText}>Inicia sesión para ver tus tareas.</p>
       </div>
 

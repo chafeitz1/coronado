@@ -81,7 +81,7 @@ export function SidebarClient({
           case and a real fix when it doesn't. */}
       <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hairline bg-canvas px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
         <Link href="/" className="flex items-center">
-          <Logo className="h-8 w-auto" />
+          <Logo className="h-11 w-auto" />
         </Link>
         <div className="flex items-center gap-2">
           <button
@@ -197,9 +197,9 @@ export function SidebarClient({
 
       {/* Desktop sidebar */}
       <aside className="hidden shrink-0 flex-col border-r border-hairline bg-canvas md:sticky md:top-0 md:flex md:h-screen md:w-64">
-        <div className="flex items-center px-4 py-5">
+        <div className="flex items-center px-4 py-6">
           <Link href="/" className="flex items-center">
-            <Logo className="h-12 w-auto" />
+            <Logo className="h-20 w-auto" />
           </Link>
         </div>
 

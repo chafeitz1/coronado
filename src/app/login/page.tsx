@@ -95,7 +95,7 @@ function LoginCard() {
             depending on what's behind the glass at any given scroll/crop —
             a soft white halo (not a background chip, which would fight the
             glass look) keeps it legible over both light and dark patches. */}
-        <Logo className="mx-auto h-12 w-auto [filter:drop-shadow(0_0_3px_rgba(255,255,255,0.9))_drop-shadow(0_0_10px_rgba(255,255,255,0.7))]" />
+        <Logo className="mx-auto h-16 w-auto [filter:drop-shadow(0_0_3px_rgba(255,255,255,0.9))_drop-shadow(0_0_10px_rgba(255,255,255,0.7))]" />
         <p className={mutedText}>Inicia sesión para ver tus tareas.</p>
       </div>
 

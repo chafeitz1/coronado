@@ -136,12 +136,6 @@ export default function LoginPage() {
       <div className="fixed inset-0 -z-10">
         <Image src="/login-bg.jpg" alt="" fill priority sizes="100vw" className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/55" />
-        {/* iOS's reserved status-bar strip (appleWebApp.statusBarStyle:
-            "default" in layout.tsx) sits physically above this div and is
-            always opaque white — not something a page can repaint. Fading
-            this photo's own top edge to white makes that hard native cutoff
-            read as one deliberate composition instead of a broken seam. */}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/80 to-transparent md:hidden" />
       </div>
 
       <Suspense fallback={null}>

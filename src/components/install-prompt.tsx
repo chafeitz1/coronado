@@ -90,11 +90,10 @@ export function InstallPrompt() {
     <div className={`fixed inset-x-4 bottom-20 z-40 mx-auto max-w-sm space-y-2 p-4 shadow-2xl md:bottom-4 ${card}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-on-primary">
-            C
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, not a Next/Image candidate */}
+          <img src="/icons/icon-192.png" alt="" className="size-9 shrink-0 rounded-lg" />
           <div>
-            <p className="text-sm font-semibold text-ink">Agregá Casa Coronado a tu pantalla de inicio</p>
+            <p className="text-sm font-semibold text-ink">Agregá Bonsai a tu pantalla de inicio</p>
             <p className={`text-xs ${mutedText}`}>
               {visibility === "ios"
                 ? "Así podés recibir notificaciones — en iPhone no funcionan desde el navegador."

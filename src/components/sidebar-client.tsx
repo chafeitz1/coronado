@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { CommandPalette, OPEN_COMMAND_PALETTE_EVENT } from "@/components/command-palette";
+import { Logo } from "@/components/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
@@ -79,11 +80,8 @@ export function SidebarClient({
           browser already reserves the space, so this is a no-op in that
           case and a real fix when it doesn't. */}
       <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hairline bg-canvas px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">
-            C
-          </span>
-          <span className="font-semibold tracking-tight text-ink">{dict.sidebar.appName}</span>
+        <Link href="/" className="flex items-center">
+          <Logo className="h-7 w-auto" />
         </Link>
         <div className="flex items-center gap-2">
           <button
@@ -200,11 +198,8 @@ export function SidebarClient({
       {/* Desktop sidebar */}
       <aside className="hidden shrink-0 flex-col border-r border-hairline bg-canvas md:sticky md:top-0 md:flex md:h-screen md:w-64">
         <div className="flex items-center px-4 py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">
-              C
-            </span>
-            <span className="font-semibold tracking-tight text-ink">{dict.sidebar.appName}</span>
+          <Link href="/" className="flex items-center">
+            <Logo className="h-7 w-auto" />
           </Link>
         </div>
 

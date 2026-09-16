@@ -13,12 +13,15 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Casa Coronado",
-  description: "Mantenimiento de la casa de playa",
+  title: "Bonsai",
+  description: "Bonsai · Casa de playa",
   manifest: "/manifest.json",
   icons: {
-    icon: [{ url: "/icon-512.png", sizes: "512x512", type: "image/png" }],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    icon: [
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   // iOS ignores manifest.json's install-related fields — these meta tags are
   // what actually let Safari treat an "Add to Home Screen" launch as a
@@ -33,13 +36,13 @@ export const metadata: Metadata = {
   // nothing else needs to account for it.
   appleWebApp: {
     capable: true,
-    title: "Coronado",
+    title: "Bonsai",
     statusBarStyle: "default",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0075de",
+  themeColor: "#1F1D1A",
   // Without this, env(safe-area-inset-*) resolves to 0 on iOS — fine in a
   // regular Safari tab (the browser's own chrome keeps content off the
   // rounded corners/home indicator), but an installed standalone PWA has no

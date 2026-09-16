@@ -4,6 +4,7 @@ import { Suspense, useActionState, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { login, sendMagicLink } from "@/app/actions/auth";
+import { Logo } from "@/components/logo";
 import { Field } from "@/components/ui/field";
 import { buttonPrimary, mutedText } from "@/lib/ui";
 
@@ -89,11 +90,8 @@ function LoginCard() {
 
   return (
     <div className="w-full max-w-sm space-y-5 rounded-2xl border border-white/25 bg-surface/25 p-8 shadow-2xl backdrop-blur-2xl backdrop-saturate-150">
-      <div className="space-y-1 text-center">
-        <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-base font-bold text-on-primary">
-          C
-        </span>
-        <h1 className="pt-1 text-xl font-bold tracking-tight text-ink">Casa Coronado</h1>
+      <div className="space-y-2 text-center">
+        <Logo className="mx-auto h-10 w-auto" />
         <p className={mutedText}>Inicia sesión para ver tus tareas.</p>
       </div>
 

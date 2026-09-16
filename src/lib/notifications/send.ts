@@ -123,10 +123,10 @@ export async function sendInviteEmail(email: string, fullName: string, actionLin
   if (!resend) return;
 
   await resend.emails.send({
-    from: process.env.NOTIFICATIONS_FROM_EMAIL ?? "Casa Coronado <notificaciones@resend.dev>",
+    from: process.env.NOTIFICATIONS_FROM_EMAIL ?? "Bonsai <notificaciones@resend.dev>",
     to: email,
-    subject: "Te invitaron a Casa Coronado",
-    html: `<p>Hola ${fullName},</p><p>Te invitaron a Casa Coronado. Haz clic para entrar y configurar tu cuenta:</p><p><a href="${actionLink}">Entrar a Casa Coronado</a></p>`,
+    subject: "Te invitaron a Bonsai",
+    html: `<p>Hola ${fullName},</p><p>Te invitaron a Bonsai. Haz clic para entrar y configurar tu cuenta:</p><p><a href="${actionLink}">Entrar a Bonsai</a></p>`,
   });
 }
 
@@ -139,13 +139,13 @@ async function sendEmailToUser(userId: string, title: string, payload: NotifyPay
   if (!email) return;
 
   await resend.emails.send({
-    from: process.env.NOTIFICATIONS_FROM_EMAIL ?? "Casa Coronado <notificaciones@resend.dev>",
+    from: process.env.NOTIFICATIONS_FROM_EMAIL ?? "Bonsai <notificaciones@resend.dev>",
     to: email,
     subject: title,
     html: `${payload.emailHtml ?? `<p>${payload.body}</p>`}${
       payload.url
         ? `<div style="max-width:480px;margin:16px auto 0;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-             <a href="${process.env.NEXT_PUBLIC_APP_URL ?? ""}${payload.url}" style="display:inline-block;background-color:#0075de;color:#ffffff;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none;">Ver en Casa Coronado</a>
+             <a href="${process.env.NEXT_PUBLIC_APP_URL ?? ""}${payload.url}" style="display:inline-block;background-color:#0075de;color:#ffffff;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none;">Ver en Bonsai</a>
            </div>`
         : ""
     }`,

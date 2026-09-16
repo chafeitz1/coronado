@@ -2,7 +2,6 @@ export type Locale = "es" | "en";
 
 const es = {
   sidebar: {
-    appName: "Casa Coronado",
     search: "Buscar",
     searchPlaceholder: "Buscar...",
     workSection: "Trabajo",
@@ -35,7 +34,7 @@ const es = {
     groupVendors: "Proveedores",
   },
   login: {
-    title: "Casa Coronado",
+    title: "Bonsai",
     subtitle: "Inicia sesión para ver tus tareas.",
     email: "Email",
     password: "Contraseña",
@@ -556,7 +555,6 @@ export type Dictionary = typeof es;
 
 const en: Dictionary = {
   sidebar: {
-    appName: "Casa Coronado",
     search: "Search",
     searchPlaceholder: "Search...",
     workSection: "Work",
@@ -589,7 +587,7 @@ const en: Dictionary = {
     groupVendors: "Vendors",
   },
   login: {
-    title: "Casa Coronado",
+    title: "Bonsai",
     subtitle: "Sign in to see your tasks.",
     email: "Email",
     password: "Password",

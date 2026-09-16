@@ -58,7 +58,7 @@ function ConfirmCard() {
         {next && <input type="hidden" name="next" value={next} />}
 
         <h1 className={pageHeading}>Confirmar acceso</h1>
-        <p className={mutedText}>Tocá el botón para entrar a Casa Coronado.</p>
+        <p className={mutedText}>Tocá el botón para entrar a Bonsai.</p>
 
         <button type="submit" className={`w-full ${buttonPrimary}`}>
           Entrar

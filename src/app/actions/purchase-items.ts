@@ -30,9 +30,8 @@ function urgentPurchaseEmailHtml(params: {
   const { title, quantity, notes, requesterName, imageUrl, otherPending } = params;
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;">
-      <div style="background-color:#0075de;padding:18px 24px;border-radius:12px 12px 0 0;text-align:center;">
-        <span style="display:inline-block;width:26px;height:26px;line-height:26px;background:#ffffff;color:#0075de;border-radius:6px;font-weight:700;font-size:13px;text-align:center;vertical-align:middle;">C</span>
-        <span style="color:#ffffff;font-weight:600;font-size:15px;vertical-align:middle;margin-left:8px;">Casa Coronado</span>
+      <div style="background-color:#1F1D1A;padding:18px 24px;border-radius:12px 12px 0 0;text-align:center;">
+        <img src="${process.env.NEXT_PUBLIC_APP_URL ?? ""}/brand/bonsai-logo-principal-blanco.png" alt="Bonsai" width="58" height="30" style="display:inline-block;height:30px;width:58px;" />
       </div>
       <div style="background:#ffffff;border:1px solid #e7e5e4;border-top:none;border-radius:0 0 12px 12px;padding:24px;">
         <p style="margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#dc2626;">🛒 Compra urgente</p>

@@ -1,21 +1,35 @@
 {
-  "name": "Casa Coronado",
-  "short_name": "Coronado",
-  "description": "Mantenimiento de la casa de playa",
-  "start_url": "/",
+  "name": "Bonsai",
+  "short_name": "Bonsai",
+  "description": "Bonsai · Casa de playa",
+  "start_url": "/?source=pwa",
   "display": "standalone",
-  "background_color": "#f6f5f4",
-  "theme_color": "#0075de",
+  "background_color": "#1F1D1A",
+  "theme_color": "#1F1D1A",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

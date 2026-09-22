@@ -104,7 +104,8 @@ export function PurchaseItemRow({
           disabled={pending}
           aria-label={dict.workOrderDetail.delete}
           onClick={() => {
-            if (window.confirm(format(dict.purchases.deleteConfirm, { title: item.title }))) {
+            const confirmMessage = purchased ? dict.purchases.deleteConfirmPurchased : dict.purchases.deleteConfirm;
+            if (window.confirm(format(confirmMessage, { title: item.title }))) {
               startTransition(() => {
                 deletePurchaseItem(item.id, item.image_path);
               });

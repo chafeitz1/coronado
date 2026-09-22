@@ -13,6 +13,8 @@ const EVENT_LABELS: Record<NotificationEventType, string> = {
   purchase_urgent: "Compra urgente",
   daily_digest: "Resumen del día",
   maintenance_reminder: "Mantenimiento próximo",
+  announcement_created: "Nuevo anuncio",
+  announcement_happened: "Anuncio marcado como sucedido",
 };
 
 let vapidConfigured = false;
@@ -29,6 +31,26 @@ function configureVapid() {
 }
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+// Same brand shell every "amigable" email reads as — an eyebrow label over
+// a title, on the dark-header/white-card layout. Callers only supply the
+// eyebrow (+ optional color, for urgency) and the body markup that goes
+// under the title.
+export function brandedEmailHtml(params: { eyebrow: string; eyebrowColor?: string; title: string; bodyHtml: string }) {
+  const { eyebrow, eyebrowColor = "#0075de", title, bodyHtml } = params;
+  return `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;">
+      <div style="background-color:#1F1D1A;padding:18px 24px;border-radius:12px 12px 0 0;text-align:center;">
+        <img src="${process.env.NEXT_PUBLIC_APP_URL ?? ""}/brand/bonsai-logo-principal-blanco.png" alt="Bonsai" width="58" height="30" style="display:inline-block;height:30px;width:58px;" />
+      </div>
+      <div style="background:#ffffff;border:1px solid #e7e5e4;border-top:none;border-radius:0 0 12px 12px;padding:24px;">
+        <p style="margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${eyebrowColor};">${eyebrow}</p>
+        <h1 style="margin:0 0 14px;font-size:20px;line-height:1.3;color:#18181b;">${title}</h1>
+        ${bodyHtml}
+      </div>
+    </div>
+  `;
+}
 
 export interface NotifyPayload {
   title?: string;

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
-import { notifyUser, sendPushToUser } from "@/lib/notifications/send";
+import { notifyUser, sendPushToUser, brandedEmailHtml } from "@/lib/notifications/send";
 import { MAX_ATTACHMENT_BYTES, ALLOWED_ATTACHMENT_TYPES } from "@/lib/attachments";
 import type { PurchaseItemListType, PurchaseItemStatus } from "@/lib/types/database";
 
@@ -16,9 +16,6 @@ async function getOwnerId(supabase: SupabaseClient) {
 
 export type PurchaseItemState = { ok: true } | { ok: false; error: string } | null;
 
-// Same brand shell every "amigable" email should read as — kept local since
-// this is currently the only email that needs one; if a second email wants
-// it, pull it out into lib/notifications then.
 function urgentPurchaseEmailHtml(params: {
   title: string;
   quantity: string | null;
@@ -28,30 +25,26 @@ function urgentPurchaseEmailHtml(params: {
   otherPending: { title: string; quantity: string | null }[];
 }) {
   const { title, quantity, notes, requesterName, imageUrl, otherPending } = params;
-  return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;">
-      <div style="background-color:#1F1D1A;padding:18px 24px;border-radius:12px 12px 0 0;text-align:center;">
-        <img src="${process.env.NEXT_PUBLIC_APP_URL ?? ""}/brand/bonsai-logo-principal-blanco.png" alt="Bonsai" width="58" height="30" style="display:inline-block;height:30px;width:58px;" />
+  return brandedEmailHtml({
+    eyebrow: "🛒 Compra urgente",
+    eyebrowColor: "#dc2626",
+    title,
+    bodyHtml: `
+      ${imageUrl ? `<img src="${imageUrl}" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:14px;display:block;" />` : ""}
+      <div style="background:#fdeaea;border-radius:8px;padding:12px 16px;${otherPending.length ? "margin-bottom:20px;" : ""}">
+        <p style="margin:0;font-size:14px;color:#18181b;">Pedido por <strong>${requesterName}</strong>${quantity ? ` · ${quantity}` : ""}</p>
+        ${notes ? `<p style="margin:6px 0 0;font-size:13px;color:#78716c;">${notes}</p>` : ""}
       </div>
-      <div style="background:#ffffff;border:1px solid #e7e5e4;border-top:none;border-radius:0 0 12px 12px;padding:24px;">
-        <p style="margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#dc2626;">🛒 Compra urgente</p>
-        <h1 style="margin:0 0 14px;font-size:20px;line-height:1.3;color:#18181b;">${title}</h1>
-        ${imageUrl ? `<img src="${imageUrl}" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:14px;display:block;" />` : ""}
-        <div style="background:#fdeaea;border-radius:8px;padding:12px 16px;${otherPending.length ? "margin-bottom:20px;" : ""}">
-          <p style="margin:0;font-size:14px;color:#18181b;">Pedido por <strong>${requesterName}</strong>${quantity ? ` · ${quantity}` : ""}</p>
-          ${notes ? `<p style="margin:6px 0 0;font-size:13px;color:#78716c;">${notes}</p>` : ""}
-        </div>
-        ${
-          otherPending.length
-            ? `<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#78716c;">Otras compras urgentes pendientes (${otherPending.length}):</p>
-               <ul style="margin:0;padding-left:18px;font-size:14px;color:#18181b;">
-                 ${otherPending.map((i) => `<li style="margin-bottom:4px;">${i.title}${i.quantity ? ` · ${i.quantity}` : ""}</li>`).join("")}
-               </ul>`
-            : ""
-        }
-      </div>
-    </div>
-  `;
+      ${
+        otherPending.length
+          ? `<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#78716c;">Otras compras urgentes pendientes (${otherPending.length}):</p>
+             <ul style="margin:0;padding-left:18px;font-size:14px;color:#18181b;">
+               ${otherPending.map((i) => `<li style="margin-bottom:4px;">${i.title}${i.quantity ? ` · ${i.quantity}` : ""}</li>`).join("")}
+             </ul>`
+          : ""
+      }
+    `,
+  });
 }
 
 // "groceries" items just join the accumulating list. "urgent" ones also

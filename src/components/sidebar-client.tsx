@@ -11,6 +11,7 @@ import {
   BookUser,
   DollarSign,
   BookOpen,
+  Megaphone,
   Search,
   ChevronRight,
   LogOut,
@@ -31,6 +32,7 @@ const ICONS = {
   directory: BookUser,
   finance: DollarSign,
   manuals: BookOpen,
+  announcements: Megaphone,
 };
 
 export type SidebarLink = {
@@ -63,7 +65,7 @@ export function SidebarClient({
   // cramped — these are lower-frequency than the other four, so they move
   // into a "More" sheet instead of sitting in the bar itself. Add new
   // lower-frequency sections here as they show up (e.g. important dates).
-  const OVERFLOW_ICONS = ["directory", "finance", "manuals"] as const;
+  const OVERFLOW_ICONS = ["directory", "finance", "manuals", "announcements"] as const;
   const primaryLinks = workLinks.filter((link) => !(OVERFLOW_ICONS as readonly string[]).includes(link.icon));
   const overflowLinks = workLinks.filter((link) => (OVERFLOW_ICONS as readonly string[]).includes(link.icon));
   const overflowActive = overflowLinks.some((link) => isActive(link.href));

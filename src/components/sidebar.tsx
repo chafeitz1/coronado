@@ -25,6 +25,7 @@ export async function Sidebar() {
     { href: "/assets", label: dict.sidebar.assets, icon: "assets" },
     { href: "/directory", label: dict.sidebar.directory, icon: "directory" },
     { href: "/manuals", label: dict.sidebar.manuals, icon: "manuals" },
+    { href: "/announcements", label: dict.sidebar.announcements, icon: "announcements" },
   ];
 
   if (profile.role === "owner") {

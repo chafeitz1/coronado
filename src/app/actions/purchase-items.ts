@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
-import { notifyUser } from "@/lib/notifications/send";
+import { notifyUser, sendPushToUser } from "@/lib/notifications/send";
 import { MAX_ATTACHMENT_BYTES, ALLOWED_ATTACHMENT_TYPES } from "@/lib/attachments";
 import type { PurchaseItemListType, PurchaseItemStatus } from "@/lib/types/database";
 
@@ -145,14 +145,29 @@ export async function togglePurchaseItemStatus(itemId: string, nextStatus: Purch
   const profile = await requireUser();
   const supabase = await createClient();
 
-  await supabase
+  const { data: item } = await supabase
     .from("purchase_items")
     .update(
       nextStatus === "purchased"
         ? { status: "purchased", purchased_by: profile.id, purchased_at: new Date().toISOString() }
         : { status: "pending", purchased_by: null, purchased_at: null }
     )
-    .eq("id", itemId);
+    .eq("id", itemId)
+    .select("title")
+    .single();
+
+  // Push-only (no email, no NotificationEventType/preference row) — this is
+  // meant as a quick heads-up when staff checks something off, not a formal
+  // channel Carlos would want to configure or get emailed about.
+  if (nextStatus === "purchased" && item) {
+    const ownerId = await getOwnerId(supabase);
+    if (ownerId && ownerId !== profile.id) {
+      await sendPushToUser(ownerId, "Compra recibida", {
+        body: `${profile.full_name} marcó "${item.title}" como comprado`,
+        url: "/purchases",
+      });
+    }
+  }
 
   revalidatePath("/purchases");
 }

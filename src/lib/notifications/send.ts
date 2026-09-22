@@ -71,7 +71,7 @@ export async function notifyUser(
   ]);
 }
 
-async function sendPushToUser(userId: string, title: string, payload: NotifyPayload) {
+export async function sendPushToUser(userId: string, title: string, payload: NotifyPayload) {
   configureVapid();
   if (!vapidConfigured) {
     console.error("[push] not sent: VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY missing from server env");

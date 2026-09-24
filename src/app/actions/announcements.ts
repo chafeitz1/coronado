@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser, requireOwner } from "@/lib/auth";
-import { notifyUser, brandedEmailHtml } from "@/lib/notifications/send";
+import { notifyUser } from "@/lib/notifications/send";
 import { formatLongDate } from "@/lib/dates";
 import type { AnnouncementStatus } from "@/lib/types/database";
 
@@ -59,22 +59,19 @@ export async function createAnnouncement(
 
   const staffIds = await getStaffIds(supabase);
   const when = dateRangeLabel(startDate, endDate);
-  const emailHtml = brandedEmailHtml({
-    eyebrow: "📅 Nuevo anuncio",
-    title,
-    bodyHtml: `
-      <div style="background:#e8f2fe;border-radius:8px;padding:12px 16px;">
-        <p style="margin:0;font-size:14px;color:#18181b;"><strong>${when}</strong></p>
-        ${notes ? `<p style="margin:6px 0 0;font-size:13px;color:#78716c;">${notes}</p>` : ""}
-      </div>
-    `,
-  });
+  const emailHtml = `
+    <div style="background:#e8f2fe;border-radius:8px;padding:12px 16px;">
+      <p style="margin:0;font-size:14px;color:#18181b;"><strong>${when}</strong></p>
+      ${notes ? `<p style="margin:6px 0 0;font-size:13px;color:#78716c;">${notes}</p>` : ""}
+    </div>
+  `;
 
   await Promise.all(
     staffIds.map((staffId) =>
       notifyUser(staffId, "announcement_created", {
         body: `${title} — ${when}`,
         url: "/announcements",
+        emailTitle: title,
         emailHtml,
       })
     )
@@ -108,6 +105,15 @@ export async function toggleAnnouncementStatus(announcementId: string, nextStatu
       await notifyUser(ownerId, "announcement_happened", {
         body: `${profile.full_name} marcó "${item.title}" (${when}) como sucedido`,
         url: "/announcements",
+        emailEyebrow: "✅ Anuncio sucedido",
+        emailEyebrowColor: "#15803d",
+        emailTitle: item.title,
+        emailHtml: `
+          <div style="background:#eafbf0;border-radius:8px;padding:12px 16px;">
+            <p style="margin:0;font-size:14px;color:#18181b;">Marcado por <strong>${profile.full_name}</strong></p>
+            <p style="margin:6px 0 0;font-size:13px;color:#78716c;">${when}</p>
+          </div>
+        `,
       });
     }
   }

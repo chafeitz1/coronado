@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
-import { notifyUser, sendPushToUser, brandedEmailHtml } from "@/lib/notifications/send";
+import { notifyUser, sendPushToUser } from "@/lib/notifications/send";
 import { MAX_ATTACHMENT_BYTES, ALLOWED_ATTACHMENT_TYPES } from "@/lib/attachments";
 import type { PurchaseItemListType, PurchaseItemStatus } from "@/lib/types/database";
 
@@ -16,35 +16,31 @@ async function getOwnerId(supabase: SupabaseClient) {
 
 export type PurchaseItemState = { ok: true } | { ok: false; error: string } | null;
 
-function urgentPurchaseEmailHtml(params: {
-  title: string;
+// Inner fragment only — placed inside notifyUser's branded email shell
+// (see NotifyPayload.emailHtml), not a full document itself.
+function urgentPurchaseEmailBody(params: {
   quantity: string | null;
   notes: string | null;
   requesterName: string;
   imageUrl: string | null;
   otherPending: { title: string; quantity: string | null }[];
 }) {
-  const { title, quantity, notes, requesterName, imageUrl, otherPending } = params;
-  return brandedEmailHtml({
-    eyebrow: "🛒 Compra urgente",
-    eyebrowColor: "#dc2626",
-    title,
-    bodyHtml: `
-      ${imageUrl ? `<img src="${imageUrl}" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:14px;display:block;" />` : ""}
-      <div style="background:#fdeaea;border-radius:8px;padding:12px 16px;${otherPending.length ? "margin-bottom:20px;" : ""}">
-        <p style="margin:0;font-size:14px;color:#18181b;">Pedido por <strong>${requesterName}</strong>${quantity ? ` · ${quantity}` : ""}</p>
-        ${notes ? `<p style="margin:6px 0 0;font-size:13px;color:#78716c;">${notes}</p>` : ""}
-      </div>
-      ${
-        otherPending.length
-          ? `<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#78716c;">Otras compras urgentes pendientes (${otherPending.length}):</p>
-             <ul style="margin:0;padding-left:18px;font-size:14px;color:#18181b;">
-               ${otherPending.map((i) => `<li style="margin-bottom:4px;">${i.title}${i.quantity ? ` · ${i.quantity}` : ""}</li>`).join("")}
-             </ul>`
-          : ""
-      }
-    `,
-  });
+  const { quantity, notes, requesterName, imageUrl, otherPending } = params;
+  return `
+    ${imageUrl ? `<img src="${imageUrl}" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:14px;display:block;" />` : ""}
+    <div style="background:#fdeaea;border-radius:8px;padding:12px 16px;${otherPending.length ? "margin-bottom:20px;" : ""}">
+      <p style="margin:0;font-size:14px;color:#18181b;">Pedido por <strong>${requesterName}</strong>${quantity ? ` · ${quantity}` : ""}</p>
+      ${notes ? `<p style="margin:6px 0 0;font-size:13px;color:#78716c;">${notes}</p>` : ""}
+    </div>
+    ${
+      otherPending.length
+        ? `<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#78716c;">Otras compras urgentes pendientes (${otherPending.length}):</p>
+           <ul style="margin:0;padding-left:18px;font-size:14px;color:#18181b;">
+             ${otherPending.map((i) => `<li style="margin-bottom:4px;">${i.title}${i.quantity ? ` · ${i.quantity}` : ""}</li>`).join("")}
+           </ul>`
+        : ""
+    }
+  `;
 }
 
 // "groceries" items just join the accumulating list. "urgent" ones also
@@ -116,8 +112,10 @@ export async function createPurchaseItem(
       await notifyUser(ownerId, "purchase_urgent", {
         body: `${profile.full_name} pidió comprar: ${title}`,
         url: "/purchases",
-        emailHtml: urgentPurchaseEmailHtml({
-          title,
+        emailEyebrow: "🛒 Compra urgente",
+        emailEyebrowColor: "#dc2626",
+        emailTitle: title,
+        emailHtml: urgentPurchaseEmailBody({
           quantity,
           notes,
           requesterName: profile.full_name,

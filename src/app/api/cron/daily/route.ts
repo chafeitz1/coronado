@@ -63,19 +63,20 @@ async function sendDailyDigest(supabase: Supabase, ownerId: string) {
 
   const line = (r: Row) => {
     const assignee = single(r.assignee)?.full_name ?? "Sin asignar";
-    return `<li>${r.title} — ${STATUS_LABELS[r.status] ?? r.status} (${assignee})</li>`;
+    return `<li style="margin-bottom:4px;">${r.title} — ${STATUS_LABELS[r.status] ?? r.status} (${assignee})</li>`;
   };
+  const listStyle = 'style="margin:0;padding-left:18px;font-size:14px;color:#18181b;"';
+  const labelStyle = 'style="margin:0 0 8px;font-size:13px;font-weight:600;color:#78716c;"';
 
   const emailHtml = `
-    <h2>Resumen del día</h2>
     ${
       dueToday.length
-        ? `<p><strong>Tareas de hoy (${dueToday.length}):</strong></p><ul>${dueToday.map(line).join("")}</ul>`
-        : "<p>No había tareas programadas para hoy.</p>"
+        ? `<p ${labelStyle}>Tareas de hoy (${dueToday.length}):</p><ul ${listStyle}>${dueToday.map(line).join("")}</ul>`
+        : `<p style="margin:0;font-size:14px;color:#18181b;">No había tareas programadas para hoy.</p>`
     }
     ${
       stillOpenFromBefore.length
-        ? `<p><strong>Atrasadas y sin cerrar (${stillOpenFromBefore.length}):</strong></p><ul>${stillOpenFromBefore.map(line).join("")}</ul>`
+        ? `<p ${labelStyle}>Atrasadas y sin cerrar (${stillOpenFromBefore.length}):</p><ul ${listStyle}>${stillOpenFromBefore.map(line).join("")}</ul>`
         : ""
     }
   `;

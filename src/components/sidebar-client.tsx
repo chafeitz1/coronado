@@ -154,11 +154,16 @@ export function SidebarClient({
 
           `[transform:translateZ(0)]` forces this onto its own compositing
           layer — without it, iOS Safari can let a `fixed` element scroll
-          along with the page during momentum/inertial scrolling on long
-          lists (Directory, Tasks) before it snaps back, instead of staying
-          pinned to the viewport the whole time. */}
+          along with the page during momentum/inertial scrolling before it
+          snaps back, instead of staying pinned to the viewport the whole
+          time. That alone fixed the worst of it on long lists (Directory,
+          Tasks), but Carlos still saw it detach on Profile — paired with
+          `will-change: transform` here, which gets iOS to allocate and keep
+          that compositing layer up front instead of promoting/demoting it
+          opportunistically mid-scroll, which is where the flicker was
+          apparently still slipping through. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-hairline bg-canvas pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] [transform:translateZ(0)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-hairline bg-canvas pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] [transform:translateZ(0)] will-change-transform md:hidden"
         aria-label={dict.sidebar.workSection}
       >
         {primaryLinks.map((link) => {

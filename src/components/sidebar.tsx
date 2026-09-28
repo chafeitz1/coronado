@@ -18,17 +18,19 @@ export async function Sidebar() {
     .not("status", "in", "(done,skipped)")
     .lt("due_date", today);
 
-  // Purchases still pending (either list) — already-purchased items don't
-  // count, same as done/skipped tasks don't count toward the tasks badge.
-  const { count: pendingPurchasesCount } = await supabase
+  // Urgent purchases still pending — same "needs attention now" signal as
+  // the tasks badge above, scoped to the urgent list only (groceries aren't
+  // time-sensitive enough to warrant a badge).
+  const { count: urgentPendingCount } = await supabase
     .from("purchase_items")
     .select("id", { count: "exact", head: true })
+    .eq("list_type", "urgent")
     .eq("status", "pending");
 
   const workLinks: SidebarLink[] = [
     { href: "/", label: dict.sidebar.home, icon: "home" },
     { href: "/work-orders", label: dict.sidebar.tasks, icon: "tasks", badge: overdueCount ?? 0 },
-    { href: "/purchases", label: dict.sidebar.purchases, icon: "purchases", badge: pendingPurchasesCount ?? 0 },
+    { href: "/purchases", label: dict.sidebar.purchases, icon: "purchases", badge: urgentPendingCount ?? 0 },
     { href: "/assets", label: dict.sidebar.assets, icon: "assets" },
     { href: "/directory", label: dict.sidebar.directory, icon: "directory" },
     { href: "/manuals", label: dict.sidebar.manuals, icon: "manuals" },

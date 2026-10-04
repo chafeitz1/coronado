@@ -1,7 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notifyUser } from "@/lib/notifications/send";
+import { notifyUser, sendPushToUser } from "@/lib/notifications/send";
 import { isoDateOffset, daysUntil } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
@@ -33,12 +33,13 @@ export async function GET(request: Request) {
   const { data: owner } = await supabase.from("profiles").select("id").eq("role", "owner").limit(1).single();
   if (!owner) return NextResponse.json({ ok: true, skipped: "no owner" });
 
-  const [digest, maintenance] = await Promise.all([
+  const [digest, maintenance, announcements] = await Promise.all([
     sendDailyDigest(supabase, owner.id),
     sendMaintenanceReminders(supabase, owner.id),
+    sendAnnouncementReminders(supabase),
   ]);
 
-  return NextResponse.json({ ok: true, digest, maintenance });
+  return NextResponse.json({ ok: true, digest, maintenance, announcements });
 }
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -122,4 +123,38 @@ async function sendMaintenanceReminders(supabase: Supabase, ownerId: string) {
   }
 
   return { sent };
+}
+
+// Push-only (no email, same as the purchase "Compra recibida" nudge) —
+// fires every day an announcement's window has arrived/passed and nobody
+// marked it "sucedido" yet, to everyone (staff + owner) so whoever is on
+// site can confirm it. No sent-at flag: unlike maintenance reminders this
+// is meant to repeat daily until someone acts on it, not fire once.
+async function sendAnnouncementReminders(supabase: Supabase) {
+  const today = isoDateOffset(0);
+
+  const { data: rows } = await supabase
+    .from("announcements")
+    .select("id, title, start_date, end_date")
+    .eq("status", "pending");
+
+  const due = (rows ?? []).filter((r) => (r.end_date ?? r.start_date) <= today);
+  if (due.length === 0) return { sent: 0 };
+
+  const { data: profiles } = await supabase.from("profiles").select("id");
+  const userIds = (profiles ?? []).map((p) => p.id);
+  if (userIds.length === 0) return { sent: 0 };
+
+  await Promise.all(
+    due.flatMap((row) =>
+      userIds.map((userId) =>
+        sendPushToUser(userId, "¿Este anuncio ya sucedió?", {
+          body: `"${row.title}" todavía no se marcó como sucedido — confirmalo en Anuncios.`,
+          url: "/announcements",
+        })
+      )
+    )
+  );
+
+  return { sent: due.length * userIds.length, announcements: due.length };
 }

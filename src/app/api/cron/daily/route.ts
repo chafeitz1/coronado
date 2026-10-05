@@ -22,16 +22,23 @@ const STATUS_LABELS: Record<string, string> = {
 // the 6pm digest and the maintenance-reminder sweep, since Vercel Hobby
 // only guarantees daily granularity anyway and there's no reason to spend
 // a second invocation on this.
+// Logged to cron_runs on every hit (even unauthorized ones) — Vercel's own
+// log retention on this plan is too short to tell us whether the scheduled
+// trigger is actually firing, so this table is the durable record instead.
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
+  const supabase = createAdminClient();
+
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    await supabase.from("cron_runs").insert({ result: { ok: false, reason: "unauthorized" } });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createAdminClient();
-
   const { data: owner } = await supabase.from("profiles").select("id").eq("role", "owner").limit(1).single();
-  if (!owner) return NextResponse.json({ ok: true, skipped: "no owner" });
+  if (!owner) {
+    await supabase.from("cron_runs").insert({ result: { ok: true, skipped: "no owner" } });
+    return NextResponse.json({ ok: true, skipped: "no owner" });
+  }
 
   const [digest, maintenance, announcements] = await Promise.all([
     sendDailyDigest(supabase, owner.id),
@@ -39,6 +46,7 @@ export async function GET(request: Request) {
     sendAnnouncementReminders(supabase),
   ]);
 
+  await supabase.from("cron_runs").insert({ result: { ok: true, digest, maintenance, announcements } });
   return NextResponse.json({ ok: true, digest, maintenance, announcements });
 }
 

@@ -154,7 +154,7 @@ export async function togglePurchaseItemStatus(itemId: string, nextStatus: Purch
     const ownerId = await getOwnerId(supabase);
     if (ownerId && ownerId !== profile.id) {
       await sendPushToUser(ownerId, "Compra recibida", {
-        body: `${profile.full_name} marcó "${item.title}" como comprado`,
+        body: `${profile.full_name}\n"${item.title}"`,
         url: "/purchases",
       });
     }

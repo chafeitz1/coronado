@@ -160,7 +160,7 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   const { data: existing } = await supabase
     .from("work_orders")
     .select(
-      "title, description, asset_id, due_date, assigned_to, vendor_id, recurrence_interval_value, recurrence_interval_unit"
+      "title, description, asset_id, due_date, assigned_to, vendor_id, video_url, recurrence_interval_value, recurrence_interval_unit"
     )
     .eq("id", workOrderId)
     .single();
@@ -175,6 +175,7 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   const dueDate = String(formData.get("due_date") ?? "") || null;
   const assignedTo = String(formData.get("assigned_to") ?? "") || null;
   const vendorId = String(formData.get("vendor_id") ?? "") || null;
+  const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
   const recurrenceValue = Number(formData.get("recurrence_interval_value") ?? "") || null;
   const recurrenceUnit = recurrenceValue
     ? (String(formData.get("recurrence_interval_unit") ?? "") as IntervalUnit) || null
@@ -187,6 +188,7 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
     due_date: dueDate,
     assigned_to: assignedTo,
     vendor_id: vendorId,
+    video_url: videoUrl,
     recurrence_interval_value: recurrenceUnit ? recurrenceValue : null,
     recurrence_interval_unit: recurrenceUnit,
   };
@@ -201,6 +203,7 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   if ((existing.due_date ?? null) !== dueDate) changed.push("due_date");
   if ((existing.assigned_to ?? null) !== assignedTo) changed.push("assigned_to");
   if ((existing.vendor_id ?? null) !== vendorId) changed.push("vendor_id");
+  if ((existing.video_url ?? null) !== videoUrl) changed.push("video_url");
   if (
     (existing.recurrence_interval_value ?? null) !== update.recurrence_interval_value ||
     (existing.recurrence_interval_unit ?? null) !== update.recurrence_interval_unit
@@ -355,12 +358,20 @@ export type WorkOrderAttachmentState = { error?: string } | undefined;
 // browser (lib/attachments-client.ts) before calling this to save the DB
 // row. Keeps a big PDF/photo's bytes off this Server Action's request body,
 // which Vercel caps well under what a scanned multi-page report needs.
-export async function saveWorkOrderAttachment(workOrderId: string, path: string, fileName: string) {
-  const profile = await requireUser();
+export async function saveWorkOrderAttachment(
+  workOrderId: string,
+  path: string,
+  fileName: string,
+  kind: "evidence" | "instruction" = "evidence"
+) {
+  // Instruction photos are reference material the owner sets up for the
+  // task (how to do it), not evidence anyone adds while doing the work —
+  // same owner-only bar as editing the task's own description.
+  const profile = kind === "instruction" ? await requireOwner() : await requireUser();
   const supabase = await createClient();
 
   try {
-    await saveAttachmentRecord(supabase, { workOrderId }, profile.id, path, fileName);
+    await saveAttachmentRecord(supabase, { workOrderId }, profile.id, path, fileName, kind);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "No se pudo guardar el archivo." };
   }

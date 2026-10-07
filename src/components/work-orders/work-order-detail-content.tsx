@@ -1,4 +1,4 @@
-import { Bell, MessageSquare, Wrench, Building2, Repeat, CalendarCheck, History, X } from "lucide-react";
+import { Bell, MessageSquare, Wrench, Building2, Repeat, CalendarCheck, History, X, PlayCircle } from "lucide-react";
 import { addWorkOrderNote } from "@/app/actions/work-orders";
 import { StatusBadge, OverdueBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -26,13 +26,21 @@ export type WorkOrderDetailData = {
     recurrence_interval_value: number | null;
     recurrence_interval_unit: string | null;
     assigned_to: string | null;
+    video_url: string | null;
     created_at: string;
   };
   asset: { name: string } | null;
   vendor: { name: string } | null;
   assignee: Person;
   creator: Person;
-  attachments: { id: string; storagePath: string; fileName: string; publicUrl: string; canDelete: boolean }[];
+  attachments: {
+    id: string;
+    storagePath: string;
+    fileName: string;
+    publicUrl: string;
+    canDelete: boolean;
+    kind: "evidence" | "instruction";
+  }[];
   notes: { id: string; body: string; notify_owner: boolean; created_at: string; author: Person | Person[] }[];
   activityRows: {
     id: string;
@@ -107,6 +115,7 @@ export function WorkOrderDetailContent({
     assigned_to: dict.workOrderDetail.fieldAssignee,
     vendor_id: dict.workOrderDetail.fieldVendor,
     recurrence: dict.workOrderDetail.fieldRecurrence,
+    video_url: dict.workOrderDetail.fieldVideoUrl,
   };
 
   // Newest first, with a synthetic "created" entry (derived from the work
@@ -256,12 +265,43 @@ export function WorkOrderDetailContent({
         </section>
       )}
 
+      {/* Reference material for how to do the task — set up once by the
+          owner, kept separate from the evidence attachments below (which
+          anyone adds, and which pile up over time). */}
+      {(workOrder.video_url || attachments.some((a) => a.kind === "instruction") || isOwner) && (
+        <section className="space-y-3 border-t border-hairline p-5">
+          <h2 className={sectionHeading}>{dict.workOrderDetail.instructionsTitle}</h2>
+          {workOrder.video_url && (
+            <a
+              href={workOrder.video_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2.5 rounded-lg border border-hairline p-2.5 text-sm font-medium text-ink hover:bg-surface-hover active:bg-surface-hover"
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+                <PlayCircle className="size-4" strokeWidth={2} />
+              </span>
+              {dict.workOrderDetail.watchVideo}
+            </a>
+          )}
+          <WorkOrderAttachments
+            workOrderId={workOrder.id}
+            currentUserId={currentUserId}
+            attachments={attachments}
+            kind="instruction"
+            canUpload={isOwner}
+            dict={dict}
+          />
+        </section>
+      )}
+
       <section className="space-y-3 border-t border-hairline p-5">
         <h2 className={sectionHeading}>{dict.workOrderDetail.attachmentsTitle}</h2>
         <WorkOrderAttachments
           workOrderId={workOrder.id}
           currentUserId={currentUserId}
           attachments={attachments}
+          kind="evidence"
           dict={dict}
         />
       </section>

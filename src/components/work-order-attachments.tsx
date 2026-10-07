@@ -16,6 +16,7 @@ type AttachmentItem = {
   fileName: string;
   publicUrl: string;
   canDelete: boolean;
+  kind: "evidence" | "instruction";
 };
 
 function isPdf(fileName: string) {
@@ -24,16 +25,23 @@ function isPdf(fileName: string) {
 
 // Same "add + grid" pattern as AssetAttachments, but split into a photo
 // grid and a PDF list (e.g. a vendor's maintenance report) since a PDF
-// can't render as an image thumbnail.
+// can't render as an image thumbnail. Filters the full attachment list
+// down to one `kind` — "evidence" (anyone, accumulates over time) or
+// "instruction" (owner-only reference material) — so the two render as
+// separate sections sharing this one component.
 export function WorkOrderAttachments({
   workOrderId,
   currentUserId,
   attachments,
+  kind = "evidence",
+  canUpload = true,
   dict,
 }: {
   workOrderId: string;
   currentUserId: string;
   attachments: AttachmentItem[];
+  kind?: "evidence" | "instruction";
+  canUpload?: boolean;
   dict: Dictionary;
 }) {
   const router = useRouter();
@@ -41,8 +49,9 @@ export function WorkOrderAttachments({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const photos = attachments.filter((a) => !isPdf(a.fileName));
-  const documents = attachments.filter((a) => isPdf(a.fileName));
+  const scoped = attachments.filter((a) => a.kind === kind);
+  const photos = scoped.filter((a) => !isPdf(a.fileName));
+  const documents = scoped.filter((a) => isPdf(a.fileName));
 
   // Two async steps (upload to Storage, then save the DB row) — kept
   // outside startTransition so `pending` covers the whole thing, not just
@@ -60,7 +69,7 @@ export function WorkOrderAttachments({
     }
 
     startTransition(async () => {
-      const saveResult = await saveWorkOrderAttachment(workOrderId, result.path, file.name);
+      const saveResult = await saveWorkOrderAttachment(workOrderId, result.path, file.name, kind);
       if (saveResult?.error) {
         setError(saveResult.error);
         return;
@@ -122,21 +131,30 @@ export function WorkOrderAttachments({
       )}
 
       <div className="flex items-center gap-2">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,application/pdf"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => inputRef.current?.click()}
-          className={`${buttonSecondary} disabled:pointer-events-none disabled:opacity-50`}
-        >
-          <Paperclip className="size-4" /> {pending ? dict.workOrderForm.submitPending : dict.workOrderDetail.addAttachment}
-        </button>
+        {canUpload && (
+          <>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => inputRef.current?.click()}
+              className={`${buttonSecondary} disabled:pointer-events-none disabled:opacity-50`}
+            >
+              <Paperclip className="size-4" />{" "}
+              {pending
+                ? dict.workOrderForm.submitPending
+                : kind === "instruction"
+                  ? dict.workOrderDetail.addInstructionPhoto
+                  : dict.workOrderDetail.addAttachment}
+            </button>
+          </>
+        )}
         {error && <p className="text-sm text-status-overdue-fg">{error}</p>}
       </div>
     </div>

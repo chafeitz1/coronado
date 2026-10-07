@@ -79,6 +79,16 @@ export default async function EditWorkOrderPage({
           />
         </Field>
 
+        <Field label={dict.workOrderForm.videoUrlLabel}>
+          <input
+            type="url"
+            name="video_url"
+            defaultValue={workOrder.video_url ?? ""}
+            placeholder="https://youtube.com/..."
+            className={input}
+          />
+        </Field>
+
         <RecurrenceFields
           dict={dict}
           defaultEnabled={!!workOrder.recurrence_interval_value}

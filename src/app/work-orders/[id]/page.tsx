@@ -50,7 +50,7 @@ export default async function WorkOrderDetailPage({
 
   const { data: attachmentRows } = await supabase
     .from("attachments")
-    .select("id, storage_path, file_name, uploaded_by")
+    .select("id, storage_path, file_name, uploaded_by, kind")
     .eq("work_order_id", id)
     .order("created_at", { ascending: true });
 
@@ -70,6 +70,7 @@ export default async function WorkOrderDetailPage({
     fileName: row.file_name,
     publicUrl: supabase.storage.from("attachments").getPublicUrl(row.storage_path).data.publicUrl,
     canDelete: isOwner || row.uploaded_by === profile.id,
+    kind: row.kind as "evidence" | "instruction",
   }));
 
   return (

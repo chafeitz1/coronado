@@ -17,7 +17,8 @@ export async function uploadAttachment(
   supabase: SupabaseClient<any>,
   target: AttachmentTarget,
   userId: string,
-  file: File
+  file: File,
+  kind: "evidence" | "instruction" = "evidence"
 ) {
   if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
     throw new Error("Solo se permiten fotos JPG, PNG, WEBP o archivos PDF.");
@@ -34,7 +35,7 @@ export async function uploadAttachment(
     .upload(path, file, { contentType: file.type });
   if (uploadError) throw new Error(uploadError.message);
 
-  await saveAttachmentRecord(supabase, target, userId, path, file.name);
+  await saveAttachmentRecord(supabase, target, userId, path, file.name, kind);
 }
 
 // Inserts the DB row for a file that's already sitting in Storage —
@@ -46,7 +47,8 @@ export async function saveAttachmentRecord(
   target: AttachmentTarget,
   userId: string,
   path: string,
-  fileName: string
+  fileName: string,
+  kind: "evidence" | "instruction" = "evidence"
 ) {
   const { error: insertError } = await supabase.from("attachments").insert({
     asset_id: target.assetId ?? null,
@@ -54,6 +56,7 @@ export async function saveAttachmentRecord(
     storage_path: path,
     file_name: fileName,
     uploaded_by: userId,
+    kind,
   });
   if (insertError) {
     await supabase.storage.from("attachments").remove([path]);

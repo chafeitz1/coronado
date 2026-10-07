@@ -11,13 +11,6 @@ function single<T>(value: T | T[] | null): T | null {
   return value;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  done: "Completada",
-  skipped: "Omitida",
-  in_progress: "En progreso",
-  open: "Sin completar",
-};
-
 // Runs once a day (see vercel.json) — a single cron invocation covers both
 // the 6pm digest and the maintenance-reminder sweep, since Vercel Hobby
 // only guarantees daily granularity anyway and there's no reason to spend
@@ -54,7 +47,10 @@ type Supabase = ReturnType<typeof createAdminClient>;
 
 // Today's tasks (whatever their outcome) plus anything still open from
 // before today, so the owner sees both "how did today go" and "what's
-// been slipping."
+// been slipping." The "lt today AND status in (open, in_progress)" half of
+// the filter is what makes a stale task persist: it keeps matching on
+// every day's run until it's finally closed out (done or skipped), not
+// just the one day it was due.
 async function sendDailyDigest(supabase: Supabase, ownerId: string) {
   const today = isoDateOffset(0);
 
@@ -67,36 +63,46 @@ async function sendDailyDigest(supabase: Supabase, ownerId: string) {
   if (!rows || rows.length === 0) return { sent: false };
 
   type Row = (typeof rows)[number];
-  const dueToday = rows.filter((r) => r.due_date === today);
-  const stillOpenFromBefore = rows.filter((r) => r.due_date !== today);
+  // Split by outcome, not by due date — a skipped task counts as "no
+  // completada" alongside the ones still open, tagged "omitida" so it
+  // doesn't read like it's merely running late.
+  const completed = rows.filter((r) => r.status === "done");
+  const notCompleted = rows.filter((r) => r.status !== "done");
 
-  const line = (r: Row) => {
-    const assignee = single(r.assignee)?.full_name ?? "Sin asignar";
-    return `<li style="margin-bottom:4px;">${r.title} — ${STATUS_LABELS[r.status] ?? r.status} (${assignee})</li>`;
+  const assigneeOf = (r: Row) => single(r.assignee)?.full_name ?? "Sin asignar";
+  const completedLine = (r: Row) => `<li style="margin-bottom:4px;">${r.title} (${assigneeOf(r)})</li>`;
+  const notCompletedLine = (r: Row) => {
+    if (r.status === "skipped") return `<li style="margin-bottom:4px;">${r.title} — omitida (${assigneeOf(r)})</li>`;
+    const daysLate = r.due_date! < today ? -daysUntil(r.due_date!) : 0;
+    const when = r.due_date === today ? "vence hoy" : daysLate === 1 ? "venció ayer" : `venció hace ${daysLate} días`;
+    return `<li style="margin-bottom:4px;">${r.title} — ${when} (${assigneeOf(r)})</li>`;
   };
+
   const listStyle = 'style="margin:0;padding-left:18px;font-size:14px;color:#18181b;"';
   const labelStyle = 'style="margin:0 0 8px;font-size:13px;font-weight:600;color:#78716c;"';
+  const emptyStyle = 'style="margin:0 0 12px;font-size:14px;color:#18181b;"';
 
   const emailHtml = `
+    <p ${labelStyle}>✅ Completadas (${completed.length}):</p>
     ${
-      dueToday.length
-        ? `<p ${labelStyle}>Tareas de hoy (${dueToday.length}):</p><ul ${listStyle}>${dueToday.map(line).join("")}</ul>`
-        : `<p style="margin:0;font-size:14px;color:#18181b;">No había tareas programadas para hoy.</p>`
+      completed.length
+        ? `<ul ${listStyle}>${completed.map(completedLine).join("")}</ul>`
+        : `<p ${emptyStyle}>Ninguna todavía.</p>`
     }
+    <p ${labelStyle}>❌ No completadas (${notCompleted.length}):</p>
     ${
-      stillOpenFromBefore.length
-        ? `<p ${labelStyle}>Atrasadas y sin cerrar (${stillOpenFromBefore.length}):</p><ul ${listStyle}>${stillOpenFromBefore.map(line).join("")}</ul>`
-        : ""
+      notCompleted.length
+        ? `<ul ${listStyle}>${notCompleted.map(notCompletedLine).join("")}</ul>`
+        : `<p style="margin:0;font-size:14px;color:#18181b;">Ninguna — todo al día.</p>`
     }
   `;
 
-  const doneCount = dueToday.filter((r) => r.status === "done").length;
-  const body = `Hoy: ${doneCount}/${dueToday.length} tareas completadas${
-    stillOpenFromBefore.length ? `, ${stillOpenFromBefore.length} atrasadas sin cerrar` : ""
+  const body = `Hoy: ${completed.length}/${rows.length} tareas completadas${
+    notCompleted.length ? `, ${notCompleted.length} sin completar` : ""
   }.`;
 
   await notifyUser(ownerId, "daily_digest", { body, url: "/work-orders", emailHtml });
-  return { sent: true, dueToday: dueToday.length, stillOpenFromBefore: stillOpenFromBefore.length };
+  return { sent: true, completed: completed.length, notCompleted: notCompleted.length };
 }
 
 // Fires once per maintenance task, the first time it's within 14 days of

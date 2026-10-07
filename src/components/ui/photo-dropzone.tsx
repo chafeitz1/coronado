@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { Camera, X } from "lucide-react";
+import { compressImageFile } from "@/lib/image-compress";
 
 // MaintainX-style "Add or drag pictures" zone on the creation forms —
 // drag-and-drop or click, with an inline preview once a file is picked.
@@ -11,9 +12,20 @@ export function PhotoDropzone({ name, label }: { name: string; label: string }) 
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function setFile(file: File | undefined) {
+  // This form submits the file sitting in the input itself, so the
+  // compressed copy has to be written back there too (a plain <input
+  // type="file"> doesn't read from React state) — not just used for the
+  // preview. Covers both the click-to-pick path (whose own FileList would
+  // otherwise hold the uncompressed original) and the drop path.
+  async function setFile(file: File | undefined) {
     if (!file) return;
-    setPreview(URL.createObjectURL(file));
+    const compressed = await compressImageFile(file);
+    if (inputRef.current) {
+      const transfer = new DataTransfer();
+      transfer.items.add(compressed);
+      inputRef.current.files = transfer.files;
+    }
+    setPreview(URL.createObjectURL(compressed));
   }
 
   function clear() {
@@ -55,13 +67,7 @@ export function PhotoDropzone({ name, label }: { name: string; label: string }) 
           onDrop={(e) => {
             e.preventDefault();
             setDragOver(false);
-            const file = e.dataTransfer.files?.[0];
-            if (file && inputRef.current) {
-              const transfer = new DataTransfer();
-              transfer.items.add(file);
-              inputRef.current.files = transfer.files;
-              setFile(file);
-            }
+            setFile(e.dataTransfer.files?.[0]);
           }}
           className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-10 text-sm font-medium transition-colors ${
             dragOver

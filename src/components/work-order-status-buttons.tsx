@@ -39,13 +39,26 @@ const ORDER: WorkOrderStatus[] = ["open", "in_progress", "done", "skipped"];
 export function WorkOrderStatusButtons({
   workOrderId,
   status,
+  hasEvidencePhoto,
   dict,
 }: {
   workOrderId: string;
   status: WorkOrderStatus;
+  // Nudges whoever's completing the task to upload a photo first, without
+  // blocking them outright — some tasks (a vendor phone call, say) have no
+  // photo to show for it, so this stays a confirm, not a hard requirement.
+  hasEvidencePhoto: boolean;
   dict: Dictionary;
 }) {
   const [pending, startTransition] = useTransition();
+
+  function handleSelect(s: WorkOrderStatus) {
+    if (s === status) return;
+    if (s === "done" && !hasEvidencePhoto && !window.confirm(dict.workOrderDetail.confirmNoPhoto)) return;
+    startTransition(() => {
+      updateWorkOrderStatus(workOrderId, s);
+    });
+  }
 
   return (
     // One row of 4 big tappable boxes (icon stacked over label) — same
@@ -60,12 +73,7 @@ export function WorkOrderStatusButtons({
             key={s}
             type="button"
             disabled={pending}
-            onClick={() => {
-              if (s === status) return;
-              startTransition(() => {
-                updateWorkOrderStatus(workOrderId, s);
-              });
-            }}
+            onClick={() => handleSelect(s)}
             className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
               active
                 ? `${ACTIVE_STYLES[s]} hover:brightness-95 active:brightness-90`

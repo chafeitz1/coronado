@@ -105,6 +105,9 @@ export function WorkOrderDetailContent({
   const { workOrder, asset, vendor, assignee, creator, attachments, notes, activityRows, seriesRows } = data;
   const canChangeStatus = isOwner || workOrder.assigned_to === currentUserId;
   const overdue = !isWorkOrderClosed(workOrder.status) && !!workOrder.due_date && workOrder.due_date < today;
+  const hasEvidencePhoto = attachments.some(
+    (a) => a.kind === "evidence" && !a.fileName.toLowerCase().endsWith(".pdf")
+  );
   const [editing, setEditing] = useState(false);
 
   // Switches this same card into its edit form instead of navigating to a
@@ -201,7 +204,12 @@ export function WorkOrderDetailContent({
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {canChangeStatus ? (
-            <WorkOrderStatusButtons workOrderId={workOrder.id} status={workOrder.status} dict={dict} />
+            <WorkOrderStatusButtons
+              workOrderId={workOrder.id}
+              status={workOrder.status}
+              hasEvidencePhoto={hasEvidencePhoto}
+              dict={dict}
+            />
           ) : (
             <StatusBadge status={workOrder.status} locale={locale} />
           )}

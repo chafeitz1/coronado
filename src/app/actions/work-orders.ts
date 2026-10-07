@@ -257,13 +257,25 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
   const profile = await requireUser();
   const supabase = await createClient();
 
-  const { data: previous } = await supabase.from("work_orders").select("status").eq("id", workOrderId).single();
+  const { data: previous } = await supabase
+    .from("work_orders")
+    .select("status, assigned_to")
+    .eq("id", workOrderId)
+    .single();
 
   const { data: workOrder, error } = await supabase
     .from("work_orders")
     .update({
       status,
       completed_at: isWorkOrderClosed(status) ? new Date().toISOString() : null,
+      // Credits whoever actually did the work, including on a task left
+      // unassigned on purpose so either staff member could pick it up —
+      // "Asignado a" becomes a record of who completed it, not a lock on
+      // who's allowed to. Deliberately NOT carried into the next
+      // occurrence below (that still inherits the pre-completion
+      // assignment), so a recurring task stays open to whoever's free
+      // next time instead of sticking to the last person who did it.
+      ...(status === "done" ? { assigned_to: profile.id } : {}),
     })
     .eq("id", workOrderId)
     .select(
@@ -304,6 +316,12 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
       ? advanceDate(workOrder.due_date, workOrder.recurrence_interval_unit as IntervalUnit, workOrder.recurrence_interval_value)
       : isoDateOffset(0);
 
+    // The pre-completion assignment, not workOrder.assigned_to above (which,
+    // on a "done" close, now points at whoever just completed it) — the
+    // next occurrence should stay exactly as open or as assigned as this
+    // one started out, not inherit the completer specifically.
+    const nextAssignedTo = previous?.assigned_to ?? null;
+
     const { data: nextWorkOrder } = await supabase
       .from("work_orders")
       .insert({
@@ -312,7 +330,7 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
         priority: workOrder.priority,
         asset_id: workOrder.asset_id,
         vendor_id: workOrder.vendor_id,
-        assigned_to: workOrder.assigned_to,
+        assigned_to: nextAssignedTo,
         created_by: workOrder.created_by,
         due_date: nextDueDate,
         source: "pm",
@@ -326,8 +344,8 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
       .select("id")
       .single();
 
-    if (nextWorkOrder && workOrder.assigned_to) {
-      await notifyUser(workOrder.assigned_to, "task_assigned", {
+    if (nextWorkOrder && nextAssignedTo) {
+      await notifyUser(nextAssignedTo, "task_assigned", {
         body: `Tarea recurrente: ${workOrder.title}`,
         url: `/work-orders/${nextWorkOrder.id}`,
       });

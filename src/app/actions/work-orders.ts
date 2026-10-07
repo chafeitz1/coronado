@@ -17,6 +17,16 @@ async function getOwnerId(supabase: SupabaseClient) {
   return data?.id ?? null;
 }
 
+// One glance at the push/email list should say what happened without
+// opening it — an emoji per status beats the raw status string the
+// notification used to show verbatim (e.g. "cambió ... a done").
+const STATUS_NOTIFICATION: Record<string, { emoji: string; verb: string }> = {
+  done: { emoji: "✅", verb: "completó" },
+  in_progress: { emoji: "🔧", verb: "empezó" },
+  skipped: { emoji: "⏭️", verb: "salteó" },
+  open: { emoji: "↩️", verb: "reabrió" },
+};
+
 async function logWorkOrderActivity(
   supabase: SupabaseClient,
   workOrderId: string,
@@ -273,10 +283,11 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
 
   const ownerId = await getOwnerId(supabase);
   if (ownerId && ownerId !== profile.id) {
-    await notifyUser(ownerId, "status_changed", {
-      body: `${profile.full_name} cambió "${workOrder.title}" a ${status}`,
-      url: `/work-orders/${workOrder.id}`,
-    });
+    const statusInfo = STATUS_NOTIFICATION[status];
+    const body = statusInfo
+      ? `${statusInfo.emoji} ${profile.full_name} ${statusInfo.verb} "${workOrder.title}"`
+      : `${profile.full_name} cambió "${workOrder.title}" a ${status}`;
+    await notifyUser(ownerId, "status_changed", { body, url: `/work-orders/${workOrder.id}` });
   }
 
   // Recurring task just got closed out (done or deliberately skipped) —

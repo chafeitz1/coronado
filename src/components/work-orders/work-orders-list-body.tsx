@@ -37,10 +37,13 @@ export function WorkOrdersListBody({
   const searchParams = useSearchParams();
   const display = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
   const { search, tab, taskType, dueBucket, location } = useWorkOrdersFilters();
-  // Every view (List/To Do, Table, Calendar, Board) opens a task in this
-  // same side panel instead of navigating to the [id] route — a route
-  // change would drop whichever view and ?display= param was active and
-  // bounce back to the default List view.
+  // Table, Calendar, and Board open a task in this side panel instead of
+  // navigating to the [id] route — those views take over the whole page
+  // (no split detail column), and a route change would also drop their
+  // non-default ?display= value and bounce back to the default List view.
+  // List/To Do view keeps linking to the [id] route directly: it already
+  // shows detail inline in its own split column, and since "list" is the
+  // default display value, that navigation never loses it.
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
 
   const q = search.trim().toLowerCase();
@@ -137,7 +140,6 @@ export function WorkOrdersListBody({
           locale={locale}
           currentUserId={currentUserId}
           isOwner={isOwner}
-          onSelect={setOpenTaskId}
         />
         <WorkOrderListView
           title={dict.workOrders.otherTasks}
@@ -147,7 +149,6 @@ export function WorkOrdersListBody({
           locale={locale}
           currentUserId={currentUserId}
           isOwner={isOwner}
-          onSelect={setOpenTaskId}
         />
       </>
     );
@@ -161,7 +162,6 @@ export function WorkOrdersListBody({
         currentUserId={currentUserId}
         isOwner={isOwner}
         emptyMessage={dict.workOrders.emptyView}
-        onSelect={setOpenTaskId}
       />
     );
   }

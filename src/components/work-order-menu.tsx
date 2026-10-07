@@ -1,26 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { deleteWorkOrder } from "@/app/actions/work-orders";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { format } from "@/lib/i18n/dictionaries";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-// Same dropdown pattern as AssetRowMenu — Editar links to the edit route,
-// Eliminar is owner-only (matches the work_orders_delete_owner RLS policy).
+// Same dropdown pattern as AssetRowMenu, but Editar switches
+// WorkOrderDetailContent into its inline edit form instead of navigating —
+// a route change would drop whichever List/Calendar/Board view (and its
+// ?display= param) the user had open. Eliminar is owner-only (matches the
+// work_orders_delete_owner RLS policy).
 export function WorkOrderMenu({
   workOrderId,
   workOrderTitle,
   canEdit,
   canDelete,
+  onEdit,
   dict,
 }: {
   workOrderId: string;
   workOrderTitle: string;
   canEdit: boolean;
   canDelete: boolean;
+  onEdit: () => void;
   dict: Dictionary;
 }) {
   const [open, setOpen] = useState(false);
@@ -50,13 +54,16 @@ export function WorkOrderMenu({
       {open && (
         <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-lg border border-hairline bg-surface py-1 shadow-[var(--shadow-soft)]">
           {canEdit && (
-            <Link
-              href={`/work-orders/${workOrderId}/edit`}
-              onClick={() => setOpen(false)}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onEdit();
+              }}
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
             >
               <Pencil className="size-3.5" /> {dict.workOrderDetail.edit}
-            </Link>
+            </button>
           )}
           {canDelete && (
             <form action={deleteWorkOrder.bind(null, workOrderId)}>

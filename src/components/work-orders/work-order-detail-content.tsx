@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Bell, MessageSquare, Wrench, Building2, Repeat, CalendarCheck, History, X, PlayCircle } from "lucide-react";
 import { addWorkOrderNote } from "@/app/actions/work-orders";
 import { StatusBadge, OverdueBadge } from "@/components/ui/badge";
@@ -6,6 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { WorkOrderAttachments } from "@/components/work-order-attachments";
 import { WorkOrderStatusButtons } from "@/components/work-order-status-buttons";
 import { WorkOrderMenu } from "@/components/work-order-menu";
+import { WorkOrderEditForm } from "./work-order-edit-form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
@@ -25,7 +29,9 @@ export type WorkOrderDetailData = {
     completed_at: string | null;
     recurrence_interval_value: number | null;
     recurrence_interval_unit: string | null;
+    asset_id: string | null;
     assigned_to: string | null;
+    vendor_id: string | null;
     video_url: string | null;
     created_at: string;
   };
@@ -99,6 +105,16 @@ export function WorkOrderDetailContent({
   const { workOrder, asset, vendor, assignee, creator, attachments, notes, activityRows, seriesRows } = data;
   const canChangeStatus = isOwner || workOrder.assigned_to === currentUserId;
   const overdue = !isWorkOrderClosed(workOrder.status) && !!workOrder.due_date && workOrder.due_date < today;
+  const [editing, setEditing] = useState(false);
+
+  // Switches this same card into its edit form instead of navigating to a
+  // separate route — a route change would drop whichever List/Calendar/
+  // Board view (and its ?display= param) was open when "Editar" was
+  // clicked. Works the same whether this is rendered on the standalone
+  // [id] page or inside WorkOrderPanel's side panel.
+  if (editing) {
+    return <WorkOrderEditForm workOrder={workOrder} dict={dict} onClose={() => setEditing(false)} />;
+  }
 
   const unitLabels: Record<string, string> = {
     days: dict.workOrderDetail.unitDays,
@@ -169,6 +185,7 @@ export function WorkOrderDetailContent({
               workOrderTitle={workOrder.title}
               canEdit={isOwner}
               canDelete={isOwner}
+              onEdit={() => setEditing(true)}
               dict={dict}
             />
             {onClose && (

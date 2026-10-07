@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { ClipboardList, Repeat, Building2, ChevronUp, ChevronDown as ChevronDownIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { OverdueBadge } from "@/components/ui/badge";
@@ -43,6 +42,7 @@ export function WorkOrderListView({
   currentUserId,
   isOwner,
   emptyMessage,
+  onSelect,
 }: {
   title?: string;
   orders: WorkOrderRow[];
@@ -52,6 +52,7 @@ export function WorkOrderListView({
   currentUserId: string;
   isOwner: boolean;
   emptyMessage?: string;
+  onSelect: (workOrderId: string) => void;
 }) {
   const [open, setOpen] = useState(true);
 
@@ -98,9 +99,10 @@ export function WorkOrderListView({
 
             return (
               <li key={wo.id}>
-                <Link
-                  href={`/work-orders/${wo.id}`}
-                  className="flex flex-col gap-1.5 px-4 py-3.5 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                <button
+                  type="button"
+                  onClick={() => onSelect(wo.id)}
+                  className="flex w-full flex-col gap-1.5 px-4 py-3.5 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover"
                 >
                   <div className="flex items-start gap-3">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
@@ -132,11 +134,11 @@ export function WorkOrderListView({
                       {subtitleParts.join(" · ")}
                     </p>
                   )}
-                  <div className="flex items-center justify-between gap-1.5 pl-12" onClick={(e) => e.preventDefault()}>
+                  <div className="flex items-center justify-between gap-1.5 pl-12" onClick={(e) => e.stopPropagation()}>
                     <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
                     {overdue && <OverdueBadge locale={locale} />}
                   </div>
-                </Link>
+                </button>
               </li>
             );
           })}

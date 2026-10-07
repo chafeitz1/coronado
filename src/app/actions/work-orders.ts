@@ -153,7 +153,16 @@ export async function createWorkOrderPanel(
 // as it was before this update, not against the submitted form itself.
 // Owner-only: editing (unlike a status change) isn't something an
 // assignee can do here, matching deleteWorkOrder's permission.
-export async function updateWorkOrder(workOrderId: string, formData: FormData) {
+// No redirect — this is called from the inline edit form inside
+// WorkOrderDetailContent (both the standalone [id] page and WorkOrderPanel),
+// which closes itself back to the read view on success instead of
+// navigating to a separate route and losing whichever List/Calendar/Board
+// view the user had open.
+export async function updateWorkOrder(
+  workOrderId: string,
+  _prevState: MaintenanceTaskState,
+  formData: FormData
+): Promise<MaintenanceTaskState> {
   const profile = await requireOwner();
   const supabase = await createClient();
 
@@ -165,10 +174,10 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
     .eq("id", workOrderId)
     .single();
 
-  if (!existing) throw new Error("Tarea no encontrada.");
+  if (!existing) return { ok: false, error: "Tarea no encontrada." };
 
   const title = String(formData.get("title") ?? "").trim();
-  if (!title) throw new Error("El título es obligatorio.");
+  if (!title) return { ok: false, error: "El título es obligatorio." };
 
   const description = String(formData.get("description") ?? "").trim() || null;
   const assetId = String(formData.get("asset_id") ?? "") || null;
@@ -194,7 +203,7 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   };
 
   const { error } = await supabase.from("work_orders").update(update).eq("id", workOrderId);
-  if (error) throw new Error(error.message);
+  if (error) return { ok: false, error: error.message };
 
   const changed: string[] = [];
   if (existing.title !== title) changed.push("title");
@@ -218,7 +227,7 @@ export async function updateWorkOrder(workOrderId: string, formData: FormData) {
   revalidatePath(`/work-orders/${workOrderId}`);
   revalidatePath("/work-orders", "layout");
   revalidatePath("/");
-  redirect(`/work-orders/${workOrderId}`);
+  return { ok: true };
 }
 
 export async function deleteWorkOrder(workOrderId: string) {

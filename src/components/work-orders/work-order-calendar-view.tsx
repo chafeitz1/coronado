@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { ChevronLeft, ChevronRight, ClipboardList } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { card, mutedText } from "@/lib/ui";
@@ -14,11 +13,13 @@ export function WorkOrderCalendarView({
   today,
   dict,
   locale,
+  onSelect,
 }: {
   orders: WorkOrderRow[];
   today: string;
   dict: Dictionary;
   locale: string;
+  onSelect: (workOrderId: string) => void;
 }) {
   const now = new Date(`${today}T00:00:00Z`);
   const [year, setYear] = useState(now.getUTCFullYear());
@@ -119,13 +120,14 @@ export function WorkOrderCalendarView({
                 </p>
                 <div className="space-y-1">
                   {dayOrders.slice(0, 3).map((wo) => (
-                    <Link
+                    <button
                       key={wo.id}
-                      href={`/work-orders/${wo.id}`}
-                      className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
+                      type="button"
+                      onClick={() => onSelect(wo.id)}
+                      className="flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
                     >
                       <span className="truncate">{wo.title}</span>
-                    </Link>
+                    </button>
                   ))}
                   {dayOrders.length > 3 && (
                     <p className="px-1 text-[11px] text-ink-faint">+{dayOrders.length - 3}</p>
@@ -145,11 +147,15 @@ export function WorkOrderCalendarView({
           <ul className={`divide-y divide-hairline overflow-hidden ${card}`}>
             {unscheduled.map((wo) => (
               <li key={wo.id}>
-                <Link href={`/work-orders/${wo.id}`} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-hover active:bg-surface-hover">
+                <button
+                  type="button"
+                  onClick={() => onSelect(wo.id)}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-surface-hover active:bg-surface-hover"
+                >
                   <ClipboardList className="size-3.5 shrink-0 text-ink-faint" />
                   <span className="truncate">{wo.title}</span>
                   {wo.asset && <span className={`${mutedText} truncate`}>· {wo.asset.name}</span>}
-                </Link>
+                </button>
               </li>
             ))}
           </ul>

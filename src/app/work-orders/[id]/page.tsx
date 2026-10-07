@@ -61,6 +61,7 @@ export default async function WorkOrderDetailPage({
     .order("created_at", { ascending: false });
 
   const isOwner = profile.role === "owner";
+  const canManageTasks = isOwner || profile.role === "staff";
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -89,6 +90,7 @@ export default async function WorkOrderDetailPage({
       today={today}
       currentUserId={profile.id}
       isOwner={isOwner}
+      canManageTasks={canManageTasks}
       locale={profile.locale}
       dict={dict}
     />

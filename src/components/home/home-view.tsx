@@ -38,6 +38,7 @@ export function HomeView({
   locale,
   currentUserId,
   isOwner,
+  canManageTasks,
 }: {
   overdue: OrderRow[];
   dueSoon: OrderRow[];
@@ -48,6 +49,9 @@ export function HomeView({
   locale: Locale;
   currentUserId: string;
   isOwner: boolean;
+  // Owner or staff — any staff member can work any task regardless of who
+  // it's assigned to, not just its own assignee.
+  canManageTasks: boolean;
 }) {
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
 
@@ -154,6 +158,7 @@ export function HomeView({
         onClose={() => setOpenTaskId(null)}
         currentUserId={currentUserId}
         isOwner={isOwner}
+        canManageTasks={canManageTasks}
         locale={locale}
         dict={dict}
       />

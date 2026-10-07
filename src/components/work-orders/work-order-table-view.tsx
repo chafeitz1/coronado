@@ -41,7 +41,7 @@ export function WorkOrderTableView({
   dict,
   locale,
   currentUserId,
-  isOwner,
+  canManageTasks,
   emptyMessage,
   onSelect,
 }: {
@@ -50,7 +50,10 @@ export function WorkOrderTableView({
   dict: Dictionary;
   locale: Locale;
   currentUserId: string;
-  isOwner: boolean;
+  // Owner or staff — any staff member can work any task regardless of who
+  // it's assigned to (matches the work_orders_update RLS policy), not just
+  // its own assignee.
+  canManageTasks: boolean;
   emptyMessage: string;
   onSelect: (workOrderId: string) => void;
 }) {
@@ -113,7 +116,7 @@ export function WorkOrderTableView({
         </thead>
         <tbody className="divide-y divide-hairline">
           {sorted.map((wo) => {
-            const canEdit = isOwner || wo.assigned_to === currentUserId;
+            const canEdit = canManageTasks || wo.assigned_to === currentUserId;
             const overdue = !isWorkOrderClosed(wo.status) && !!wo.due_date && wo.due_date < today;
             return (
               <tr

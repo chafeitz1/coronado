@@ -15,6 +15,7 @@ export function WorkOrderPanel({
   onClose,
   currentUserId,
   isOwner,
+  canManageTasks,
   locale,
   dict,
 }: {
@@ -22,6 +23,7 @@ export function WorkOrderPanel({
   onClose: () => void;
   currentUserId: string;
   isOwner: boolean;
+  canManageTasks: boolean;
   locale: Locale;
   dict: Dictionary;
 }) {
@@ -61,6 +63,7 @@ export function WorkOrderPanel({
           today={loaded.today}
           currentUserId={currentUserId}
           isOwner={isOwner}
+          canManageTasks={canManageTasks}
           locale={locale}
           dict={dict}
           onClose={onClose}

@@ -72,6 +72,7 @@ export default async function WorkOrdersLayout({ children }: { children: React.R
       locale={profile.locale}
       currentUserId={profile.id}
       isOwner={profile.role === "owner"}
+      canManageTasks={profile.role === "owner" || profile.role === "staff"}
     />
   );
 

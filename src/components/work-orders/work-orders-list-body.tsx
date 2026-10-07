@@ -26,6 +26,7 @@ export function WorkOrdersListBody({
   locale,
   currentUserId,
   isOwner,
+  canManageTasks,
 }: {
   orders: WorkOrderRow[];
   today: string;
@@ -33,6 +34,9 @@ export function WorkOrdersListBody({
   locale: Locale;
   currentUserId: string;
   isOwner: boolean;
+  // Owner or staff — any staff member can work any task regardless of who
+  // it's assigned to, not just its own assignee.
+  canManageTasks: boolean;
 }) {
   const searchParams = useSearchParams();
   const display = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
@@ -107,7 +111,7 @@ export function WorkOrdersListBody({
         dict={dict}
         locale={locale}
         currentUserId={currentUserId}
-        isOwner={isOwner}
+        canManageTasks={canManageTasks}
         emptyMessage={dict.workOrders.emptyView}
         onSelect={setOpenTaskId}
       />
@@ -124,7 +128,7 @@ export function WorkOrdersListBody({
         dict={dict}
         locale={locale}
         currentUserId={currentUserId}
-        isOwner={isOwner}
+        canManageTasks={canManageTasks}
         onSelect={setOpenTaskId}
         emptyMessage={dict.workOrders.emptyView}
       />
@@ -139,7 +143,7 @@ export function WorkOrdersListBody({
           dict={dict}
           locale={locale}
           currentUserId={currentUserId}
-          isOwner={isOwner}
+          canManageTasks={canManageTasks}
         />
         <WorkOrderListView
           title={dict.workOrders.otherTasks}
@@ -148,7 +152,7 @@ export function WorkOrdersListBody({
           dict={dict}
           locale={locale}
           currentUserId={currentUserId}
-          isOwner={isOwner}
+          canManageTasks={canManageTasks}
         />
       </>
     );
@@ -160,7 +164,7 @@ export function WorkOrdersListBody({
         dict={dict}
         locale={locale}
         currentUserId={currentUserId}
-        isOwner={isOwner}
+        canManageTasks={canManageTasks}
         emptyMessage={dict.workOrders.emptyView}
       />
     );
@@ -174,6 +178,7 @@ export function WorkOrdersListBody({
         onClose={() => setOpenTaskId(null)}
         currentUserId={currentUserId}
         isOwner={isOwner}
+        canManageTasks={canManageTasks}
         locale={locale}
         dict={dict}
       />

@@ -81,6 +81,7 @@ export function WorkOrderDetailContent({
   today,
   currentUserId,
   isOwner,
+  canManageTasks,
   locale,
   dict,
   onClose,
@@ -93,6 +94,11 @@ export function WorkOrderDetailContent({
   today: string;
   currentUserId: string;
   isOwner: boolean;
+  // Owner or staff — any staff member can work any task regardless of who
+  // it's assigned to (matches the work_orders_update RLS policy), not just
+  // its own assignee. A task left unassigned on purpose (any staff can
+  // pick it up) must still be completable by staff, not just the owner.
+  canManageTasks: boolean;
   locale: Locale;
   dict: Dictionary;
   // Only set when rendered inside WorkOrderPanel's side panel — adds a
@@ -103,7 +109,7 @@ export function WorkOrderDetailContent({
   onClose?: () => void;
 }) {
   const { workOrder, asset, vendor, assignee, creator, attachments, notes, activityRows, seriesRows } = data;
-  const canChangeStatus = isOwner || workOrder.assigned_to === currentUserId;
+  const canChangeStatus = canManageTasks || workOrder.assigned_to === currentUserId;
   const overdue = !isWorkOrderClosed(workOrder.status) && !!workOrder.due_date && workOrder.due_date < today;
   const hasEvidencePhoto = attachments.some(
     (a) => a.kind === "evidence" && !a.fileName.toLowerCase().endsWith(".pdf")

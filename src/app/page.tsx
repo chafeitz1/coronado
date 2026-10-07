@@ -30,6 +30,7 @@ export default async function HomePage() {
   const dict = getDictionary(profile.locale);
   const supabase = await createClient();
   const isOwner = profile.role === "owner";
+  const canManageTasks = isOwner || profile.role === "staff";
 
   const [{ data: workOrders }, { data: announcements }, { data: urgentPurchases }] = await Promise.all([
     supabase
@@ -123,6 +124,7 @@ export default async function HomePage() {
         locale={profile.locale}
         currentUserId={profile.id}
         isOwner={isOwner}
+        canManageTasks={canManageTasks}
       />
 
       {/* Numeric overview, secondary to the prioritized sections above. */}

@@ -18,13 +18,14 @@ async function getOwnerId(supabase: SupabaseClient) {
 }
 
 // One glance at the push/email list should say what happened without
-// opening it — an emoji per status beats the raw status string the
-// notification used to show verbatim (e.g. "cambió ... a done").
-const STATUS_NOTIFICATION: Record<string, { emoji: string; verb: string }> = {
-  done: { emoji: "✅", verb: "completó" },
-  in_progress: { emoji: "🔧", verb: "empezó" },
-  skipped: { emoji: "⏭️", verb: "salteó" },
-  open: { emoji: "↩️", verb: "reabrió" },
+// opening it — a distinct title + emoji per status beats a generic "Una
+// tarea cambió de estado" (the status_changed event's default label) and
+// the raw status string the body used to show verbatim (e.g. "a done").
+const STATUS_NOTIFICATION: Record<string, { title: string; emoji: string; verb: string }> = {
+  done: { title: "Tarea completada", emoji: "✅", verb: "completó" },
+  in_progress: { title: "Tarea en progreso", emoji: "🔧", verb: "empezó" },
+  skipped: { title: "Tarea salteada", emoji: "⏭️", verb: "salteó" },
+  open: { title: "Tarea reabierta", emoji: "↩️", verb: "reabrió" },
 };
 
 async function logWorkOrderActivity(
@@ -287,7 +288,11 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
     const body = statusInfo
       ? `${statusInfo.emoji} ${profile.full_name} ${statusInfo.verb} "${workOrder.title}"`
       : `${profile.full_name} cambió "${workOrder.title}" a ${status}`;
-    await notifyUser(ownerId, "status_changed", { body, url: `/work-orders/${workOrder.id}` });
+    await notifyUser(ownerId, "status_changed", {
+      title: statusInfo?.title,
+      body,
+      url: `/work-orders/${workOrder.id}`,
+    });
   }
 
   // Recurring task just got closed out (done or deliberately skipped) —

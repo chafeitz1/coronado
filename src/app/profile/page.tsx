@@ -1,4 +1,4 @@
-import { Bell, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/actions/auth";
@@ -10,6 +10,7 @@ import { PrefToggle } from "@/components/pref-toggle";
 import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buttonSecondary, card, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
+import type { NotificationEventType } from "@/lib/types/database";
 
 export default async function ProfilePage() {
   const profile = await requireUser();
@@ -20,16 +21,28 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   const isOwner = profile.role === "owner";
 
-  let noteFlaggedEmailEnabled = true;
+  // Only the event types that actually reach the owner (status_changed when
+  // staff closes out a task, note_flagged, purchase_urgent, the daily cron's
+  // digest/maintenance reminder, an announcement marked as happened) — not
+  // task_assigned/due_soon/overdue, which either target staff instead or
+  // (due_soon/overdue) aren't wired to notifyUser anywhere yet, so toggling
+  // them here would do nothing.
+  const notifEvents: { key: NotificationEventType; label: string }[] = [
+    { key: "status_changed", label: dict.directory.eventStatusChanged },
+    { key: "note_flagged", label: dict.directory.eventNoteFlagged },
+    { key: "purchase_urgent", label: dict.directory.eventPurchaseUrgent },
+    { key: "daily_digest", label: dict.directory.eventDailyDigest },
+    { key: "maintenance_reminder", label: dict.directory.eventMaintenanceReminder },
+    { key: "announcement_happened", label: dict.directory.eventAnnouncementHappened },
+  ];
+
+  let prefLookup: Record<string, boolean> = {};
   if (isOwner) {
-    const { data: pref } = await supabase
+    const { data: prefs } = await supabase
       .from("notification_preferences")
-      .select("enabled")
-      .eq("user_id", profile.id)
-      .eq("event_type", "note_flagged")
-      .eq("channel", "email")
-      .maybeSingle();
-    noteFlaggedEmailEnabled = pref?.enabled ?? true;
+      .select("event_type, channel, enabled")
+      .eq("user_id", profile.id);
+    prefLookup = Object.fromEntries((prefs ?? []).map((p) => [`${p.event_type}:${p.channel}`, p.enabled]));
   }
 
   return (
@@ -74,18 +87,43 @@ export default async function ProfilePage() {
 
       <section className="space-y-3">
         <h2 className={sectionHeading}>{dict.profile.notifications}</h2>
-        <div className={`space-y-3 p-5 ${card}`}>
+        <div className={`space-y-4 p-5 ${card}`}>
           <PushSubscribeButton locale={profile.locale} />
           {isOwner && (
-            <label className="flex items-center gap-2 text-sm text-ink-muted">
-              <PrefToggle
-                userId={profile.id}
-                eventType="note_flagged"
-                channel="email"
-                defaultEnabled={noteFlaggedEmailEnabled}
-              />
-              <Bell className="size-3.5" /> {dict.profile.notifyMe}
-            </label>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-ink-faint">
+                    <th className="pb-2 font-normal">{dict.directory.eventHeader}</th>
+                    <th className="pb-2 font-normal">{dict.directory.pushHeader}</th>
+                    <th className="pb-2 font-normal">{dict.directory.emailHeader}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline">
+                  {notifEvents.map((event) => (
+                    <tr key={event.key}>
+                      <td className="py-2 text-ink-secondary">{event.label}</td>
+                      <td className="py-2">
+                        <PrefToggle
+                          userId={profile.id}
+                          eventType={event.key}
+                          channel="push"
+                          defaultEnabled={prefLookup[`${event.key}:push`] ?? true}
+                        />
+                      </td>
+                      <td className="py-2">
+                        <PrefToggle
+                          userId={profile.id}
+                          eventType={event.key}
+                          channel="email"
+                          defaultEnabled={prefLookup[`${event.key}:email`] ?? true}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </section>

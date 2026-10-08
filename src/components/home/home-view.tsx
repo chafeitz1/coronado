@@ -57,101 +57,111 @@ export function HomeView({
 
   return (
     <>
-      {/* The three things the owner said matter most, in the order given:
-          overdue tasks, pending purchases, announcements — ahead of the
-          stat tiles and everything else, not buried under them. */}
-      {overdue.length > 0 && (
-        <OrderSection
-          title={dict.home.overdueTitle}
-          icon={AlertTriangle}
-          orders={overdue}
-          tone="danger"
-          dict={dict}
-          locale={locale}
-          onSelect={setOpenTaskId}
-        />
-      )}
+      {/* Mobile: a single stacked column, in the order the owner said
+          matters most (overdue tasks, pending purchases, announcements,
+          due soon, recent activity) — plain flex-col, so that priority
+          order is just DOM order. Desktop has the room to show three of
+          these side by side instead of one long scroll: tasks (overdue
+          over due-soon) on the left, recent activity in the middle,
+          purchases over announcements on the right — explicit grid
+          placement rather than reordering the DOM, so the mobile order
+          above stays intact underneath it. */}
+      <div className="flex flex-col gap-6 md:grid md:grid-cols-3 md:items-start md:gap-x-6 md:gap-y-8">
+        {overdue.length > 0 && (
+          <OrderSection
+            title={dict.home.overdueTitle}
+            icon={AlertTriangle}
+            orders={overdue}
+            tone="danger"
+            dict={dict}
+            locale={locale}
+            onSelect={setOpenTaskId}
+            className="md:col-start-1 md:row-start-1"
+          />
+        )}
 
-      {purchaseRows.length > 0 && (
-        <section className="space-y-2">
-          <h2 className={`flex items-center gap-1.5 ${sectionHeading} text-status-overdue-fg`}>
-            <ShoppingCart className="size-3.5" /> {dict.home.urgentPurchasesPending}{" "}
-            <span className="text-ink-faint">· {purchaseRows.length}</span>
-          </h2>
-          <ul className={listCard}>
-            {purchaseRows.map((p) => (
-              <PurchaseItemRow
-                key={p.id}
-                item={p}
-                dict={dict}
-                locale={locale}
-                canDelete={isOwner || p.requested_by === currentUserId}
-              />
-            ))}
-          </ul>
-        </section>
-      )}
+        {purchaseRows.length > 0 && (
+          <section className="space-y-2 md:col-start-3 md:row-start-1">
+            <h2 className={`flex items-center gap-1.5 ${sectionHeading} text-status-overdue-fg`}>
+              <ShoppingCart className="size-3.5" /> {dict.home.urgentPurchasesPending}{" "}
+              <span className="text-ink-faint">· {purchaseRows.length}</span>
+            </h2>
+            <ul className={listCard}>
+              {purchaseRows.map((p) => (
+                <PurchaseItemRow
+                  key={p.id}
+                  item={p}
+                  dict={dict}
+                  locale={locale}
+                  canDelete={isOwner || p.requested_by === currentUserId}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
 
-      {announcementRows.length > 0 && (
-        <section className="space-y-2">
-          <h2 className={sectionHeading}>
-            <span className="inline-flex items-center gap-1.5">
-              <Megaphone className="size-3.5" /> {dict.home.upcomingAnnouncements}{" "}
-              <span className="text-ink-faint">· {announcementRows.length}</span>
-            </span>
-          </h2>
-          <ul className={listCard}>
-            {announcementRows.map((a) => (
-              <AnnouncementRow key={a.id} item={a} dict={dict} locale={locale} canDelete={isOwner} />
-            ))}
-          </ul>
-        </section>
-      )}
+        {announcementRows.length > 0 && (
+          <section className="space-y-2 md:col-start-3 md:row-start-2">
+            <h2 className={sectionHeading}>
+              <span className="inline-flex items-center gap-1.5">
+                <Megaphone className="size-3.5" /> {dict.home.upcomingAnnouncements}{" "}
+                <span className="text-ink-faint">· {announcementRows.length}</span>
+              </span>
+            </h2>
+            <ul className={listCard}>
+              {announcementRows.map((a) => (
+                <AnnouncementRow key={a.id} item={a} dict={dict} locale={locale} canDelete={isOwner} />
+              ))}
+            </ul>
+          </section>
+        )}
 
-      {dueSoon.length > 0 && (
-        <OrderSection
-          title={dict.home.dueSoonTitle}
-          icon={Clock}
-          orders={dueSoon}
-          dict={dict}
-          locale={locale}
-          onSelect={setOpenTaskId}
-        />
-      )}
+        {dueSoon.length > 0 && (
+          <OrderSection
+            title={dict.home.dueSoonTitle}
+            icon={Clock}
+            orders={dueSoon}
+            dict={dict}
+            locale={locale}
+            onSelect={setOpenTaskId}
+            className="md:col-start-1 md:row-start-2"
+          />
+        )}
 
-      {overdue.length === 0 && dueSoon.length === 0 && purchaseRows.length === 0 && (
-        <div className={`flex items-center gap-3 p-5 text-sm ${card}`}>
-          <PartyPopper className="size-5 shrink-0 text-status-done-fg" />
-          <p className="text-ink-secondary">{dict.home.allClear}</p>
-        </div>
-      )}
+        {overdue.length === 0 && dueSoon.length === 0 && purchaseRows.length === 0 && (
+          <div className={`flex items-center gap-3 p-5 text-sm md:col-span-3 ${card}`}>
+            <PartyPopper className="size-5 shrink-0 text-status-done-fg" />
+            <p className="text-ink-secondary">{dict.home.allClear}</p>
+          </div>
+        )}
 
-      {recent.length > 0 && (
-        <section className="space-y-2">
-          <h2 className={sectionHeading}>{dict.home.recentActivity}</h2>
-          <ul className={listCard}>
-            {recent.map((wo) => {
-              const assignee = Array.isArray(wo.profiles) ? wo.profiles[0] : wo.profiles;
-              return (
-                <li key={wo.id}>
-                  <button type="button" onClick={() => setOpenTaskId(wo.id)} className={`${listRow} w-full text-left`}>
-                    <div className="min-w-40 flex-1">
-                      <p className="flex items-center gap-1.5 truncate font-medium text-ink">
-                        {wo.title}
-                        {wo.recurrence_interval_value && (
-                          <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
-                        )}
-                      </p>
-                      <p className={`${mutedText} truncate`}>{assignee ? assignee.full_name : dict.home.unassigned}</p>
-                    </div>
-                    <StatusBadge status={wo.status} locale={locale} />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+        {recent.length > 0 && (
+          <section className="space-y-2 md:col-start-2 md:row-start-1 md:row-span-2">
+            <h2 className={sectionHeading}>{dict.home.recentActivity}</h2>
+            <ul className={listCard}>
+              {recent.map((wo) => {
+                const assignee = Array.isArray(wo.profiles) ? wo.profiles[0] : wo.profiles;
+                return (
+                  <li key={wo.id}>
+                    <button type="button" onClick={() => setOpenTaskId(wo.id)} className={`${listRow} w-full text-left`}>
+                      <div className="min-w-40 flex-1">
+                        <p className="flex items-center gap-1.5 truncate font-medium text-ink">
+                          {wo.title}
+                          {wo.recurrence_interval_value && (
+                            <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
+                          )}
+                        </p>
+                        <p className={`${mutedText} truncate`}>{assignee ? assignee.full_name : dict.home.unassigned}</p>
+                      </div>
+                      <StatusBadge status={wo.status} locale={locale} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+      </div>
 
       <WorkOrderPanel
         workOrderId={openTaskId}
@@ -174,6 +184,7 @@ function OrderSection({
   dict,
   locale,
   onSelect,
+  className,
 }: {
   title: string;
   icon: typeof AlertTriangle;
@@ -182,9 +193,10 @@ function OrderSection({
   dict: Dictionary;
   locale: Locale;
   onSelect: (id: string) => void;
+  className?: string;
 }) {
   return (
-    <section className="space-y-2">
+    <section className={`space-y-2 ${className ?? ""}`}>
       <h2 className={sectionHeading}>
         <span className="inline-flex items-center gap-1.5">
           <Icon className={`size-3.5 ${tone === "danger" ? "text-status-overdue-fg" : ""}`} />

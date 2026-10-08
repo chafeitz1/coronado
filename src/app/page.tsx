@@ -110,7 +110,6 @@ export default async function HomePage() {
   const in7Days = isoDateOffset(7);
   const weekAgo = isoDateTimeOffset(-7);
 
-  const openOrders = orders.filter((wo) => !isWorkOrderClosed(wo.status));
   const overdue = orders.filter((wo) => !isWorkOrderClosed(wo.status) && wo.due_date && wo.due_date < today);
   const dueSoon = orders.filter(
     (wo) => !isWorkOrderClosed(wo.status) && wo.due_date && wo.due_date >= today && wo.due_date <= in7Days
@@ -120,6 +119,24 @@ export default async function HomePage() {
 
   const homeContent = (
     <>
+      {/* Quick-glance counts up front, ahead of the detail sections below. */}
+      <div className="mb-6 grid grid-cols-3 gap-3">
+        <StatTile
+          href="/work-orders?view=overdue"
+          icon={AlertTriangle}
+          label={dict.home.statOverdue}
+          value={overdue.length}
+          tone={overdue.length > 0 ? "danger" : undefined}
+        />
+        <StatTile
+          href="/work-orders?view=done"
+          icon={CheckCircle2}
+          label={dict.home.statDoneWeek}
+          value={doneThisWeek.length}
+        />
+        <StatTile href="/work-orders?view=due_soon" icon={Clock} label={dict.home.statDueSoon} value={dueSoon.length} />
+      </div>
+
       <HomeView
         overdue={overdue}
         dueSoon={dueSoon}
@@ -132,25 +149,6 @@ export default async function HomePage() {
         isOwner={isOwner}
         canManageTasks={canManageTasks}
       />
-
-      {/* Numeric overview, secondary to the prioritized sections above. */}
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile href="/work-orders?view=open" icon={ClipboardList} label={dict.home.statOpen} value={openOrders.length} />
-        <StatTile
-          href="/work-orders?view=overdue"
-          icon={AlertTriangle}
-          label={dict.home.statOverdue}
-          value={overdue.length}
-          tone={overdue.length > 0 ? "danger" : undefined}
-        />
-        <StatTile href="/work-orders?view=due_soon" icon={Clock} label={dict.home.statDueSoon} value={dueSoon.length} />
-        <StatTile
-          href="/work-orders?view=done"
-          icon={CheckCircle2}
-          label={dict.home.statDoneWeek}
-          value={doneThisWeek.length}
-        />
-      </div>
     </>
   );
 

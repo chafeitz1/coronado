@@ -53,26 +53,37 @@ export function WorkOrderAttachments({
   const photos = scoped.filter((a) => !isPdf(a.fileName));
   const documents = scoped.filter((a) => isPdf(a.fileName));
 
-  // Two async steps (upload to Storage, then save the DB row) — kept
-  // outside startTransition so `pending` covers the whole thing, not just
-  // the second half.
+  // Multi-select: pick several photos at once (Miguel's ask — finishing a
+  // task often means several evidence shots, not just one) and upload them
+  // all under a single button press. Uploads run in parallel; one failing
+  // doesn't block the rest — whatever succeeded still gets saved, and the
+  // error names what didn't. Two async steps per file (upload to Storage,
+  // then save the DB row) — the save half is kept inside startTransition so
+  // `pending` covers the whole batch, not just the uploads.
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
     if (inputRef.current) inputRef.current.value = "";
-    if (!file) return;
+    if (files.length === 0) return;
 
     setError(null);
-    const result = await uploadAttachmentToStorage({ workOrderId }, currentUserId, file);
-    if ("error" in result) {
-      setError(result.error);
-      return;
+    const uploads = await Promise.all(
+      files.map(async (file) => ({ file, result: await uploadAttachmentToStorage({ workOrderId }, currentUserId, file) }))
+    );
+    const failed = uploads.filter((u) => "error" in u.result);
+    const succeeded = uploads.filter(
+      (u): u is { file: File; result: { path: string } } => !("error" in u.result)
+    );
+
+    if (failed.length > 0) {
+      const firstError = (failed[0].result as { error: string }).error;
+      setError(failed.length === uploads.length ? firstError : `${succeeded.length} de ${uploads.length} se subieron. ${firstError}`);
     }
+    if (succeeded.length === 0) return;
 
     startTransition(async () => {
-      const saveResult = await saveWorkOrderAttachment(workOrderId, result.path, file.name, kind);
-      if (saveResult?.error) {
-        setError(saveResult.error);
-        return;
+      for (const { file, result } of succeeded) {
+        const saveResult = await saveWorkOrderAttachment(workOrderId, result.path, file.name, kind);
+        if (saveResult?.error) setError(saveResult.error);
       }
       router.refresh();
     });
@@ -137,6 +148,7 @@ export function WorkOrderAttachments({
               ref={inputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp,application/pdf"
+              multiple
               className="hidden"
               onChange={handleFileChange}
             />

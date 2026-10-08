@@ -3,12 +3,15 @@ import { ClipboardList, AlertTriangle, Clock, CheckCircle2, Plus } from "lucide-
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { HomeView } from "@/components/home/home-view";
+import { HomeTabs } from "@/components/home/home-tabs";
+import { RoutineTimeline } from "@/components/home/routine-timeline";
 import { card, buttonPrimary, mutedText, pageHeading } from "@/lib/ui";
 import { isoDateOffset, isoDateTimeOffset } from "@/lib/dates";
 import { getDictionary, format } from "@/lib/i18n/dictionaries";
 import { isWorkOrderClosed } from "@/lib/types/database";
 import type { AnnouncementRow } from "@/components/announcements/types";
 import type { PurchaseItemRow } from "@/components/purchases/types";
+import type { RoutineItem } from "@/components/home/types";
 
 function single<T>(value: T | T[] | null): T | null {
   if (Array.isArray(value)) return value[0] ?? null;
@@ -56,6 +59,19 @@ export default async function HomePage() {
       .order("created_at", { ascending: true }),
   ]);
 
+  // The guest-day routine is internal ops for staff/owner — residents never
+  // see the tab at all, so skip the (RLS-blocked for them anyway) fetch.
+  let routineItems: RoutineItem[] = [];
+  let guestsPresent = false;
+  if (canManageTasks) {
+    const [{ data: routineRows }, { data: occupancy }] = await Promise.all([
+      supabase.from("routine_items").select("id, time, title, steps").order("time"),
+      supabase.from("house_occupancy").select("guests_present").eq("id", 1).single(),
+    ]);
+    routineItems = routineRows ?? [];
+    guestsPresent = occupancy?.guests_present ?? false;
+  }
+
   const orders = (workOrders ?? []) as OrderRow[];
   const announcementRows: AnnouncementRow[] = (announcements ?? []).map((row) => ({
     id: row.id,
@@ -102,18 +118,8 @@ export default async function HomePage() {
   const doneThisWeek = orders.filter((wo) => wo.status === "done" && wo.completed_at && wo.completed_at >= weekAgo);
   const recent = orders.slice(0, 5);
 
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className={pageHeading}>{format(dict.home.greeting, { name: profile.full_name.split(" ")[0] })}</h1>
-          <p className={mutedText}>{dict.home.subtitle}</p>
-        </div>
-        <Link href="/work-orders/new" className={buttonPrimary}>
-          <Plus className="size-4" /> {dict.home.newTask}
-        </Link>
-      </div>
-
+  const homeContent = (
+    <>
       <HomeView
         overdue={overdue}
         dueSoon={dueSoon}
@@ -128,7 +134,7 @@ export default async function HomePage() {
       />
 
       {/* Numeric overview, secondary to the prioritized sections above. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile href="/work-orders?view=open" icon={ClipboardList} label={dict.home.statOpen} value={openOrders.length} />
         <StatTile
           href="/work-orders?view=overdue"
@@ -145,6 +151,35 @@ export default async function HomePage() {
           value={doneThisWeek.length}
         />
       </div>
+    </>
+  );
+
+  // Residents never see the routine tab (internal staff/owner ops), so the
+  // tab switcher itself only exists for roles that have something to switch
+  // to — a resident's Home looks exactly like it did before this feature.
+  const content = canManageTasks ? (
+    <HomeTabs
+      dict={dict}
+      homeContent={homeContent}
+      routineContent={<RoutineTimeline items={routineItems} guestsPresent={guestsPresent} isOwner={isOwner} dict={dict} />}
+    />
+  ) : (
+    homeContent
+  );
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className={pageHeading}>{format(dict.home.greeting, { name: profile.full_name.split(" ")[0] })}</h1>
+          <p className={mutedText}>{dict.home.subtitle}</p>
+        </div>
+        <Link href="/work-orders/new" className={buttonPrimary}>
+          <Plus className="size-4" /> {dict.home.newTask}
+        </Link>
+      </div>
+
+      {content}
     </div>
   );
 }

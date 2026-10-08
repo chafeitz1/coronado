@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser, requireOwner } from "@/lib/auth";
 import { notifyUser } from "@/lib/notifications/send";
 import { advanceDate, isoDateOffset } from "@/lib/dates";
@@ -322,7 +323,19 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
     // one started out, not inherit the completer specifically.
     const nextAssignedTo = previous?.assigned_to ?? null;
 
-    const { data: nextWorkOrder } = await supabase
+    // Admin client, not the request-scoped one above: work_orders_insert's
+    // RLS only lets a non-owner create a one-off manual request for
+    // themselves (source='manual', created_by=auth.uid(), no recurrence) —
+    // none of which this system-generated "pm" row satisfies when staff
+    // (not the owner) is the one closing out the task. That silently
+    // dropped the next occurrence for every recurring task staff completed
+    // (discovered via "Mantenimiento brazo electromecánico portón" never
+    // getting its 3rd cycle), since the insert's error was never checked.
+    // This spawn isn't really "created by" whoever's clicking the button —
+    // it's the recurrence engine — so it runs as admin rather than loosen
+    // the RLS policy meant for actual user-submitted requests.
+    const adminSupabase = createAdminClient();
+    const { data: nextWorkOrder, error: nextWorkOrderError } = await adminSupabase
       .from("work_orders")
       .insert({
         title: workOrder.title,
@@ -343,6 +356,10 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
       })
       .select("id")
       .single();
+
+    if (nextWorkOrderError) {
+      console.error(`[work-orders] failed to spawn next occurrence for ${workOrderId}:`, nextWorkOrderError.message);
+    }
 
     if (nextWorkOrder && nextAssignedTo) {
       await notifyUser(nextAssignedTo, "task_assigned", {

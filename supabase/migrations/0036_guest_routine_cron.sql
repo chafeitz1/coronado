@@ -11,13 +11,11 @@ select cron.schedule(
   'guest-routine-check',
   '*/15 * * * *',
   $$
-  select net.http_post(
+  select net.http_get(
     url := 'https://coronado-vert.vercel.app/api/cron/routine',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'routine_cron_secret'),
-      'Content-Type', 'application/json'
-    ),
-    body := '{}'::jsonb
+      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'routine_cron_secret')
+    )
   );
   $$
 );

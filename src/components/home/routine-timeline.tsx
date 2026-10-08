@@ -93,8 +93,8 @@ export function RoutineTimeline({
           }`}
         >
           <span
-            className={`absolute top-1 size-5 rounded-full bg-white shadow transition-transform ${
-              guestsPresent ? "translate-x-6" : "translate-x-1"
+            className={`absolute left-1 top-1 size-5 rounded-full bg-white shadow transition-transform ${
+              guestsPresent ? "translate-x-5" : "translate-x-0"
             }`}
           />
         </button>

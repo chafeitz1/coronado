@@ -69,8 +69,46 @@ async function sendDailyDigest(supabase: Supabase, ownerId: string) {
   const completed = rows.filter((r) => r.status === "done");
   const notCompleted = rows.filter((r) => r.status !== "done");
 
+  // Evidence photos under each completed task — "¿de verdad se hizo?" at a
+  // glance, without opening the task. Only for completed tasks (there's
+  // nothing to show yet for one still open); capped at 3 thumbnails each so
+  // one task with a dozen photos doesn't blow up the email. PDFs (vendor
+  // reports etc. also filed as "evidence") don't render as images, so those
+  // are skipped here — the photos only.
+  const completedIds = completed.map((r) => r.id);
+  const { data: attachmentRows } = completedIds.length
+    ? await supabase
+        .from("attachments")
+        .select("work_order_id, storage_path")
+        .in("work_order_id", completedIds)
+        .eq("kind", "evidence")
+        .order("created_at")
+    : { data: [] };
+
+  const MAX_PHOTOS_PER_TASK = 3;
+  const photosByWorkOrder = new Map<string, string[]>();
+  for (const row of attachmentRows ?? []) {
+    if (row.storage_path.toLowerCase().endsWith(".pdf")) continue;
+    const existing = photosByWorkOrder.get(row.work_order_id) ?? [];
+    if (existing.length >= MAX_PHOTOS_PER_TASK) continue;
+    const url = supabase.storage.from("attachments").getPublicUrl(row.storage_path).data.publicUrl;
+    existing.push(url);
+    photosByWorkOrder.set(row.work_order_id, existing);
+  }
+
   const assigneeOf = (r: Row) => single(r.assignee)?.full_name ?? "Sin asignar";
-  const completedLine = (r: Row) => `<li style="margin-bottom:4px;">${r.title} (${assigneeOf(r)})</li>`;
+  const completedLine = (r: Row) => {
+    const photos = photosByWorkOrder.get(r.id) ?? [];
+    const photosHtml = photos.length
+      ? `<div style="margin-top:4px;display:flex;gap:6px;">${photos
+          .map(
+            (url) =>
+              `<img src="${url}" width="72" height="72" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #e7e5e4;display:block;" />`
+          )
+          .join("")}</div>`
+      : "";
+    return `<li style="margin-bottom:${photos.length ? "10px" : "4px"};">${r.title} (${assigneeOf(r)})${photosHtml}</li>`;
+  };
   const notCompletedLine = (r: Row) => {
     if (r.status === "skipped") return `<li style="margin-bottom:4px;">${r.title} — omitida (${assigneeOf(r)})</li>`;
     const daysLate = r.due_date! < today ? -daysUntil(r.due_date!) : 0;

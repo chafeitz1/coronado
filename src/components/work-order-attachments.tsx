@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { FileText, Paperclip, Trash2 } from "lucide-react";
+import { FileText, Paperclip, Trash2, X } from "lucide-react";
 import { saveWorkOrderAttachment, deleteWorkOrderAttachment } from "@/app/actions/work-orders";
 import { uploadAttachmentToStorage } from "@/lib/attachments-client";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
@@ -56,6 +56,7 @@ export function WorkOrderAttachments({
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<AttachmentItem | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const scoped = attachments.filter((a) => a.kind === kind);
@@ -115,7 +116,14 @@ export function WorkOrderAttachments({
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {photos.map((a) => (
             <div key={a.id} className="group relative aspect-square overflow-hidden rounded-lg border border-hairline">
-              <Image src={a.publicUrl} alt={a.fileName} fill unoptimized className="object-cover" />
+              <button
+                type="button"
+                onClick={() => setLightbox(a)}
+                className="absolute inset-0 block size-full"
+                aria-label={a.fileName}
+              >
+                <Image src={a.publicUrl} alt={a.fileName} fill unoptimized className="object-cover" />
+              </button>
               {a.canDelete && (
                 <form action={deleteWorkOrderAttachment.bind(null, a.id, a.storagePath, workOrderId)} className="absolute right-1 top-1">
                   <ConfirmSubmitButton
@@ -189,6 +197,27 @@ export function WorkOrderAttachments({
         )}
         {error && <p className="text-sm text-status-overdue-fg">{error}</p>}
       </div>
+
+      {lightbox && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setLightbox(null)}>
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            aria-label={dict.assetDetail.close}
+            className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/75 active:bg-black/75"
+          >
+            <X className="size-5" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element -- full-size
+              original, not a fixed-box thumbnail the Image loader can size. */}
+          <img
+            src={lightbox.publicUrl}
+            alt={lightbox.fileName}
+            className="max-h-full max-w-full rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

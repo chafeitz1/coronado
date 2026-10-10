@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SidePanel } from "@/components/ui/side-panel";
 import { WorkOrderDetailContent, type WorkOrderDetailData } from "./work-order-detail-content";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -34,13 +34,17 @@ export function WorkOrderPanel({
   // clear the previous task while the new one loads.
   const [data, setData] = useState<{ id: string; detail: WorkOrderDetailData; today: string } | null>(null);
 
-  useEffect(() => {
-    if (!workOrderId) return;
+  // Reusable so a mutation made from inside the panel (photo upload, status
+  // change, edit, note) can re-fetch this same data — this `data` is plain
+  // client state, not part of the Server Component tree, so none of those
+  // Server Actions' revalidatePath calls ever reach it on their own. See
+  // the `onMutate` prop passed to WorkOrderDetailContent below.
+  const load = useCallback((id: string) => {
     let cancelled = false;
-    fetch(`/api/work-orders/${workOrderId}`)
+    fetch(`/api/work-orders/${id}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("failed to load"))))
       .then((json: WorkOrderDetailData & { today: string }) => {
-        if (!cancelled) setData({ id: workOrderId, detail: json, today: json.today });
+        if (!cancelled) setData({ id, detail: json, today: json.today });
       })
       .catch(() => {
         if (!cancelled) setData(null);
@@ -48,7 +52,12 @@ export function WorkOrderPanel({
     return () => {
       cancelled = true;
     };
-  }, [workOrderId]);
+  }, []);
+
+  useEffect(() => {
+    if (!workOrderId) return;
+    return load(workOrderId);
+  }, [workOrderId, load]);
 
   const loaded = data && data.id === workOrderId ? data : null;
 
@@ -67,6 +76,7 @@ export function WorkOrderPanel({
           locale={locale}
           dict={dict}
           onClose={onClose}
+          onMutate={() => workOrderId && load(workOrderId)}
         />
       ) : (
         <div className="animate-pulse space-y-3">

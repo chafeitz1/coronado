@@ -40,10 +40,14 @@ export function WorkOrderEditForm({
   workOrder,
   dict,
   onClose,
+  onMutate,
 }: {
   workOrder: EditableWorkOrder;
   dict: Dictionary;
   onClose: () => void;
+  // Set when rendered inside WorkOrderPanel's side panel — see
+  // WorkOrderAttachments' onMutate comment.
+  onMutate?: () => void;
 }) {
   const router = useRouter();
   const [options, setOptions] = useState<Options | null>(null);
@@ -66,10 +70,11 @@ export function WorkOrderEditForm({
 
   useEffect(() => {
     if (state?.ok) {
-      router.refresh();
+      if (onMutate) onMutate();
+      else router.refresh();
       onClose();
     }
-  }, [state, router, onClose]);
+  }, [state, router, onClose, onMutate]);
 
   return (
     <div className={`space-y-5 p-5 ${card}`}>

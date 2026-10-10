@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, MessageSquare, Wrench, Building2, Repeat, CalendarCheck, History, X, PlayCircle } from "lucide-react";
 import { addWorkOrderNote } from "@/app/actions/work-orders";
 import { StatusBadge, OverdueBadge } from "@/components/ui/badge";
@@ -85,6 +86,7 @@ export function WorkOrderDetailContent({
   locale,
   dict,
   onClose,
+  onMutate,
 }: {
   data: WorkOrderDetailData;
   // ISO date string ("YYYY-MM-DD") — needed to tell whether this task is
@@ -107,7 +109,14 @@ export function WorkOrderDetailContent({
   // route itself renders this with no onClose, since a standalone page
   // has nothing to "close" to.
   onClose?: () => void;
+  // Set only by WorkOrderPanel, whose detail data is plain client state
+  // fetched once — router.refresh() (used throughout this tree's children
+  // as a fallback) only revalidates Server Components and never reaches
+  // that state, so every mutating child here needs this explicit re-fetch
+  // instead when rendered inside the panel.
+  onMutate?: () => void;
 }) {
+  const router = useRouter();
   const { workOrder, asset, vendor, assignee, creator, attachments, notes, activityRows, seriesRows } = data;
   const canChangeStatus = canManageTasks || workOrder.assigned_to === currentUserId;
   const overdue = !isWorkOrderClosed(workOrder.status) && !!workOrder.due_date && workOrder.due_date < today;
@@ -116,13 +125,31 @@ export function WorkOrderDetailContent({
   );
   const [editing, setEditing] = useState(false);
 
+  // Notes still submit via the real Server Action (progressive enhancement
+  // works the same as before), but wrapped in useActionState so a
+  // successful submit can also trigger onMutate and reset the textarea —
+  // a plain <form action={addWorkOrderNote}> gives no hook for either.
+  const noteFormRef = useRef<HTMLFormElement>(null);
+  const [noteVersion, noteAction] = useActionState(async (prev: number, formData: FormData) => {
+    await addWorkOrderNote(formData);
+    return prev + 1;
+  }, 0);
+  const lastNoteVersion = useRef(noteVersion);
+  useEffect(() => {
+    if (noteVersion === lastNoteVersion.current) return;
+    lastNoteVersion.current = noteVersion;
+    noteFormRef.current?.reset();
+    if (onMutate) onMutate();
+    else router.refresh();
+  }, [noteVersion, onMutate, router]);
+
   // Switches this same card into its edit form instead of navigating to a
   // separate route — a route change would drop whichever List/Calendar/
   // Board view (and its ?display= param) was open when "Editar" was
   // clicked. Works the same whether this is rendered on the standalone
   // [id] page or inside WorkOrderPanel's side panel.
   if (editing) {
-    return <WorkOrderEditForm workOrder={workOrder} dict={dict} onClose={() => setEditing(false)} />;
+    return <WorkOrderEditForm workOrder={workOrder} dict={dict} onClose={() => setEditing(false)} onMutate={onMutate} />;
   }
 
   const unitLabels: Record<string, string> = {
@@ -214,6 +241,7 @@ export function WorkOrderDetailContent({
               workOrderId={workOrder.id}
               status={workOrder.status}
               hasEvidencePhoto={hasEvidencePhoto}
+              onMutate={onMutate}
               dict={dict}
             />
           ) : (
@@ -321,6 +349,7 @@ export function WorkOrderDetailContent({
             attachments={attachments}
             kind="instruction"
             canUpload={isOwner}
+            onMutate={onMutate}
             dict={dict}
           />
         </section>
@@ -333,6 +362,7 @@ export function WorkOrderDetailContent({
           currentUserId={currentUserId}
           attachments={attachments}
           kind="evidence"
+          onMutate={onMutate}
           dict={dict}
         />
       </section>
@@ -365,7 +395,7 @@ export function WorkOrderDetailContent({
           {notes.length === 0 && <EmptyState icon={MessageSquare} message={dict.workOrderDetail.emptyNotes} />}
         </ul>
 
-        <form action={addWorkOrderNote} className="space-y-3 rounded-md border border-hairline p-4">
+        <form ref={noteFormRef} action={noteAction} className="space-y-3 rounded-md border border-hairline p-4">
           <input type="hidden" name="work_order_id" value={workOrder.id} />
           <textarea
             name="body"

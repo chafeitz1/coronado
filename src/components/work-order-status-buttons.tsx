@@ -40,6 +40,7 @@ export function WorkOrderStatusButtons({
   workOrderId,
   status,
   hasEvidencePhoto,
+  onMutate,
   dict,
 }: {
   workOrderId: string;
@@ -48,6 +49,11 @@ export function WorkOrderStatusButtons({
   // blocking them outright — some tasks (a vendor phone call, say) have no
   // photo to show for it, so this stays a confirm, not a hard requirement.
   hasEvidencePhoto: boolean;
+  // Set when rendered inside WorkOrderPanel's side panel — see
+  // WorkOrderAttachments' onMutate comment. Without this, a status change
+  // made from the panel updates the database but the panel itself (plain
+  // client state) never reflects it.
+  onMutate?: () => void;
   dict: Dictionary;
 }) {
   const [pending, startTransition] = useTransition();
@@ -55,8 +61,9 @@ export function WorkOrderStatusButtons({
   function handleSelect(s: WorkOrderStatus) {
     if (s === status) return;
     if (s === "done" && !hasEvidencePhoto && !window.confirm(dict.workOrderDetail.confirmNoPhoto)) return;
-    startTransition(() => {
-      updateWorkOrderStatus(workOrderId, s);
+    startTransition(async () => {
+      await updateWorkOrderStatus(workOrderId, s);
+      onMutate?.();
     });
   }
 

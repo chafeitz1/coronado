@@ -35,6 +35,7 @@ export function WorkOrderAttachments({
   attachments,
   kind = "evidence",
   canUpload = true,
+  onMutate,
   dict,
 }: {
   workOrderId: string;
@@ -42,10 +43,18 @@ export function WorkOrderAttachments({
   attachments: AttachmentItem[];
   kind?: "evidence" | "instruction";
   canUpload?: boolean;
+  // Set when rendered inside WorkOrderPanel's side panel, whose detail data
+  // is plain client state fetched once — router.refresh() only revalidates
+  // Server Components and never reaches that state, so a save there needs
+  // this explicit re-fetch instead. Falls back to router.refresh() on the
+  // standalone [id] page / To-Do split view, which render this straight
+  // from server-fetched data.
+  onMutate?: () => void;
   dict: Dictionary;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -66,6 +75,12 @@ export function WorkOrderAttachments({
     if (files.length === 0) return;
 
     setError(null);
+    // Covers the compress + Storage upload step too, not just the DB save
+    // below — on a phone photo over a weak connection that step alone can
+    // take several seconds, and with no visible feedback during it, a
+    // staff member taps "add" again thinking nothing happened, uploading
+    // the same photo twice (confirmed from real duplicate uploads).
+    setUploading(true);
     const uploads = await Promise.all(
       files.map(async (file) => ({ file, result: await uploadAttachmentToStorage({ workOrderId }, currentUserId, file) }))
     );
@@ -78,14 +93,19 @@ export function WorkOrderAttachments({
       const firstError = (failed[0].result as { error: string }).error;
       setError(failed.length === uploads.length ? firstError : `${succeeded.length} de ${uploads.length} se subieron. ${firstError}`);
     }
-    if (succeeded.length === 0) return;
+    if (succeeded.length === 0) {
+      setUploading(false);
+      return;
+    }
 
     startTransition(async () => {
       for (const { file, result } of succeeded) {
         const saveResult = await saveWorkOrderAttachment(workOrderId, result.path, file.name, kind);
         if (saveResult?.error) setError(saveResult.error);
       }
-      router.refresh();
+      if (onMutate) onMutate();
+      else router.refresh();
+      setUploading(false);
     });
   }
 
@@ -154,12 +174,12 @@ export function WorkOrderAttachments({
             />
             <button
               type="button"
-              disabled={pending}
+              disabled={pending || uploading}
               onClick={() => inputRef.current?.click()}
               className={`${buttonSecondary} disabled:pointer-events-none disabled:opacity-50`}
             >
               <Paperclip className="size-4" />{" "}
-              {pending
+              {pending || uploading
                 ? dict.workOrderForm.submitPending
                 : kind === "instruction"
                   ? dict.workOrderDetail.addInstructionPhoto

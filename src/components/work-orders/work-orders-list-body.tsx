@@ -90,13 +90,18 @@ export function WorkOrdersListBody({
     });
   }, [baseFiltered, tab, dueBucket, today, endOfThisWeek, startOfNextWeek, endOfNextWeek]);
 
-  // No user-facing sort control anymore — a fixed order instead: soonest
-  // due date first, undated tasks last.
+  // No user-facing sort control anymore — a fixed order instead. "Done"
+  // reads newest-completed-first (what you just finished is what you're
+  // checking for), everywhere else soonest due date first, undated last.
   const sorted = useMemo(() => {
     const rows = [...filtered];
-    rows.sort((a, b) => (a.due_date ?? "9999-99-99").localeCompare(b.due_date ?? "9999-99-99"));
+    if (tab === "done") {
+      rows.sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""));
+    } else {
+      rows.sort((a, b) => (a.due_date ?? "9999-99-99").localeCompare(b.due_date ?? "9999-99-99"));
+    }
     return rows;
-  }, [filtered]);
+  }, [filtered, tab]);
 
   const mine = sorted.filter((wo) => wo.assigned_to === currentUserId);
   const others = sorted.filter((wo) => wo.assigned_to !== currentUserId);

@@ -25,6 +25,7 @@ type OrderRow = {
   due_date: string | null;
   completed_at: string | null;
   recurrence_interval_value: number | null;
+  source: string;
   profiles: { full_name: string } | { full_name: string }[] | null;
 };
 
@@ -39,7 +40,7 @@ export default async function HomePage() {
     supabase
       .from("work_orders")
       .select(
-        "id, title, status, due_date, completed_at, recurrence_interval_value, profiles!work_orders_assigned_to_fkey(full_name)"
+        "id, title, status, due_date, completed_at, recurrence_interval_value, source, profiles!work_orders_assigned_to_fkey(full_name)"
       )
       .order("created_at", { ascending: false }),
     supabase
@@ -115,7 +116,11 @@ export default async function HomePage() {
     (wo) => !isWorkOrderClosed(wo.status) && wo.due_date && wo.due_date >= today && wo.due_date <= in7Days
   );
   const doneThisWeek = orders.filter((wo) => wo.status === "done" && wo.completed_at && wo.completed_at >= weekAgo);
-  const recent = orders.slice(0, 5);
+  // Excludes the system's own next-occurrence spawn (source "pm", created
+  // the instant a recurring task is closed out) — it's bookkeeping, not
+  // something anyone did, and otherwise bumps whatever a person actually
+  // just did off this list every time a recurring task gets completed.
+  const recent = orders.filter((wo) => wo.source !== "pm").slice(0, 5);
 
   const homeContent = (
     <>

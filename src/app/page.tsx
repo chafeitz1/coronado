@@ -56,7 +56,7 @@ export default async function HomePage() {
       .from("work_order_activity")
       .select("id, event_type, meta, created_at, actor:profiles(full_name), work_order:work_orders(id, title)")
       .order("created_at", { ascending: false })
-      .limit(10),
+      .limit(14),
     supabase
       .from("announcements")
       .select(
@@ -195,7 +195,9 @@ export default async function HomePage() {
     })
     .filter((e): e is ActivityEvent => e !== null);
 
-  const activity = [...createdEvents, ...loggedEvents].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, 5);
+  // 7, matching the cap HomeView applies to every other section — keeps
+  // Home a single glance instead of a growing list.
+  const activity = [...createdEvents, ...loggedEvents].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, 7);
 
   const homeContent = (
     <>
@@ -219,7 +221,6 @@ export default async function HomePage() {
 
       <HomeView
         overdue={overdue}
-        dueSoon={dueSoon}
         activity={activity}
         announcementRows={announcementRows}
         purchaseRows={purchaseRows}

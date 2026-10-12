@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Clock, PartyPopper, Repeat, Megaphone, ShoppingCart } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, PartyPopper, Repeat, Megaphone, ShoppingCart } from "lucide-react";
 import { StatusBadge, OverdueBadge } from "@/components/ui/badge";
 import { WorkOrderPanel } from "@/components/work-orders/work-order-panel";
 import { AnnouncementRow } from "@/components/announcements/announcement-row";
@@ -12,6 +13,12 @@ import type { Locale } from "@/lib/types/database";
 import type { AnnouncementRow as AnnouncementRowType } from "@/components/announcements/types";
 import type { PurchaseItemRow as PurchaseItemRowType } from "@/components/purchases/types";
 import type { ActivityEvent } from "./types";
+
+// Home is a dashboard, not another place to see every row — each list here
+// caps at this many so the page stays a single glance instead of growing
+// as tall as the full /work-orders, /purchases or /announcements list
+// would. A "Ver todas" link covers the rest when a section is truncated.
+const MAX_HOME_ITEMS = 7;
 
 type OrderRow = {
   id: string;
@@ -31,7 +38,6 @@ type OrderRow = {
 // their action buttons), so acting on them here needs no panel at all.
 export function HomeView({
   overdue,
-  dueSoon,
   activity,
   announcementRows,
   purchaseRows,
@@ -42,7 +48,6 @@ export function HomeView({
   canManageTasks,
 }: {
   overdue: OrderRow[];
-  dueSoon: OrderRow[];
   activity: ActivityEvent[];
   announcementRows: AnnouncementRowType[];
   purchaseRows: PurchaseItemRowType[];
@@ -60,13 +65,12 @@ export function HomeView({
     <>
       {/* Mobile: a single stacked column, in the order the owner said
           matters most (overdue tasks, pending purchases, announcements,
-          due soon, recent activity) — plain flex-col, so that priority
-          order is just DOM order. Desktop has the room to show three of
-          these side by side instead of one long scroll: tasks (overdue
-          over due-soon) on the left, recent activity in the middle,
-          purchases over announcements on the right — explicit grid
-          placement rather than reordering the DOM, so the mobile order
-          above stays intact underneath it. */}
+          recent activity) — plain flex-col, so that priority order is just
+          DOM order. Desktop has the room to show three of these side by
+          side instead of one long scroll: overdue tasks on the left,
+          recent activity in the middle, purchases over announcements on
+          the right — explicit grid placement rather than reordering the
+          DOM, so the mobile order above stays intact underneath it. */}
       <div className="flex flex-col gap-6 md:grid md:grid-cols-3 md:items-start md:gap-x-6 md:gap-y-8">
         {overdue.length > 0 && (
           <OrderSection
@@ -78,6 +82,7 @@ export function HomeView({
             locale={locale}
             onSelect={setOpenTaskId}
             className="md:col-start-1 md:row-start-1"
+            viewAllHref="/work-orders?view=overdue"
           />
         )}
 
@@ -88,7 +93,7 @@ export function HomeView({
               <span className="text-ink-faint">· {purchaseRows.length}</span>
             </h2>
             <ul className={listCard}>
-              {purchaseRows.map((p) => (
+              {purchaseRows.slice(0, MAX_HOME_ITEMS).map((p) => (
                 <PurchaseItemRow
                   key={p.id}
                   item={p}
@@ -98,6 +103,7 @@ export function HomeView({
                 />
               ))}
             </ul>
+            {purchaseRows.length > MAX_HOME_ITEMS && <ViewAllLink href="/purchases" dict={dict} />}
           </section>
         )}
 
@@ -110,26 +116,15 @@ export function HomeView({
               </span>
             </h2>
             <ul className={listCard}>
-              {announcementRows.map((a) => (
+              {announcementRows.slice(0, MAX_HOME_ITEMS).map((a) => (
                 <AnnouncementRow key={a.id} item={a} dict={dict} locale={locale} canDelete={isOwner} />
               ))}
             </ul>
+            {announcementRows.length > MAX_HOME_ITEMS && <ViewAllLink href="/announcements" dict={dict} />}
           </section>
         )}
 
-        {dueSoon.length > 0 && (
-          <OrderSection
-            title={dict.home.dueSoonTitle}
-            icon={Clock}
-            orders={dueSoon}
-            dict={dict}
-            locale={locale}
-            onSelect={setOpenTaskId}
-            className="md:col-start-1 md:row-start-2"
-          />
-        )}
-
-        {overdue.length === 0 && dueSoon.length === 0 && purchaseRows.length === 0 && (
+        {overdue.length === 0 && purchaseRows.length === 0 && (
           <div className={`flex items-center gap-3 p-5 text-sm md:col-span-3 ${card}`}>
             <PartyPopper className="size-5 shrink-0 text-status-done-fg" />
             <p className="text-ink-secondary">{dict.home.allClear}</p>
@@ -140,7 +135,7 @@ export function HomeView({
           <section className="space-y-2 md:col-start-2 md:row-start-1 md:row-span-2">
             <h2 className={sectionHeading}>{dict.home.recentActivity}</h2>
             <ul className={listCard}>
-              {activity.map((event) => (
+              {activity.slice(0, MAX_HOME_ITEMS).map((event) => (
                 <li key={event.id}>
                   <button
                     type="button"
@@ -172,6 +167,14 @@ export function HomeView({
   );
 }
 
+function ViewAllLink({ href, dict }: { href: string; dict: Dictionary }) {
+  return (
+    <Link href={href} className="block text-sm font-medium text-primary hover:underline active:underline">
+      {dict.home.viewAllLink}
+    </Link>
+  );
+}
+
 function OrderSection({
   title,
   icon: Icon,
@@ -181,6 +184,7 @@ function OrderSection({
   locale,
   onSelect,
   className,
+  viewAllHref,
 }: {
   title: string;
   icon: typeof AlertTriangle;
@@ -190,6 +194,7 @@ function OrderSection({
   locale: Locale;
   onSelect: (id: string) => void;
   className?: string;
+  viewAllHref?: string;
 }) {
   return (
     <section className={`space-y-2 ${className ?? ""}`}>
@@ -200,7 +205,7 @@ function OrderSection({
         </span>
       </h2>
       <ul className={listCard}>
-        {orders.map((wo) => {
+        {orders.slice(0, MAX_HOME_ITEMS).map((wo) => {
           const assignee = Array.isArray(wo.profiles) ? wo.profiles[0] : wo.profiles;
           return (
             <li key={wo.id}>
@@ -225,6 +230,7 @@ function OrderSection({
           );
         })}
       </ul>
+      {viewAllHref && orders.length > MAX_HOME_ITEMS && <ViewAllLink href={viewAllHref} dict={dict} />}
     </section>
   );
 }

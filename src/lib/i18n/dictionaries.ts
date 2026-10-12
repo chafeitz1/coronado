@@ -59,6 +59,7 @@ const es = {
     urgentPurchasesPending: "Compras urgentes pendientes",
     ordered: "Ordenado",
     recentActivity: "Actividad reciente",
+    viewAllLink: "Ver todas →",
     // Plain verbs, not full sentences — Home builds "{actor} {verb}
     // \"{title}\"" itself, same template as the push/email notification
     // body, so this reads as an actual human action instead of just a
@@ -672,6 +673,7 @@ const en: Dictionary = {
     urgentPurchasesPending: "Urgent purchases pending",
     ordered: "Ordered",
     recentActivity: "Recent activity",
+    viewAllLink: "View all →",
     activityVerbDone: "completed",
     activityVerbInProgress: "started",
     activityVerbSkipped: "skipped",

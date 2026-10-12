@@ -11,6 +11,7 @@ import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
 import type { AnnouncementRow as AnnouncementRowType } from "@/components/announcements/types";
 import type { PurchaseItemRow as PurchaseItemRowType } from "@/components/purchases/types";
+import type { ActivityEvent } from "./types";
 
 type OrderRow = {
   id: string;
@@ -31,7 +32,7 @@ type OrderRow = {
 export function HomeView({
   overdue,
   dueSoon,
-  recent,
+  activity,
   announcementRows,
   purchaseRows,
   dict,
@@ -42,7 +43,7 @@ export function HomeView({
 }: {
   overdue: OrderRow[];
   dueSoon: OrderRow[];
-  recent: OrderRow[];
+  activity: ActivityEvent[];
   announcementRows: AnnouncementRowType[];
   purchaseRows: PurchaseItemRowType[];
   dict: Dictionary;
@@ -135,29 +136,24 @@ export function HomeView({
           </div>
         )}
 
-        {recent.length > 0 && (
+        {activity.length > 0 && (
           <section className="space-y-2 md:col-start-2 md:row-start-1 md:row-span-2">
             <h2 className={sectionHeading}>{dict.home.recentActivity}</h2>
             <ul className={listCard}>
-              {recent.map((wo) => {
-                const assignee = Array.isArray(wo.profiles) ? wo.profiles[0] : wo.profiles;
-                return (
-                  <li key={wo.id}>
-                    <button type="button" onClick={() => setOpenTaskId(wo.id)} className={`${listRow} w-full text-left`}>
-                      <div className="min-w-40 flex-1">
-                        <p className="flex items-center gap-1.5 truncate font-medium text-ink">
-                          {wo.title}
-                          {wo.recurrence_interval_value && (
-                            <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
-                          )}
-                        </p>
-                        <p className={`${mutedText} truncate`}>{assignee ? assignee.full_name : dict.home.unassigned}</p>
-                      </div>
-                      <StatusBadge status={wo.status} locale={locale} />
-                    </button>
-                  </li>
-                );
-              })}
+              {activity.map((event) => (
+                <li key={event.id}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenTaskId(event.workOrderId)}
+                    className={`${listRow} w-full flex-col items-start gap-0.5 text-left`}
+                  >
+                    <p className="text-sm text-ink">
+                      <span className="font-medium">{event.actorName}</span> {event.text}
+                    </p>
+                    <p className={mutedText}>{new Date(event.createdAt).toLocaleString(locale)}</p>
+                  </button>
+                </li>
+              ))}
             </ul>
           </section>
         )}

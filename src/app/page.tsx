@@ -11,7 +11,7 @@ import { getDictionary, format } from "@/lib/i18n/dictionaries";
 import { isWorkOrderClosed } from "@/lib/types/database";
 import type { AnnouncementRow } from "@/components/announcements/types";
 import type { PurchaseItemRow } from "@/components/purchases/types";
-import type { RoutineItem } from "@/components/home/types";
+import type { ActivityEvent, RoutineItem } from "@/components/home/types";
 
 function single<T>(value: T | T[] | null): T | null {
   if (Array.isArray(value)) return value[0] ?? null;
@@ -24,9 +24,11 @@ type OrderRow = {
   status: string;
   due_date: string | null;
   completed_at: string | null;
+  created_at: string;
   recurrence_interval_value: number | null;
   source: string;
   profiles: { full_name: string } | { full_name: string }[] | null;
+  creator: { full_name: string } | { full_name: string }[] | null;
 };
 
 export default async function HomePage() {
@@ -36,13 +38,25 @@ export default async function HomePage() {
   const isOwner = profile.role === "owner";
   const canManageTasks = isOwner || profile.role === "staff";
 
-  const [{ data: workOrders }, { data: announcements }, { data: urgentPurchases }] = await Promise.all([
+  const [{ data: workOrders }, { data: activityRows }, { data: announcements }, { data: urgentPurchases }] =
+    await Promise.all([
     supabase
       .from("work_orders")
       .select(
-        "id, title, status, due_date, completed_at, recurrence_interval_value, source, profiles!work_orders_assigned_to_fkey(full_name)"
+        "id, title, status, due_date, completed_at, created_at, recurrence_interval_value, source, profiles!work_orders_assigned_to_fkey(full_name), creator:profiles!work_orders_created_by_fkey(full_name)"
       )
       .order("created_at", { ascending: false }),
+    // Everything that happened to a task after its creation — the other
+    // half of Recent Activity below, alongside manually-created tasks from
+    // the query above. "pm" (system-spawned next occurrence) never logs
+    // here since logWorkOrderActivity only runs from the user-triggered
+    // status update, not the admin-client insert that follows it — so
+    // every row here is already a genuine human action, no filtering needed.
+    supabase
+      .from("work_order_activity")
+      .select("id, event_type, meta, created_at, actor:profiles(full_name), work_order:work_orders(id, title)")
+      .order("created_at", { ascending: false })
+      .limit(10),
     supabase
       .from("announcements")
       .select(
@@ -116,11 +130,72 @@ export default async function HomePage() {
     (wo) => !isWorkOrderClosed(wo.status) && wo.due_date && wo.due_date >= today && wo.due_date <= in7Days
   );
   const doneThisWeek = orders.filter((wo) => wo.status === "done" && wo.completed_at && wo.completed_at >= weekAgo);
-  // Excludes the system's own next-occurrence spawn (source "pm", created
-  // the instant a recurring task is closed out) — it's bookkeeping, not
-  // something anyone did, and otherwise bumps whatever a person actually
-  // just did off this list every time a recurring task gets completed.
-  const recent = orders.filter((wo) => wo.source !== "pm").slice(0, 5);
+
+  // Recent Activity: real human actions only, each rendered as
+  // "{actor} {verb} \"{title}\"" — not just a task title next to a status
+  // badge, which gave no way to tell what had actually happened. Two
+  // sources merged by timestamp: a task's own creation (skipping "pm",
+  // the system's own next-occurrence spawn — nobody did that) and
+  // everything logged afterward (status changes, edits).
+  const statusVerbs: Record<string, string> = {
+    done: dict.home.activityVerbDone,
+    in_progress: dict.home.activityVerbInProgress,
+    skipped: dict.home.activityVerbSkipped,
+    open: dict.home.activityVerbOpen,
+  };
+  const editedFieldLabels: Record<string, string> = {
+    title: dict.workOrderDetail.fieldTitle,
+    description: dict.workOrderDetail.fieldDescription,
+    due_date: dict.workOrderDetail.fieldDueDate,
+    asset_id: dict.workOrderDetail.fieldAsset,
+    assigned_to: dict.workOrderDetail.fieldAssignee,
+    vendor_id: dict.workOrderDetail.fieldVendor,
+    recurrence: dict.workOrderDetail.fieldRecurrence,
+    video_url: dict.workOrderDetail.fieldVideoUrl,
+  };
+
+  const createdEvents: ActivityEvent[] = orders
+    .filter((wo) => wo.source !== "pm")
+    .map((wo) => ({
+      id: `created-${wo.id}`,
+      workOrderId: wo.id,
+      actorName: single(wo.creator)?.full_name ?? "—",
+      text: `${dict.home.activityVerbCreated} "${wo.title}"`,
+      createdAt: wo.created_at,
+    }));
+
+  type ActivityLogRow = {
+    id: string;
+    event_type: "status_changed" | "edited";
+    meta: { from?: string; to?: string; fields?: string[] } | null;
+    created_at: string;
+    actor: { full_name: string } | { full_name: string }[] | null;
+    work_order: { id: string; title: string } | { id: string; title: string }[] | null;
+  };
+  const loggedEvents: ActivityEvent[] = ((activityRows ?? []) as ActivityLogRow[])
+    .map((row) => {
+      const workOrder = single(row.work_order);
+      if (!workOrder) return null; // task since deleted
+      const meta = row.meta ?? {};
+      const verb =
+        row.event_type === "status_changed"
+          ? (statusVerbs[meta.to ?? ""] ?? dict.home.activityVerbEdited)
+          : dict.home.activityVerbEdited;
+      const suffix =
+        row.event_type === "edited" && meta.fields?.length
+          ? ` (${meta.fields.map((f) => editedFieldLabels[f] ?? f).join(", ")})`
+          : "";
+      return {
+        id: row.id,
+        workOrderId: workOrder.id,
+        actorName: single(row.actor)?.full_name ?? "—",
+        text: `${verb} "${workOrder.title}"${suffix}`,
+        createdAt: row.created_at,
+      };
+    })
+    .filter((e): e is ActivityEvent => e !== null);
+
+  const activity = [...createdEvents, ...loggedEvents].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, 5);
 
   const homeContent = (
     <>
@@ -145,7 +220,7 @@ export default async function HomePage() {
       <HomeView
         overdue={overdue}
         dueSoon={dueSoon}
-        recent={recent}
+        activity={activity}
         announcementRows={announcementRows}
         purchaseRows={purchaseRows}
         dict={dict}

@@ -59,6 +59,16 @@ const es = {
     urgentPurchasesPending: "Compras urgentes pendientes",
     ordered: "Ordenado",
     recentActivity: "Actividad reciente",
+    // Plain verbs, not full sentences — Home builds "{actor} {verb}
+    // \"{title}\"" itself, same template as the push/email notification
+    // body, so this reads as an actual human action instead of just a
+    // task title with a status badge next to it.
+    activityVerbDone: "completó",
+    activityVerbInProgress: "empezó",
+    activityVerbSkipped: "salteó",
+    activityVerbOpen: "reabrió",
+    activityVerbCreated: "creó",
+    activityVerbEdited: "editó",
     unassigned: "Sin asignar",
     tabHome: "Inicio",
     tabRoutine: "Rutina",
@@ -662,6 +672,12 @@ const en: Dictionary = {
     urgentPurchasesPending: "Urgent purchases pending",
     ordered: "Ordered",
     recentActivity: "Recent activity",
+    activityVerbDone: "completed",
+    activityVerbInProgress: "started",
+    activityVerbSkipped: "skipped",
+    activityVerbOpen: "reopened",
+    activityVerbCreated: "created",
+    activityVerbEdited: "edited",
     unassigned: "Unassigned",
     tabHome: "Home",
     tabRoutine: "Routine",

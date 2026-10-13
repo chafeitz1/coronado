@@ -362,7 +362,7 @@ const es = {
   },
   payroll: {
     title: "Planilla",
-    subtitle: "Pagos al personal: quincenas, décimos, vacaciones y adelantos.",
+    subtitle: "Pagos al personal: quincenas, décimos, vacaciones, prima y préstamos.",
     selectPrompt: "Selecciona a alguien de la lista para ver su historial de pagos.",
     backToList: "Volver a planilla",
     summaryExpected: "Esperado",
@@ -972,7 +972,7 @@ const en: Dictionary = {
   },
   payroll: {
     title: "Payroll",
-    subtitle: "Staff payments: biweekly pay, bonuses, vacation and advances.",
+    subtitle: "Staff payments: biweekly pay, bonuses, vacation, seniority bonus and loans.",
     selectPrompt: "Select someone from the list to see their payment history.",
     backToList: "Back to payroll",
     summaryExpected: "Expected",

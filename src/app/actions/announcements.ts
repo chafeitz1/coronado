@@ -9,9 +9,11 @@ import type { AnnouncementStatus } from "@/lib/types/database";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
-async function getOwnerId(supabase: SupabaseClient) {
-  const { data } = await supabase.from("profiles").select("id").eq("role", "owner").limit(1).single();
-  return data?.id ?? null;
+// Every owner gets owner-level notifications, not just whichever one the
+// query happened to return first — see work-orders.ts' getOwnerIds.
+async function getOwnerIds(supabase: SupabaseClient) {
+  const { data } = await supabase.from("profiles").select("id").eq("role", "owner");
+  return (data ?? []).map((row) => row.id);
 }
 
 async function getStaffIds(supabase: SupabaseClient) {
@@ -99,22 +101,27 @@ export async function toggleAnnouncementStatus(announcementId: string, nextStatu
     .single();
 
   if (nextStatus === "happened" && item) {
-    const ownerId = await getOwnerId(supabase);
-    if (ownerId && ownerId !== profile.id) {
+    const ownerIds = await getOwnerIds(supabase);
+    const recipientIds = ownerIds.filter((id) => id !== profile.id);
+    if (recipientIds.length > 0) {
       const when = dateRangeLabel(item.start_date, item.end_date);
-      await notifyUser(ownerId, "announcement_happened", {
-        body: `${profile.full_name} marcó "${item.title}" (${when}) como sucedido`,
-        url: "/announcements",
-        emailEyebrow: "✅ Anuncio sucedido",
-        emailEyebrowColor: "#15803d",
-        emailTitle: item.title,
-        emailHtml: `
+      await Promise.all(
+        recipientIds.map((id) =>
+          notifyUser(id, "announcement_happened", {
+            body: `${profile.full_name} marcó "${item.title}" (${when}) como sucedido`,
+            url: "/announcements",
+            emailEyebrow: "✅ Anuncio sucedido",
+            emailEyebrowColor: "#15803d",
+            emailTitle: item.title,
+            emailHtml: `
           <div style="background:#eafbf0;border-radius:8px;padding:12px 16px;">
             <p style="margin:0;font-size:14px;color:#18181b;">Marcado por <strong>${profile.full_name}</strong></p>
             <p style="margin:6px 0 0;font-size:13px;color:#78716c;">${when}</p>
           </div>
         `,
-      });
+          })
+        )
+      );
     }
   }
 

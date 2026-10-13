@@ -74,6 +74,29 @@ export async function confirmAccess(formData: FormData) {
   redirect(next);
 }
 
+export type ForgotPasswordState = { ok: true } | { ok: false; error: string } | null;
+
+// Same "always ok" shape as sendMagicLink above, for the same reason: the
+// response can't reveal whether the email belongs to a real account.
+// Supabase's own recovery email does the implicit-flow redirect (fragment
+// tokens), so it lands on /auth/confirm exactly like a magic link does —
+// only the `next` target differs, pointing at /reset-password instead of
+// straight into the app.
+export async function requestPasswordReset(
+  _prevState: ForgotPasswordState,
+  formData: FormData
+): Promise<ForgotPasswordState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { ok: false, error: "Ingresa tu email." };
+
+  const supabase = await createClient();
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/auth/confirm?next=/reset-password`,
+  });
+
+  return { ok: true };
+}
+
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();

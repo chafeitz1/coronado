@@ -42,6 +42,13 @@ function PasswordForm() {
       <button type="submit" disabled={pending} className={`w-full ${buttonPrimary}`}>
         {pending ? "Entrando..." : "Entrar"}
       </button>
+
+      <a
+        href="/forgot-password"
+        className="block text-center text-sm font-medium text-ink-secondary hover:underline active:underline"
+      >
+        ¿Olvidaste tu contraseña?
+      </a>
     </form>
   );
 }

@@ -13,9 +13,12 @@ import { isWorkOrderClosed, type Database, type IntervalUnit } from "@/lib/types
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
-async function getOwnerId(supabase: SupabaseClient) {
-  const { data } = await supabase.from("profiles").select("id").eq("role", "owner").limit(1).single();
-  return data?.id ?? null;
+// Every owner gets owner-level notifications, not just whichever one the
+// query happened to return first — this house has three (Carlos, Salomón,
+// Teófilo), and before this only one of them was ever notified.
+async function getOwnerIds(supabase: SupabaseClient) {
+  const { data } = await supabase.from("profiles").select("id").eq("role", "owner");
+  return (data ?? []).map((row) => row.id);
 }
 
 // One glance at the push/email list should say what happened without
@@ -295,18 +298,16 @@ export async function updateWorkOrderStatus(workOrderId: string, status: string)
     });
   }
 
-  const ownerId = await getOwnerId(supabase);
-  if (ownerId && ownerId !== profile.id) {
-    const statusInfo = STATUS_NOTIFICATION[status];
-    const body = statusInfo
-      ? `${statusInfo.emoji} ${profile.full_name} ${statusInfo.verb} "${workOrder.title}"`
-      : `${profile.full_name} cambió "${workOrder.title}" a ${status}`;
-    await notifyUser(ownerId, "status_changed", {
-      title: statusInfo?.title,
-      body,
-      url: `/work-orders/${workOrder.id}`,
-    });
-  }
+  const ownerIds = await getOwnerIds(supabase);
+  const statusInfo = STATUS_NOTIFICATION[status];
+  const body = statusInfo
+    ? `${statusInfo.emoji} ${profile.full_name} ${statusInfo.verb} "${workOrder.title}"`
+    : `${profile.full_name} cambió "${workOrder.title}" a ${status}`;
+  await Promise.all(
+    ownerIds
+      .filter((id) => id !== profile.id)
+      .map((id) => notifyUser(id, "status_changed", { title: statusInfo?.title, body, url: `/work-orders/${workOrder.id}` }))
+  );
 
   // Recurring task just got closed out (done or deliberately skipped) —
   // spawn its next occurrence right here instead of relying on a cron job
@@ -397,15 +398,18 @@ export async function addWorkOrderNote(formData: FormData) {
   if (error) throw new Error(error.message);
 
   if (notifyOwner) {
-    const ownerId = await getOwnerId(supabase);
-    if (ownerId && ownerId !== profile.id) {
-      const workOrderTitle =
-        (note?.work_orders as unknown as { title: string } | null)?.title ?? "una tarea";
-      await notifyUser(ownerId, "note_flagged", {
-        body: `${profile.full_name} marcó una nota en "${workOrderTitle}": ${body}`,
-        url: `/work-orders/${workOrderId}`,
-      });
-    }
+    const ownerIds = await getOwnerIds(supabase);
+    const workOrderTitle = (note?.work_orders as unknown as { title: string } | null)?.title ?? "una tarea";
+    await Promise.all(
+      ownerIds
+        .filter((id) => id !== profile.id)
+        .map((id) =>
+          notifyUser(id, "note_flagged", {
+            body: `${profile.full_name} marcó una nota en "${workOrderTitle}": ${body}`,
+            url: `/work-orders/${workOrderId}`,
+          })
+        )
+    );
   }
 
   revalidatePath(`/work-orders/${workOrderId}`);

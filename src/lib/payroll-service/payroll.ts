@@ -49,7 +49,9 @@ import {
   quincenaBaseCentsAt,
   type SalaryChange,
 } from "@/lib/planilla/salary-history";
-import { getPayrollEmployee, getPayrollEmployees } from "@/lib/payroll-service/employees";
+import { getPayrollEmployee, getPayrollEmployees, setEmployeeLiquidation } from "@/lib/payroll-service/employees";
+
+export { setEmployeeLiquidation };
 import { getAllSalaryChanges, getSalaryChanges, toSalaryChanges } from "@/lib/payroll-service/salary";
 
 /** ¿Hay historial de sueldo vigente para esta quincena? Sí si la

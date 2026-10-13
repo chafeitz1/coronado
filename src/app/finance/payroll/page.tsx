@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   await requireOwner();
   const { tab } = await searchParams;
-  const employees = (await getPayrollEmployees()).filter((e) => e.status === "ACTIVE");
+  const employees = await getPayrollEmployees();
 
   return (
     <div className="space-y-5">

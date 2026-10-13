@@ -90,3 +90,19 @@ export async function updatePayrollEmployeeBenefits(
   const { error } = await supabase.from("staff_details").upsert(update, { onConflict: "user_id" });
   if (error) throw new Error(error.message);
 }
+
+/** Fija (o limpia) la fecha de terminación y las notas de liquidación.
+ *  `termination_date` es lo que el Directorio ya usa para "personal que
+ *  ya no labora"; `endDate: null` reactiva. Las notas solo se tocan si
+ *  se pasan. */
+export async function setEmployeeLiquidation(
+  id: string,
+  endDate: string | null,
+  liquidationNotes?: string | null
+): Promise<void> {
+  const supabase = await createClient();
+  const row: Record<string, unknown> = { user_id: id, termination_date: endDate, updated_at: new Date().toISOString() };
+  if (liquidationNotes !== undefined) row.liquidation_notes = liquidationNotes;
+  const { error } = await supabase.from("staff_details").upsert(row, { onConflict: "user_id" });
+  if (error) throw new Error(error.message);
+}

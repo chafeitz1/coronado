@@ -41,7 +41,6 @@ export type VendorTrade = string;
 // current screens know how to render. "planilla" is the only category with
 // a UI today.
 export type ExpenseCategory = "planilla";
-export type PayrollSubcategory = "quincena" | "decimo" | "vacacion" | "adelanto" | "liquidacion";
 export type LoanCategory = "prestamo" | "adelanto";
 export type LoanStatus = "active" | "cancelled";
 export type LoanRequestStatus = "pending" | "approved" | "rejected";
@@ -254,6 +253,8 @@ export interface Database {
           birth_date: string | null;
           termination_date: string | null;
           id_document_path: string | null;
+          benefits_base_salary_cents: number | null;
+          liquidation_notes: string | null;
           updated_at: string;
         };
         Insert: Omit<Database["public"]["Tables"]["staff_details"]["Row"], "updated_at">;
@@ -293,34 +294,39 @@ export interface Database {
       payroll_loans: {
         Row: {
           id: string;
-          person_id: string;
+          employee_id: string;
           category: LoanCategory;
-          principal_amount: number;
+          principal_cents: number;
+          payment_method: "cuota_fija" | "cuota_variable";
           num_installments: number;
           request_date: string;
-          start_year: number;
-          start_month: number;
-          start_half: 1 | 2;
+          start_period_year: number;
+          start_period_month: number;
+          start_period_half: 1 | 2;
           status: LoanStatus;
           notes: string | null;
-          created_by: string;
+          created_by: string | null;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["payroll_loans"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["payroll_loans"]["Insert"]>;
+        Insert: Partial<Database["public"]["Tables"]["payroll_loans"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["payroll_loans"]["Row"]>;
       };
-      payroll_loan_payments: {
+      payroll_ledger_entries: {
         Row: {
           id: string;
-          loan_id: string;
-          amount: number;
-          payment_date: string;
+          employee_id: string;
+          category: "prestamo" | "adelanto" | "seguro_social" | "carnet" | "otro";
+          direction: "debt" | "payment";
+          amount_cents: number;
+          entry_date: string;
+          payroll_entry_id: string | null;
+          loan_id: string | null;
           notes: string | null;
-          created_by: string;
+          created_by: string | null;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["payroll_loan_payments"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["payroll_loan_payments"]["Insert"]>;
+        Insert: Partial<Database["public"]["Tables"]["payroll_ledger_entries"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["payroll_ledger_entries"]["Row"]>;
       };
       payroll_loan_requests: {
         Row: {
@@ -341,33 +347,36 @@ export interface Database {
       payroll_entries: {
         Row: {
           id: string;
-          person_id: string;
+          employee_id: string;
           period_year: number;
           period_month: number;
           period_half: 1 | 2;
-          base_pay: number;
+          base_pay_cents: number;
           extra_hours: number;
-          extra_hours_amount: number;
+          extra_hours_cents: number;
           extra_days: number;
-          extra_days_amount: number;
-          bonus: number;
-          dias_libres: number;
+          extra_days_cents: number;
+          viaticos_cents: number;
+          bonus_cents: number;
+          dias_libres_cents: number;
           horas_descontadas: number;
-          horas_descontadas_amount: number;
+          horas_descontadas_cents: number;
           dias_descontados: number;
-          dias_descontados_amount: number;
-          other_deduction: number;
-          decimo_paid: number;
-          vacation_paid: number;
-          prima_paid: number;
+          dias_descontados_cents: number;
+          other_deduction_cents: number;
+          decimo_paid_cents: number;
+          vacation_paid_cents: number;
+          prima_antiguedad_paid_cents: number;
           payment_method: PaymentMethod;
+          paid: boolean;
+          paid_at: string | null;
           notes: string | null;
-          created_by: string;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["payroll_entries"]["Row"], "id" | "created_at" | "updated_at">;
-        Update: Partial<Database["public"]["Tables"]["payroll_entries"]["Insert"]>;
+        Insert: Partial<Database["public"]["Tables"]["payroll_entries"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["payroll_entries"]["Row"]>;
       };
       push_subscriptions: {
         Row: {

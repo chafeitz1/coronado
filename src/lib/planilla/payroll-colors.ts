@@ -34,29 +34,17 @@ export const PAYROLL_CATEGORY: Record<PayrollCategoryKey, { color: string }> = {
   total: { color: "var(--payroll-total)" },
 };
 
-/** Clave i18n de cada categoría, para las leyendas. El componente
- *  resuelve con `t(lang, strings.planilla[key])`. */
-export const PAYROLL_CATEGORY_LABEL_KEY: Record<
-  PayrollCategoryKey,
-  | "cat_salario"
-  | "cat_bonos"
-  | "cat_decimo"
-  | "cat_vacacion"
-  | "cat_prima"
-  | "cat_descuentos"
-  | "cat_descuento_prestamos"
-  | "cat_prestamos"
-  | "cat_total"
-> = {
-  salario: "cat_salario",
-  bonos: "cat_bonos",
-  decimo: "cat_decimo",
-  vacacion: "cat_vacacion",
-  prima: "cat_prima",
-  descuentos: "cat_descuentos",
-  descuentoPrestamos: "cat_descuento_prestamos",
-  prestamos: "cat_prestamos",
-  total: "cat_total",
+/** Etiqueta en español de cada categoría, para las leyendas. */
+export const PAYROLL_CATEGORY_LABEL: Record<PayrollCategoryKey, string> = {
+  salario: "Salario",
+  bonos: "Bonos",
+  decimo: "Décimo",
+  vacacion: "Vacación",
+  prima: "Prima de antigüedad",
+  descuentos: "Descuentos",
+  descuentoPrestamos: "Descuento de préstamos",
+  prestamos: "Préstamos",
+  total: "Total",
 };
 
 /** Fondo tenue teñido para un badge/ícono de categoría — misma técnica

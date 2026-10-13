@@ -86,6 +86,15 @@ export function formatMonthYear(yearMonth: string, locale: "es" | "en"): string 
   return `${LONG_MONTH_NAMES[locale][month - 1]} ${year}`;
 }
 
+// Monday-start week (matches getMonthGrid's own week start) — the last day
+// (Sunday) of the week containing dateStr, as an ISO date string.
+export function endOfWeek(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  const weekday = (d.getUTCDay() + 6) % 7; // Monday = 0 ... Sunday = 6
+  d.setUTCDate(d.getUTCDate() + (6 - weekday));
+  return d.toISOString().slice(0, 10);
+}
+
 export function advanceDate(dateStr: string, unit: "days" | "weeks" | "months" | "years", value: number): string {
   const date = new Date(`${dateStr}T00:00:00Z`);
   if (unit === "days") date.setUTCDate(date.getUTCDate() + value);

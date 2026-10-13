@@ -9,14 +9,15 @@ import {
   Power,
   PowerOff,
   Wrench,
-  Building2,
   ClipboardList,
   Repeat,
   History,
   CalendarClock,
   Plus,
+  X,
 } from "lucide-react";
 import { SidePanel } from "@/components/ui/side-panel";
+import { VendorAvatar } from "@/components/vendor-panel";
 import { AssetForm } from "@/components/asset-form";
 import { AssetAttachments } from "@/components/asset-attachments";
 import { NewMaintenanceTaskPanel } from "@/components/new-maintenance-task-panel";
@@ -37,7 +38,10 @@ export function AssetPanel({
   asset,
   vendors,
   staff,
+  existingCategories,
+  existingLocations,
   isOwner,
+  currentUserId,
   dict,
   locale,
   onClose,
@@ -46,7 +50,10 @@ export function AssetPanel({
   asset: AssetDetailData | null;
   vendors: { id: string; name: string }[];
   staff: { id: string; full_name: string }[];
+  existingCategories: string[];
+  existingLocations: string[];
   isOwner: boolean;
+  currentUserId: string;
   dict: Dictionary;
   locale: Locale;
   onClose: () => void;
@@ -126,12 +133,14 @@ export function AssetPanel({
   const title = mode === "create" ? dict.assets.newAsset : mode === "edit" ? dict.assetDetail.editAsset : undefined;
 
   return (
-    <SidePanel open onClose={onClose} title={title}>
+    <SidePanel open onClose={onClose} title={title} hideClose={mode === "view"}>
       {mode === "create" && (
         <AssetForm
           action={handleCreate}
           submitLabel={dict.assetForm.submit}
           vendors={vendors}
+          existingCategories={existingCategories}
+          existingLocations={existingLocations}
           dict={dict}
           error={createError ?? undefined}
           onCancel={onClose}
@@ -143,6 +152,8 @@ export function AssetPanel({
           action={handleUpdate}
           submitLabel={dict.assetForm.submitEdit}
           vendors={vendors}
+          existingCategories={existingCategories}
+          existingLocations={existingLocations}
           dict={dict}
           defaultValues={asset}
           error={updateError ?? undefined}
@@ -152,12 +163,12 @@ export function AssetPanel({
 
       {mode === "view" && asset && (
         <div className="space-y-6">
-          {/* pr-8 keeps the edit/delete icons clear of SidePanel's own
-              floating close "X", which sits absolutely at top-right when
-              there's no panel title (view mode never sets one). */}
-          <div className="flex items-center gap-3 pr-8">
+          <div className="flex items-center gap-3">
             <AssetThumb url={asset.attachments[0]?.publicUrl} />
             <div className="min-w-0 flex-1">
+              {/* Edit/delete/close all live in this one row (instead of a
+                  separate floating close "X") so they're guaranteed to sit
+                  on the same line, regardless of the avatar's height. */}
               <div className="flex items-center gap-1.5">
                 <p className="min-w-0 flex-1 truncate text-lg font-semibold text-ink">{asset.name}</p>
                 {isOwner && (
@@ -166,7 +177,7 @@ export function AssetPanel({
                       type="button"
                       onClick={() => setMode("edit")}
                       title={dict.assetDetail.edit}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft hover:text-ink"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
                     >
                       <Pencil className="size-3.5" />
                     </button>
@@ -175,12 +186,20 @@ export function AssetPanel({
                       onClick={handleDelete}
                       disabled={deletePending}
                       title={dict.assetDetail.delete}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-status-overdue-bg hover:text-status-overdue-fg disabled:pointer-events-none disabled:opacity-50"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-status-overdue-bg active:bg-status-overdue-bg hover:text-status-overdue-fg active:text-status-overdue-fg disabled:pointer-events-none disabled:opacity-50"
                     >
                       <Trash2 className="size-3.5" />
                     </button>
                   </>
                 )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  title={dict.assetDetail.close}
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
+                >
+                  <X className="size-3.5" />
+                </button>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 <AssetStatusChip
@@ -223,11 +242,9 @@ export function AssetPanel({
           {asset.preferred_vendor_id && asset.preferredVendorName && (
             <Link
               href={`/directory?vendor=${asset.preferred_vendor_id}`}
-              className="flex items-center gap-3 rounded-lg border border-hairline p-3 text-sm transition-colors hover:bg-surface-hover"
+              className="flex items-center gap-3 rounded-lg border border-hairline p-3 text-sm transition-colors hover:bg-surface-hover active:bg-surface-hover"
             >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
-                <Building2 className="size-4" strokeWidth={2} />
-              </span>
+              <VendorAvatar avatarUrl={asset.preferredVendorAvatarUrl} />
               <div className="min-w-0 flex-1">
                 <p className={mutedText}>{dict.assetDetail.preferredVendorLabel}</p>
                 <p className="font-medium text-ink">{asset.preferredVendorName}</p>
@@ -244,7 +261,12 @@ export function AssetPanel({
 
           <div className="space-y-2">
             <h3 className={sectionHeading}>{dict.assetDetail.photosTitle}</h3>
-            <AssetAttachments assetId={asset.id} attachments={asset.attachments} dict={dict} />
+            <AssetAttachments
+              assetId={asset.id}
+              currentUserId={currentUserId}
+              attachments={asset.attachments}
+              dict={dict}
+            />
           </div>
 
           <div className="space-y-2">
@@ -259,7 +281,7 @@ export function AssetPanel({
                 onClick={() => setShowNewTask(true)}
                 title={dict.assetDetail.newMaintenanceTask}
                 aria-label={dict.assetDetail.newMaintenanceTask}
-                className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft hover:text-ink"
+                className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
               >
                 <Plus className="size-4" strokeWidth={2.5} />
               </button>
@@ -281,7 +303,7 @@ export function AssetPanel({
                         </p>
                         <p className={mutedText}>
                           {wo.due_date
-                            ? format(dict.assetDetail.dueDate, { date: wo.due_date })
+                            ? format(dict.assetDetail.dueDate, { date: formatLongDate(wo.due_date, locale) })
                             : dict.assetDetail.noDueDate}
                           {wo.vendorName && ` · ${wo.vendorName}`}
                         </p>
@@ -313,7 +335,7 @@ export function AssetPanel({
                       <div className="min-w-40 flex-1">
                         <p className="truncate font-medium text-ink">{wo.title}</p>
                         <p className={mutedText}>
-                          {wo.completed_at ? new Date(wo.completed_at).toLocaleDateString(locale) : "—"}
+                          {wo.completed_at ? formatLongDate(wo.completed_at.slice(0, 10), locale) : "—"}
                         </p>
                       </div>
                       <StatusBadge status={wo.status} locale={locale} />
@@ -377,7 +399,7 @@ function AssetStatusChip({
       onClick={onToggle}
       disabled={pending}
       title={isActive ? dict.assetDetail.markInactive : dict.assetDetail.markActive}
-      className={`${baseClass} transition-opacity hover:opacity-80 disabled:opacity-60`}
+      className={`${baseClass} transition-opacity hover:opacity-80 active:opacity-80 disabled:opacity-60`}
     >
       <Icon className="size-3" strokeWidth={2.5} /> {label}
     </button>

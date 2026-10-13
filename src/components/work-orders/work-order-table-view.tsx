@@ -1,37 +1,62 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowUp, ArrowDown, Building2, ClipboardList } from "lucide-react";
+import { ArrowUp, ArrowDown, Building2, ClipboardList, Repeat } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
-import { PriorityBadge } from "@/components/ui/badge";
+import { OverdueBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { card, mutedText } from "@/lib/ui";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { format, type Dictionary } from "@/lib/i18n/dictionaries";
+import { daysUntil, formatLongDate } from "@/lib/dates";
+import { isWorkOrderClosed } from "@/lib/types/database";
 import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
 
-type SortKey = "title" | "status" | "priority" | "assignee" | "due_date" | "asset";
+type SortKey = "title" | "status" | "assignee" | "due_date" | "asset";
 
-const PRIORITY_RANK = { low: 0, medium: 1, high: 2 };
+const UNIT_LABEL_KEYS = {
+  days: "unitDays",
+  weeks: "unitWeeks",
+  months: "unitMonths",
+  years: "unitYears",
+} as const;
+
+function recurrenceLabel(wo: WorkOrderRow, dict: Dictionary) {
+  if (!wo.recurrence_interval_value || !wo.recurrence_interval_unit) return undefined;
+  const unit = dict.workOrderDetail[UNIT_LABEL_KEYS[wo.recurrence_interval_unit]];
+  return format(dict.workOrderDetail.recurrence, { value: wo.recurrence_interval_value, unit });
+}
+
+// "Venció ayer" / "hace {days} días" — how late a task is, not just
+// its due date, so an overdue row reads at a glance without doing the
+// date math yourself.
+function overdueRelativeLabel(daysLate: number, dict: Dictionary) {
+  return daysLate === 1 ? dict.workOrders.overdueYesterday : format(dict.workOrders.overdueDaysAgo, { days: daysLate });
+}
 
 export function WorkOrderTableView({
   orders,
+  today,
   dict,
   locale,
   currentUserId,
-  isOwner,
+  canManageTasks,
   emptyMessage,
+  onSelect,
 }: {
   orders: WorkOrderRow[];
+  today: string;
   dict: Dictionary;
   locale: Locale;
   currentUserId: string;
-  isOwner: boolean;
+  // Owner or staff — any staff member can work any task regardless of who
+  // it's assigned to (matches the work_orders_update RLS policy), not just
+  // its own assignee.
+  canManageTasks: boolean;
   emptyMessage: string;
+  onSelect: (workOrderId: string) => void;
 }) {
-  const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey>("due_date");
   const [asc, setAsc] = useState(true);
 
@@ -41,7 +66,6 @@ export function WorkOrderTableView({
       let cmp = 0;
       if (sortKey === "title") cmp = a.title.localeCompare(b.title);
       else if (sortKey === "status") cmp = a.status.localeCompare(b.status);
-      else if (sortKey === "priority") cmp = PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
       else if (sortKey === "assignee")
         cmp = (a.assignee?.full_name ?? a.vendor?.name ?? "").localeCompare(b.assignee?.full_name ?? b.vendor?.name ?? "");
       else if (sortKey === "asset") cmp = (a.asset?.name ?? "").localeCompare(b.asset?.name ?? "");
@@ -66,7 +90,6 @@ export function WorkOrderTableView({
   const columns: { key: SortKey; label: string }[] = [
     { key: "title", label: dict.workOrderForm.titleLabel },
     { key: "status", label: dict.workOrders.statusHeader },
-    { key: "priority", label: dict.workOrderForm.priorityLabel },
     { key: "assignee", label: dict.workOrderForm.assignLabel },
     { key: "due_date", label: dict.workOrderForm.dueDateLabel },
     { key: "asset", label: dict.workOrderForm.assetLabel },
@@ -82,7 +105,7 @@ export function WorkOrderTableView({
                 <button
                   type="button"
                   onClick={() => toggleSort(col.key)}
-                  className="inline-flex items-center gap-1 hover:text-ink-secondary"
+                  className="inline-flex items-center gap-1 transition-colors hover:text-ink-secondary active:text-ink-secondary"
                 >
                   {col.label}
                   {sortKey === col.key && (asc ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />)}
@@ -93,19 +116,35 @@ export function WorkOrderTableView({
         </thead>
         <tbody className="divide-y divide-hairline">
           {sorted.map((wo) => {
-            const canEdit = isOwner || wo.assigned_to === currentUserId;
+            const canEdit = canManageTasks || wo.assigned_to === currentUserId;
+            const overdue = !isWorkOrderClosed(wo.status) && !!wo.due_date && wo.due_date < today;
             return (
               <tr
                 key={wo.id}
-                onClick={() => router.push(`/work-orders/${wo.id}`)}
-                className="cursor-pointer transition-colors hover:bg-surface-hover"
+                onClick={() => onSelect(wo.id)}
+                className={`cursor-pointer transition-colors ${
+                  overdue
+                    ? "bg-status-overdue-bg/40 hover:bg-status-overdue-bg/60 active:bg-status-overdue-bg/60"
+                    : "hover:bg-surface-hover active:bg-surface-hover"
+                }`}
               >
-                <td className="max-w-64 truncate px-4 py-2.5 font-medium text-ink">{wo.title}</td>
+                <td className="max-w-64 truncate px-4 py-2.5 font-medium text-ink">
+                  <span className="flex items-center gap-1.5">
+                    {wo.recurrence_interval_value && (
+                      <span title={recurrenceLabel(wo, dict)} className="shrink-0">
+                        <Repeat className="size-3.5 text-ink-faint" strokeWidth={2} />
+                      </span>
+                    )}
+                    <span className="truncate">{wo.title}</span>
+                    {overdue && (
+                      <span className="shrink-0">
+                        <OverdueBadge locale={locale} />
+                      </span>
+                    )}
+                  </span>
+                </td>
                 <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
                   <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
-                </td>
-                <td className="px-4 py-2.5">
-                  <PriorityBadge priority={wo.priority} locale={locale} />
                 </td>
                 <td className="px-4 py-2.5">
                   {wo.assignee ? (
@@ -122,7 +161,20 @@ export function WorkOrderTableView({
                     <span className={mutedText}>{dict.workOrders.unassigned}</span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-4 py-2.5">{wo.due_date ?? "—"}</td>
+                <td className="whitespace-nowrap px-4 py-2.5">
+                  {wo.due_date ? (
+                    overdue ? (
+                      <div className="text-status-overdue-fg">
+                        <p className="font-medium">{formatLongDate(wo.due_date, locale)}</p>
+                        <p className="text-xs">{overdueRelativeLabel(-daysUntil(wo.due_date), dict)}</p>
+                      </div>
+                    ) : (
+                      formatLongDate(wo.due_date, locale)
+                    )
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td className="max-w-40 truncate px-4 py-2.5">{wo.asset?.name ?? "—"}</td>
               </tr>
             );

@@ -7,7 +7,9 @@ import { Search, Plus, CalendarClock, Repeat, Wrench } from "lucide-react";
 import { AssetsList } from "@/components/assets-list";
 import { AssetPanel, type AssetPanelMode } from "@/components/asset-panel";
 import { OverdueBadge } from "@/components/ui/badge";
-import { card, input, mutedText, sectionHeading } from "@/lib/ui";
+import { Pill } from "@/components/ui/pill";
+import { ViewSwitcher, type DisplayMode } from "@/components/view-switcher";
+import { buttonPrimary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
@@ -22,6 +24,7 @@ export function AssetsExplorer({
   vendors,
   staff,
   isOwner,
+  currentUserId,
   dict,
   locale,
 }: {
@@ -29,6 +32,7 @@ export function AssetsExplorer({
   vendors: { id: string; name: string }[];
   staff: { id: string; full_name: string }[];
   isOwner: boolean;
+  currentUserId: string;
   dict: Dictionary;
   locale: Locale;
 }) {
@@ -41,8 +45,14 @@ export function AssetsExplorer({
     return assetId ? { mode: "view", assetId } : null;
   });
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeLocation, setActiveLocation] = useState<string | null>(null);
 
   const panelAsset = panelState?.assetId ? (assets.find((a) => a.id === panelState.assetId) ?? null) : null;
+  // Gallery is the default — closest to the previous single-view look —
+  // list is the compact, information-dense alternative.
+  const display = ((searchParams.get("display") as DisplayMode) ?? "gallery") as DisplayMode;
+  const view = display === "list" ? "list" : "gallery";
 
   const q = search.trim().toLowerCase();
   // Search only narrows the browsable list below — the "Upcoming
@@ -63,6 +73,44 @@ export function AssetsExplorer({
     [assets, q]
   );
 
+  // Suggests existing categories/locations in the create/edit form —
+  // nudges people toward reusing "Piscina" instead of also typing
+  // "piscina"/"Pool", same idea as the directory's vendor-trade suggestions.
+  const existingCategories = useMemo(
+    () => [...new Set(assets.map((a) => a.category).filter((c): c is string => !!c))].sort((a, b) => a.localeCompare(b)),
+    [assets]
+  );
+  const existingLocations = useMemo(
+    () => [...new Set(assets.map((a) => a.location).filter((l): l is string => !!l))].sort((a, b) => a.localeCompare(b)),
+    [assets]
+  );
+
+  // Category/location filter chips — same "All / option · count" pattern
+  // as the directory's vendor-trade filter. Counts are computed before
+  // that same filter narrows the list further, so a chip's own count
+  // doesn't shrink to zero the moment you select it.
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const a of searchedAssets) if (a.category) counts.set(a.category, (counts.get(a.category) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [searchedAssets]);
+
+  const categoryFilteredAssets = useMemo(
+    () => (activeCategory ? searchedAssets.filter((a) => a.category === activeCategory) : searchedAssets),
+    [searchedAssets, activeCategory]
+  );
+
+  const locationCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const a of categoryFilteredAssets) if (a.location) counts.set(a.location, (counts.get(a.location) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [categoryFilteredAssets]);
+
+  const filteredAssets = useMemo(
+    () => (activeLocation ? categoryFilteredAssets.filter((a) => a.location === activeLocation) : categoryFilteredAssets),
+    [categoryFilteredAssets, activeLocation]
+  );
+
   const unitLabels: Record<string, string> = useMemo(
     () => ({
       days: dict.assetDetail.unitDays,
@@ -73,7 +121,7 @@ export function AssetsExplorer({
     [dict]
   );
 
-  const assetSummaries: AssetSummary[] = searchedAssets.map((a) => {
+  const assetSummaries: AssetSummary[] = filteredAssets.map((a) => {
     // upcoming is already sorted ascending by due_date (see assets/page.tsx)
     const nextUpcoming = a.upcoming[0] ?? null;
     return {
@@ -120,28 +168,40 @@ export function AssetsExplorer({
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={dict.assets.searchPlaceholder}
-            className={`${input} pl-9`}
-          />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className={pageHeading}>{dict.assets.title}</h1>
+          <p className={mutedText}>{format(dict.assets.subtitleCount, { count: assets.length })}</p>
         </div>
-        {isOwner && (
-          <button
-            type="button"
-            onClick={() => setPanelState({ mode: "create", assetId: null })}
-            aria-label={dict.assets.newAsset}
-            title={dict.assets.newAsset}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-active"
-          >
-            <Plus className="size-5" />
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <ViewSwitcher
+            options={[
+              { key: "gallery", label: dict.assets.viewGallery },
+              { key: "list", label: dict.assets.viewList },
+            ]}
+            defaultMode="gallery"
+          />
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => setPanelState({ mode: "create", assetId: null })}
+              className={buttonPrimary}
+            >
+              <Plus className="size-4" /> {dict.assets.newAsset}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={dict.assets.searchPlaceholder}
+          className={`${input} pl-9`}
+        />
       </div>
 
       {maintenanceDue.length > 0 && (
@@ -158,7 +218,7 @@ export function AssetsExplorer({
                 key={item.workOrderId}
                 type="button"
                 onClick={() => setPanelState({ mode: "view", assetId: item.assetId })}
-                className={`flex flex-col gap-3 p-4 text-left transition-colors hover:bg-surface-hover ${card}`}
+                className={`flex flex-col gap-3 p-4 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover ${card}`}
               >
                 <div className="flex items-center gap-3">
                   <AssetThumb url={item.coverUrl} />
@@ -187,16 +247,53 @@ export function AssetsExplorer({
         </section>
       )}
 
-      <section className="space-y-2">
+      <section className="space-y-3">
         {maintenanceDue.length > 0 && <h2 className={sectionHeading}>{dict.assets.allAssetsTitle}</h2>}
+
+        {categoryCounts.length > 0 && (
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
+            <Pill label={dict.assets.filterAllCategories} active={!activeCategory} onClick={() => setActiveCategory(null)} small noShrink />
+            {categoryCounts.map(([category, count]) => (
+              <Pill
+                key={category}
+                label={`${category} · ${count}`}
+                active={activeCategory === category}
+                onClick={() => {
+                  setActiveCategory(activeCategory === category ? null : category);
+                  setActiveLocation(null);
+                }}
+                small
+                noShrink
+              />
+            ))}
+          </div>
+        )}
+
+        {locationCounts.length > 0 && (
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
+            <Pill label={dict.assets.filterAllLocations} active={!activeLocation} onClick={() => setActiveLocation(null)} small noShrink />
+            {locationCounts.map(([location, count]) => (
+              <Pill
+                key={location}
+                label={`${location} · ${count}`}
+                active={activeLocation === location}
+                onClick={() => setActiveLocation(activeLocation === location ? null : location)}
+                small
+                noShrink
+              />
+            ))}
+          </div>
+        )}
+
         <AssetsList
           assets={assetSummaries}
+          view={view}
           isOwner={isOwner}
           dict={dict}
           locale={locale}
           onSelect={(assetId) => setPanelState({ mode: "view", assetId })}
           onEdit={(assetId) => setPanelState({ mode: "edit", assetId })}
-          emptyMessage={q ? dict.assets.emptySearch : undefined}
+          emptyMessage={q || activeCategory || activeLocation ? dict.assets.emptySearch : undefined}
         />
       </section>
 
@@ -207,7 +304,10 @@ export function AssetsExplorer({
           asset={panelState.mode === "create" ? null : panelAsset}
           vendors={vendors}
           staff={staff}
+          existingCategories={existingCategories}
+          existingLocations={existingLocations}
           isOwner={isOwner}
+          currentUserId={currentUserId}
           dict={dict}
           locale={locale}
           onClose={() => setPanelState(null)}

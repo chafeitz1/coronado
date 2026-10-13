@@ -4,28 +4,56 @@ import { useState } from "react";
 import Link from "next/link";
 import { ClipboardList, Repeat, Building2, ChevronUp, ChevronDown as ChevronDownIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { OverdueBadge } from "@/components/ui/badge";
 import { WorkOrderStatusChip } from "@/components/work-order-status-chip";
 import { EmptyState } from "@/components/ui/empty-state";
-import { listCard, mutedText, sectionHeading } from "@/lib/ui";
+import { listCard, sectionHeading } from "@/lib/ui";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
+import { daysUntil, formatLongDate } from "@/lib/dates";
 import { isWorkOrderClosed } from "@/lib/types/database";
+import type { Locale } from "@/lib/types/database";
 import type { WorkOrderRow } from "./types";
+
+const UNIT_LABEL_KEYS = {
+  days: "unitDays",
+  weeks: "unitWeeks",
+  months: "unitMonths",
+  years: "unitYears",
+} as const;
+
+function recurrenceLabel(wo: WorkOrderRow, dict: Dictionary) {
+  if (!wo.recurrence_interval_value || !wo.recurrence_interval_unit) return undefined;
+  const unit = dict.workOrderDetail[UNIT_LABEL_KEYS[wo.recurrence_interval_unit]];
+  return format(dict.workOrderDetail.recurrence, { value: wo.recurrence_interval_value, unit });
+}
+
+// "Venció ayer" / "hace {days} días" — how late a task is, not just
+// its due date, so an overdue row reads at a glance without doing the
+// date math yourself.
+function overdueRelativeLabel(daysLate: number, dict: Dictionary) {
+  return daysLate === 1 ? dict.workOrders.overdueYesterday : format(dict.workOrders.overdueDaysAgo, { days: daysLate });
+}
 
 export function WorkOrderListView({
   title,
   orders,
   today,
   dict,
+  locale,
   currentUserId,
-  isOwner,
+  canManageTasks,
   emptyMessage,
 }: {
   title?: string;
   orders: WorkOrderRow[];
   today: string;
   dict: Dictionary;
+  locale: Locale;
   currentUserId: string;
-  isOwner: boolean;
+  // Owner or staff — any staff member can work any task regardless of who
+  // it's assigned to (matches the work_orders_update RLS policy), not just
+  // its own assignee.
+  canManageTasks: boolean;
   emptyMessage?: string;
 }) {
   const [open, setOpen] = useState(true);
@@ -50,52 +78,66 @@ export function WorkOrderListView({
         <ul className={listCard}>
           {orders.map((wo) => {
             const overdue = !isWorkOrderClosed(wo.status) && !!wo.due_date && wo.due_date < today;
-            const canEdit = isOwner || wo.assigned_to === currentUserId;
+            const canEdit = canManageTasks || wo.assigned_to === currentUserId;
+            const isRecurring = !!wo.recurrence_interval_value;
+
+            // Overdue trumps the usual subtitle — how late it is matters
+            // more right now than who asked for it or the bare due date.
+            // Otherwise: a recurring task is always requested by the
+            // owner (not worth the space, show its due date instead); a
+            // one-off is more useful shown by who asked for it.
+            const subtitleParts = overdue
+              ? [
+                  wo.due_date &&
+                    `${format(dict.workOrders.dueDate, { date: formatLongDate(wo.due_date, locale) })} · ${overdueRelativeLabel(-daysUntil(wo.due_date), dict)}`,
+                  wo.asset?.name,
+                ].filter(Boolean)
+              : [
+                  isRecurring
+                    ? wo.due_date && format(dict.workOrders.dueDate, { date: formatLongDate(wo.due_date, locale) })
+                    : wo.creator && format(dict.workOrders.requestedBy, { name: wo.creator.full_name }),
+                  wo.asset?.name,
+                ].filter(Boolean);
 
             return (
               <li key={wo.id}>
                 <Link
                   href={`/work-orders/${wo.id}`}
-                  className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-hover"
+                  className="flex flex-col gap-1.5 px-4 py-3.5 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                 >
-                  <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
-                    <ClipboardList className="size-4" strokeWidth={2} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-1.5 font-medium text-ink">
+                  <div className="flex items-start gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+                      <ClipboardList className="size-4" strokeWidth={2} />
+                    </span>
+                    <p className="flex min-w-0 flex-1 items-center gap-1.5 font-medium text-ink">
                       {wo.recurrence_interval_value && (
-                        <Repeat className="size-3.5 shrink-0 text-ink-faint" strokeWidth={2} />
+                        <span title={recurrenceLabel(wo, dict)} className="shrink-0">
+                          <Repeat className="size-3.5 text-ink-faint" strokeWidth={2} />
+                        </span>
                       )}
                       <span className="truncate">{wo.title}</span>
                     </p>
-                    <p className={`${mutedText} truncate`}>
-                      {wo.asset?.name || wo.due_date ? (
-                        <>
-                          {wo.asset?.name}
-                          {wo.asset?.name && wo.due_date && " · "}
-                          {wo.due_date && (
-                            <span className={overdue ? "font-medium text-status-overdue-fg" : undefined}>
-                              {format(dict.workOrders.dueDate, { date: wo.due_date })}
-                            </span>
-                          )}
-                        </>
+                    <div className="shrink-0">
+                      {wo.assignee ? (
+                        <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />
                       ) : (
-                        dict.workOrders.unassigned
+                        wo.vendor && (
+                          <span className="flex items-center gap-1 text-xs text-ink-muted">
+                            <Building2 className="size-3.5 shrink-0" strokeWidth={2} />
+                            <span className="max-w-24 truncate">{wo.vendor.name}</span>
+                          </span>
+                        )
                       )}
-                    </p>
+                    </div>
                   </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1.5">
-                    {wo.assignee ? (
-                      <Avatar fullName={wo.assignee.full_name} avatarUrl={wo.assignee.avatar_url} />
-                    ) : (
-                      wo.vendor && (
-                        <span className="flex items-center gap-1 text-xs text-ink-muted">
-                          <Building2 className="size-3.5 shrink-0" strokeWidth={2} />
-                          <span className="max-w-24 truncate">{wo.vendor.name}</span>
-                        </span>
-                      )
-                    )}
+                  {subtitleParts.length > 0 && (
+                    <p className={`truncate pl-12 text-sm ${overdue ? "text-status-overdue-fg" : "text-ink-muted"}`}>
+                      {subtitleParts.join(" · ")}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between gap-1.5 pl-12" onClick={(e) => e.preventDefault()}>
                     <WorkOrderStatusChip workOrderId={wo.id} status={wo.status} canEdit={canEdit} dict={dict} />
+                    {overdue && <OverdueBadge locale={locale} />}
                   </div>
                 </Link>
               </li>

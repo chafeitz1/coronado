@@ -1,0 +1,97 @@
+"use client";
+
+import { useTransition } from "react";
+import { Lock, RefreshCw, CheckCircle2, SkipForward } from "lucide-react";
+import { updateWorkOrderStatus } from "@/app/actions/work-orders";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
+import type { WorkOrderStatus } from "@/lib/types/database";
+
+const ICONS: Record<WorkOrderStatus, typeof Lock> = {
+  open: Lock,
+  in_progress: RefreshCw,
+  done: CheckCircle2,
+  skipped: SkipForward,
+};
+
+const ACTIVE_STYLES: Record<WorkOrderStatus, string> = {
+  open: "bg-status-open-bg text-status-open-fg",
+  in_progress: "bg-status-progress-bg text-status-progress-fg",
+  done: "bg-status-done-bg text-status-done-fg",
+  skipped: "bg-canvas-soft text-ink-muted",
+};
+
+// Hovering an inactive button previews the color it would switch to, so
+// the row reads as clickable instead of a static status legend.
+const HOVER_STYLES: Record<WorkOrderStatus, string> = {
+  open: "hover:bg-status-open-bg active:bg-status-open-bg hover:text-status-open-fg active:text-status-open-fg",
+  in_progress:
+    "hover:bg-status-progress-bg active:bg-status-progress-bg hover:text-status-progress-fg active:text-status-progress-fg",
+  done: "hover:bg-status-done-bg active:bg-status-done-bg hover:text-status-done-fg active:text-status-done-fg",
+  skipped: "hover:bg-surface-hover active:bg-surface-hover hover:text-ink active:text-ink",
+};
+
+const ORDER: WorkOrderStatus[] = ["open", "in_progress", "done", "skipped"];
+
+// A persistent 4-button status picker for the work order detail page —
+// same statuses/icons as WorkOrderStatusChip's dropdown, but always
+// visible instead of tucked behind a click, since the detail page has
+// the room for it.
+export function WorkOrderStatusButtons({
+  workOrderId,
+  status,
+  hasEvidencePhoto,
+  onMutate,
+  dict,
+}: {
+  workOrderId: string;
+  status: WorkOrderStatus;
+  // Nudges whoever's completing the task to upload a photo first, without
+  // blocking them outright — some tasks (a vendor phone call, say) have no
+  // photo to show for it, so this stays a confirm, not a hard requirement.
+  hasEvidencePhoto: boolean;
+  // Set when rendered inside WorkOrderPanel's side panel — see
+  // WorkOrderAttachments' onMutate comment. Without this, a status change
+  // made from the panel updates the database but the panel itself (plain
+  // client state) never reflects it.
+  onMutate?: () => void;
+  dict: Dictionary;
+}) {
+  const [pending, startTransition] = useTransition();
+
+  function handleSelect(s: WorkOrderStatus) {
+    if (s === status) return;
+    if (s === "done" && !hasEvidencePhoto && !window.confirm(dict.workOrderDetail.confirmNoPhoto)) return;
+    startTransition(async () => {
+      await updateWorkOrderStatus(workOrderId, s);
+      onMutate?.();
+    });
+  }
+
+  return (
+    // One row of 4 big tappable boxes (icon stacked over label) — same
+    // treatment on desktop as mobile now, rather than shrinking back down
+    // to a compact pill row above sm.
+    <div className="grid grid-cols-4 gap-1.5">
+      {ORDER.map((s) => {
+        const Icon = ICONS[s];
+        const active = s === status;
+        return (
+          <button
+            key={s}
+            type="button"
+            disabled={pending}
+            onClick={() => handleSelect(s)}
+            className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
+              active
+                ? `${ACTIVE_STYLES[s]} hover:brightness-95 active:brightness-90`
+                : `bg-canvas-soft text-ink-muted ${HOVER_STYLES[s]}`
+            }`}
+          >
+            <Icon className="size-4" strokeWidth={2.5} />
+            {dict.statuses[s]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

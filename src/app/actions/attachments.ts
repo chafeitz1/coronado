@@ -3,55 +3,23 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { saveAttachmentRecord } from "@/lib/attachments-server";
 
 export type AttachmentFormState = { error?: string; success?: boolean } | undefined;
 
-const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-export async function uploadAssetAttachment(
-  assetId: string,
-  _state: AttachmentFormState,
-  formData: FormData
-): Promise<AttachmentFormState> {
+// The file itself is already sitting in Storage by the time this runs — see
+// components/asset-attachments.tsx, which uploads directly from the browser
+// (lib/attachments-client.ts) before calling this to save the DB row. Keeps
+// a big file's bytes off this Server Action's request body, which Vercel
+// caps well under what a large phone photo needs.
+export async function saveAssetAttachment(assetId: string, path: string, fileName: string): Promise<AttachmentFormState> {
   const profile = await requireUser();
-  const dict = getDictionary(profile.locale);
-
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: dict.attachments.errorMissing };
-  }
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return { error: dict.attachments.errorType };
-  }
-  if (file.size > MAX_ATTACHMENT_BYTES) {
-    return { error: dict.attachments.errorSize };
-  }
-
   const supabase = await createClient();
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
-  const path = `${assetId}/${profile.id}/${Date.now()}-${safeName}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from("attachments")
-    .upload(path, file, { contentType: file.type });
-
-  if (uploadError) {
-    return { error: dict.attachments.errorUpload };
-  }
-
-  const { error: insertError } = await supabase.from("attachments").insert({
-    asset_id: assetId,
-    work_order_id: null,
-    storage_path: path,
-    file_name: file.name,
-    uploaded_by: profile.id,
-  });
-
-  if (insertError) {
-    await supabase.storage.from("attachments").remove([path]);
-    return { error: dict.attachments.errorSave };
+  try {
+    await saveAttachmentRecord(supabase, { assetId }, profile.id, path, fileName);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "No se pudo guardar la foto." };
   }
 
   revalidatePath("/assets", "layout");

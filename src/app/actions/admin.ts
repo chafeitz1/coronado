@@ -28,6 +28,7 @@ export async function inviteMember(
   if (sendNow) {
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { full_name: fullName, role },
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/auth/confirm`,
     });
     if (error) return { ok: false, error: error.message };
     userId = data.user?.id;
@@ -65,7 +66,11 @@ export async function sendInvite(userId: string): Promise<{ error?: string }> {
   const email = authUser?.user?.email;
   if (!profile || !email) return { error: "No se encontró la cuenta." };
 
-  const { data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+    options: { redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/auth/confirm` },
+  });
   if (error) return { error: error.message };
 
   await sendInviteEmail(email, profile.full_name, data.properties.action_link);

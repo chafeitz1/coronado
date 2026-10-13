@@ -1,11 +1,25 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ClipboardList, Wrench, BookUser, DollarSign, Search, ChevronRight, LogOut } from "lucide-react";
+import {
+  Home,
+  ClipboardList,
+  ShoppingCart,
+  Wrench,
+  BookUser,
+  DollarSign,
+  BookOpen,
+  Megaphone,
+  Search,
+  ChevronRight,
+  LogOut,
+  MoreHorizontal,
+} from "lucide-react";
 import { logout } from "@/app/actions/auth";
-import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { CommandPalette, OPEN_COMMAND_PALETTE_EVENT } from "@/components/command-palette";
+import { Logo } from "@/components/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/types/database";
@@ -13,9 +27,12 @@ import type { Locale } from "@/lib/types/database";
 const ICONS = {
   home: Home,
   tasks: ClipboardList,
+  purchases: ShoppingCart,
   assets: Wrench,
   directory: BookUser,
   finance: DollarSign,
+  manuals: BookOpen,
+  announcements: Megaphone,
 };
 
 export type SidebarLink = {
@@ -40,27 +57,40 @@ export function SidebarClient({
 }) {
   const pathname = usePathname();
   const dict = getDictionary(locale);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+
+  // The bottom tab bar only has room for a handful of icons before it feels
+  // cramped — these are lower-frequency than the other four, so they move
+  // into a "More" sheet instead of sitting in the bar itself. Add new
+  // lower-frequency sections here as they show up (e.g. important dates).
+  const OVERFLOW_ICONS = ["directory", "finance", "manuals", "announcements"] as const;
+  const primaryLinks = workLinks.filter((link) => !(OVERFLOW_ICONS as readonly string[]).includes(link.icon));
+  const overflowLinks = workLinks.filter((link) => (OVERFLOW_ICONS as readonly string[]).includes(link.icon));
+  const overflowActive = overflowLinks.some((link) => isActive(link.href));
 
   return (
     <>
       <CommandPalette locale={locale} />
 
-      {/* Mobile top bar: logo left, search + profile right */}
-      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hairline bg-canvas px-4 py-3 md:hidden">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">
-            C
-          </span>
-          <span className="font-semibold tracking-tight text-ink">{dict.sidebar.appName}</span>
+      {/* Mobile top bar: logo left, search + profile right. Padded for
+          safe-area-inset-top explicitly rather than relying on
+          apple-mobile-web-app-status-bar-style to reserve the space itself
+          — that meta tag's behavior varies by how the app was added to the
+          home screen, whereas env(safe-area-inset-top) is 0 whenever the
+          browser already reserves the space, so this is a no-op in that
+          case and a real fix when it doesn't. */}
+      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hairline bg-canvas px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
+        <Link href="/" className="flex items-center">
+          <Logo className="h-14 w-auto" />
         </Link>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={openSearch}
             aria-label={dict.sidebar.search}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-hover active:bg-surface-hover"
           >
             <Search className="size-5" />
           </button>
@@ -70,19 +100,80 @@ export function SidebarClient({
         </div>
       </div>
 
-      {/* Mobile bottom tab bar */}
+      {/* Overflow sheet for lower-frequency sections — backdrop closes it,
+          sits above the bottom nav (which is z-20). Tiles rather than list
+          rows since this is meant to grow (manuals, important dates, ...):
+          a grid reads better than a long list once there are more than a
+          couple of entries. */}
+      {moreOpen && (
+        <>
+          <button
+            type="button"
+            aria-label={dict.sidebar.more}
+            onClick={() => setMoreOpen(false)}
+            className="fixed inset-0 z-30 bg-black/20 md:hidden"
+          />
+          <div
+            className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 grid grid-cols-3 gap-2 rounded-2xl border border-hairline bg-surface p-3 shadow-2xl md:hidden"
+            role="menu"
+          >
+            {overflowLinks.map((link) => {
+              const Icon = ICONS[link.icon];
+              const active = isActive(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  role="menuitem"
+                  onClick={() => setMoreOpen(false)}
+                  className={`relative flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center text-xs font-medium transition-colors ${
+                    active
+                      ? "border-primary/30 bg-primary-soft text-primary"
+                      : "border-hairline text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
+                  }`}
+                >
+                  <Icon className="size-5 shrink-0" strokeWidth={2} />
+                  {link.label}
+                  {!!link.badge && (
+                    <span className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-status-overdue-fg text-[10px] font-semibold text-white">
+                      {link.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Mobile bottom tab bar. Standalone (installed) mode has no browser
+          chrome to keep content off the rounded corners/home indicator, so
+          all three safe-area insets are padded explicitly — bottom for the
+          home indicator, left/right so the outer icons aren't cut off by
+          the screen's rounded corners.
+
+          `[transform:translateZ(0)]` forces this onto its own compositing
+          layer — without it, iOS Safari can let a `fixed` element scroll
+          along with the page during momentum/inertial scrolling before it
+          snaps back, instead of staying pinned to the viewport the whole
+          time. That alone fixed the worst of it on long lists (Directory,
+          Tasks), but Carlos still saw it detach on Profile — paired with
+          `will-change: transform` here, which gets iOS to allocate and keep
+          that compositing layer up front instead of promoting/demoting it
+          opportunistically mid-scroll, which is where the flicker was
+          apparently still slipping through. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-hairline bg-canvas pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-hairline bg-canvas pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] [transform:translateZ(0)] will-change-transform md:hidden"
         aria-label={dict.sidebar.workSection}
       >
-        {workLinks.map((link) => {
+        {primaryLinks.map((link) => {
           const Icon = ICONS[link.icon];
           const active = isActive(link.href);
           return (
             <Link
               key={link.href}
               href={link.href}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-[color,opacity] active:opacity-60 ${
                 active ? "text-primary" : "text-ink-muted"
               }`}
             >
@@ -96,16 +187,26 @@ export function SidebarClient({
             </Link>
           );
         })}
+        {overflowLinks.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setMoreOpen((open) => !open)}
+            aria-expanded={moreOpen}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-[color,opacity] active:opacity-60 ${
+              overflowActive || moreOpen ? "text-primary" : "text-ink-muted"
+            }`}
+          >
+            <MoreHorizontal className="size-5" strokeWidth={2} />
+            {dict.sidebar.more}
+          </button>
+        )}
       </nav>
 
       {/* Desktop sidebar */}
       <aside className="hidden shrink-0 flex-col border-r border-hairline bg-canvas md:sticky md:top-0 md:flex md:h-screen md:w-64">
-        <div className="flex items-center px-4 py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-on-primary">
-              C
-            </span>
-            <span className="font-semibold tracking-tight text-ink">{dict.sidebar.appName}</span>
+        <div className="flex items-center justify-center px-4 py-3">
+          <Link href="/" className="flex items-center">
+            <Logo className="h-24 w-auto" />
           </Link>
         </div>
 
@@ -113,7 +214,7 @@ export function SidebarClient({
           <button
             type="button"
             onClick={openSearch}
-            className="flex w-full items-center gap-2 rounded-lg border border-hairline bg-canvas-soft px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-hover"
+            className="flex w-full items-center gap-2 rounded-lg border border-hairline bg-canvas-soft px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-hover active:bg-surface-hover"
           >
             <Search className="size-4" />
             <span className="flex-1 text-left">{dict.sidebar.searchPlaceholder}</span>
@@ -126,10 +227,7 @@ export function SidebarClient({
         </nav>
 
         <div className="border-t border-hairline p-3">
-          <div className="flex items-center justify-between px-1 pb-2">
-            <PushSubscribeButton locale={locale} />
-          </div>
-          <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-hover">
+          <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-hover active:bg-surface-hover">
             <Link href="/profile" className="flex min-w-0 flex-1 items-center gap-2.5">
               <Avatar fullName={profile.fullName} avatarUrl={profile.avatarUrl} />
               <div className="min-w-0 flex-1">
@@ -141,7 +239,7 @@ export function SidebarClient({
               <button
                 type="submit"
                 aria-label={dict.sidebar.logout}
-                className="rounded-md p-1.5 text-ink-faint hover:bg-canvas-soft hover:text-ink"
+                className="rounded-md p-1.5 text-ink-faint hover:bg-canvas-soft active:bg-canvas-soft hover:text-ink active:text-ink"
               >
                 <LogOut className="size-4" />
               </button>
@@ -176,17 +274,13 @@ function SidebarSection({
                 className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors ${
                   active
                     ? "bg-primary-soft text-primary"
-                    : "text-ink-secondary hover:bg-surface-hover hover:text-ink"
+                    : "text-ink-secondary hover:bg-surface-hover active:bg-surface-hover hover:text-ink"
                 }`}
               >
                 <Icon className="size-4 shrink-0" strokeWidth={2} />
                 <span className="flex-1 truncate">{link.label}</span>
                 {!!link.badge && (
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
-                      active ? "bg-primary text-on-primary" : "bg-canvas-soft text-ink-muted"
-                    }`}
-                  >
+                  <span className="rounded-full bg-status-overdue-fg px-1.5 py-0.5 text-xs font-semibold text-white">
                     {link.badge}
                   </span>
                 )}

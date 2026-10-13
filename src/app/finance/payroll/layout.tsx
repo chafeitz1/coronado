@@ -33,7 +33,7 @@ export default async function PayrollLayout({ children }: { children: React.Reac
           <li key={person.id}>
             <Link
               href={`/finance/payroll/${person.id}`}
-              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-hover"
+              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
             >
               <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} size="sm" />
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{person.full_name}</span>

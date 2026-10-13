@@ -1,8 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DirectoryExplorer } from "@/components/directory-explorer";
-import { mutedText, pageHeading } from "@/lib/ui";
-import { getDictionary, format } from "@/lib/i18n/dictionaries";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { NotificationEventType } from "@/lib/types/database";
 
 export default async function DirectoryPage() {
@@ -73,13 +72,6 @@ export default async function DirectoryPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className={pageHeading}>{dict.directory.title}</h1>
-        <p className={mutedText}>
-          {format(dict.directory.subtitleCount, { count: vendors.length + (people?.length ?? 0) })}
-        </p>
-      </div>
-
       <DirectoryExplorer
         vendors={vendors}
         people={people ?? []}

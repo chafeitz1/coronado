@@ -24,7 +24,7 @@ function LanguageOption({ value, label, current }: { value: Locale; label: strin
         className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
           active
             ? "border-primary bg-primary-soft text-primary"
-            : "border-hairline bg-surface text-ink-secondary hover:bg-surface-hover"
+            : "border-hairline bg-surface text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
         }`}
       >
         {label}

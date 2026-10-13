@@ -1,12 +1,13 @@
-import Link from "next/link";
-import { Plus } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { WorkOrdersShell } from "@/components/work-orders-shell";
-import { WorkOrdersExplorer } from "@/components/work-orders/work-orders-explorer";
+import { WorkOrdersFiltersProvider } from "@/components/work-orders/work-orders-filters-context";
+import { WorkOrdersControls } from "@/components/work-orders/work-orders-controls";
+import { WorkOrdersListBody } from "@/components/work-orders/work-orders-list-body";
+import { NewTaskButton } from "@/components/work-orders/new-task-button";
 import { ViewSwitcher, type DisplayMode } from "@/components/view-switcher";
 import type { WorkOrderRow } from "@/components/work-orders/types";
-import { buttonPrimary, pageHeading } from "@/lib/ui";
+import { pageHeading } from "@/lib/ui";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 function single<T>(value: T | T[] | null): T | null {
@@ -22,7 +23,7 @@ export default async function WorkOrdersLayout({ children }: { children: React.R
   const { data: workOrders } = await supabase
     .from("work_orders")
     .select(
-      "id, title, status, priority, due_date, completed_at, recurrence_interval_value, assigned_to, assignee:profiles!work_orders_assigned_to_fkey(full_name, avatar_url), vendor:vendors(name), asset:assets(name, location)"
+      "id, title, status, due_date, completed_at, recurrence_interval_value, recurrence_interval_unit, assigned_to, assignee:profiles!work_orders_assigned_to_fkey(full_name, avatar_url), creator:profiles!work_orders_created_by_fkey(full_name), vendor:vendors(name), asset:assets(name, location)"
     )
     .order("created_at", { ascending: false });
 
@@ -30,12 +31,13 @@ export default async function WorkOrdersLayout({ children }: { children: React.R
     id: wo.id,
     title: wo.title,
     status: wo.status,
-    priority: wo.priority,
     due_date: wo.due_date,
     completed_at: wo.completed_at,
     recurrence_interval_value: wo.recurrence_interval_value,
+    recurrence_interval_unit: wo.recurrence_interval_unit,
     assigned_to: wo.assigned_to,
     assignee: single(wo.assignee),
+    creator: single(wo.creator),
     vendor: single(wo.vendor),
     asset: single(wo.asset),
   }));
@@ -46,33 +48,39 @@ export default async function WorkOrdersLayout({ children }: { children: React.R
     { key: "list", label: dict.workOrders.viewListDisplay },
     { key: "table", label: dict.workOrders.viewTable },
     { key: "calendar", label: dict.workOrders.viewCalendar },
+    { key: "board", label: dict.workOrders.viewBoard },
   ];
 
-  const listPane = (
+  const header = (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className={pageHeading}>{dict.workOrders.title}</h1>
+        <h1 className={pageHeading}>{dict.workOrders.title}</h1>
+        <div className="flex items-center gap-3">
           <ViewSwitcher options={viewOptions} />
+          <NewTaskButton dict={dict} isOwner={profile.role === "owner"} />
         </div>
-        <Link href="/work-orders/new" className={buttonPrimary}>
-          <Plus className="size-4" /> {dict.workOrders.newTask}
-        </Link>
       </div>
-      <WorkOrdersExplorer
-        orders={orders}
-        today={today}
-        dict={dict}
-        locale={profile.locale}
-        currentUserId={profile.id}
-        isOwner={profile.role === "owner"}
-      />
+      <WorkOrdersControls orders={orders} dict={dict} />
     </div>
   );
 
+  const listPane = (
+    <WorkOrdersListBody
+      orders={orders}
+      today={today}
+      dict={dict}
+      locale={profile.locale}
+      currentUserId={profile.id}
+      isOwner={profile.role === "owner"}
+      canManageTasks={profile.role === "owner" || profile.role === "staff"}
+    />
+  );
+
   return (
-    <WorkOrdersShell listPane={listPane} dict={dict}>
-      {children}
-    </WorkOrdersShell>
+    <WorkOrdersFiltersProvider>
+      <WorkOrdersShell header={header} listPane={listPane} dict={dict}>
+        {children}
+      </WorkOrdersShell>
+    </WorkOrdersFiltersProvider>
   );
 }

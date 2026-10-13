@@ -9,16 +9,32 @@ export async function Sidebar() {
 
   const dict = getDictionary(profile.locale);
   const supabase = await createClient();
-  const { count: openCount } = await supabase
+  const today = new Date().toISOString().slice(0, 10);
+  // Same "overdue" definition as everywhere else: still open (not done or
+  // skipped) and past its due date.
+  const { count: overdueCount } = await supabase
     .from("work_orders")
     .select("id", { count: "exact", head: true })
-    .neq("status", "done");
+    .not("status", "in", "(done,skipped)")
+    .lt("due_date", today);
+
+  // Urgent purchases still pending — same "needs attention now" signal as
+  // the tasks badge above, scoped to the urgent list only (groceries aren't
+  // time-sensitive enough to warrant a badge).
+  const { count: urgentPendingCount } = await supabase
+    .from("purchase_items")
+    .select("id", { count: "exact", head: true })
+    .eq("list_type", "urgent")
+    .eq("status", "pending");
 
   const workLinks: SidebarLink[] = [
     { href: "/", label: dict.sidebar.home, icon: "home" },
-    { href: "/work-orders", label: dict.sidebar.tasks, icon: "tasks", badge: openCount ?? 0 },
+    { href: "/work-orders", label: dict.sidebar.tasks, icon: "tasks", badge: overdueCount ?? 0 },
+    { href: "/purchases", label: dict.sidebar.purchases, icon: "purchases", badge: urgentPendingCount ?? 0 },
     { href: "/assets", label: dict.sidebar.assets, icon: "assets" },
     { href: "/directory", label: dict.sidebar.directory, icon: "directory" },
+    { href: "/manuals", label: dict.sidebar.manuals, icon: "manuals" },
+    { href: "/announcements", label: dict.sidebar.announcements, icon: "announcements" },
   ];
 
   if (profile.role === "owner") {

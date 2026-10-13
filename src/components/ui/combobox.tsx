@@ -71,7 +71,7 @@ export function Combobox({
               setQuery("");
             }}
             aria-label="Clear"
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-faint transition-colors hover:text-ink active:text-ink"
           >
             <X className="size-3.5" />
           </button>
@@ -92,7 +92,7 @@ export function Combobox({
                   setQuery("");
                   setOpen(false);
                 }}
-                className={`flex w-full items-center px-3 py-2 text-left text-sm hover:bg-surface-hover ${
+                className={`flex w-full items-center px-3 py-2 text-left text-sm hover:bg-surface-hover active:bg-surface-hover ${
                   opt.value === value ? "font-medium text-primary" : "text-ink-secondary"
                 }`}
               >

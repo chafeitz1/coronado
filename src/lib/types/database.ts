@@ -16,13 +16,22 @@ export type AssetStatus = "active" | "inactive";
 export type WorkOrderPriority = "low" | "medium" | "high";
 export type WorkOrderSource = "manual" | "pm";
 export type IntervalUnit = "days" | "weeks" | "months" | "years";
+export type WorkOrderActivityEventType = "status_changed" | "edited";
 export type NotificationEventType =
   | "task_assigned"
   | "status_changed"
   | "due_soon"
   | "overdue"
-  | "note_flagged";
+  | "note_flagged"
+  | "purchase_urgent"
+  | "daily_digest"
+  | "maintenance_reminder"
+  | "announcement_created"
+  | "announcement_happened";
 export type NotificationChannel = "push" | "email";
+export type PurchaseItemListType = "groceries" | "urgent";
+export type PurchaseItemStatus = "pending" | "purchased";
+export type AnnouncementStatus = "pending" | "happened";
 // Free-form tags the owner types in, not a fixed list — the exact words
 // people already recognize a vendor by ("Bomba Agua Tanque Reserva",
 // "Mulita", "Vecino"...) matter more here than a tidy fixed taxonomy.
@@ -138,6 +147,8 @@ export interface Database {
           source: WorkOrderSource;
           recurrence_interval_value: number | null;
           recurrence_interval_unit: IntervalUnit | null;
+          series_id: string | null;
+          maintenance_reminder_sent_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -159,6 +170,18 @@ export interface Database {
         Insert: Omit<Database["public"]["Tables"]["work_order_notes"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["work_order_notes"]["Insert"]>;
       };
+      work_order_activity: {
+        Row: {
+          id: string;
+          work_order_id: string;
+          actor_id: string;
+          event_type: WorkOrderActivityEventType;
+          meta: Record<string, unknown> | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["work_order_activity"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["work_order_activity"]["Insert"]>;
+      };
       attachments: {
         Row: {
           id: string;
@@ -171,6 +194,47 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["attachments"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["attachments"]["Insert"]>;
+      };
+      purchase_items: {
+        Row: {
+          id: string;
+          title: string;
+          quantity: string | null;
+          notes: string | null;
+          list_type: PurchaseItemListType;
+          status: PurchaseItemStatus;
+          requested_by: string;
+          purchased_by: string | null;
+          purchased_at: string | null;
+          image_path: string | null;
+          ordered_at: string | null;
+          ordered_by: string | null;
+          created_at: string;
+        };
+        Insert: Omit<
+          Database["public"]["Tables"]["purchase_items"]["Row"],
+          "id" | "status" | "purchased_by" | "purchased_at" | "ordered_at" | "ordered_by" | "created_at"
+        >;
+        Update: Partial<Database["public"]["Tables"]["purchase_items"]["Insert"]>;
+      };
+      announcements: {
+        Row: {
+          id: string;
+          title: string;
+          notes: string | null;
+          start_date: string;
+          end_date: string | null;
+          status: AnnouncementStatus;
+          created_by: string;
+          happened_by: string | null;
+          happened_at: string | null;
+          created_at: string;
+        };
+        Insert: Omit<
+          Database["public"]["Tables"]["announcements"]["Row"],
+          "id" | "status" | "happened_by" | "happened_at" | "created_at"
+        >;
+        Update: Partial<Database["public"]["Tables"]["announcements"]["Insert"]>;
       };
       notification_preferences: {
         Row: {

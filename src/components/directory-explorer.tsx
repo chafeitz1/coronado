@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Building2, Users, User, Phone, Mail, Siren, ChevronRight, Plus, UserPlus, Calendar } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pill } from "@/components/ui/pill";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Avatar } from "@/components/ui/avatar";
 import { VendorPanel, VendorAvatar, type VendorPanelMode } from "@/components/vendor-panel";
@@ -12,7 +13,7 @@ import { InvitePanel } from "@/components/invite-panel";
 import { telHref, whatsAppHref } from "@/lib/phone";
 import { format, type Dictionary } from "@/lib/i18n/dictionaries";
 import { formatLongDate } from "@/lib/dates";
-import { buttonSecondary, card, input, mutedText, sectionHeading } from "@/lib/ui";
+import { buttonPrimary, buttonSecondary, card, input, mutedText, pageHeading, sectionHeading } from "@/lib/ui";
 import type { VendorTrade, UserRole, NotificationEventType, Locale } from "@/lib/types/database";
 
 export type VendorContact = {
@@ -164,16 +165,10 @@ export function DirectoryExplorer({
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={dict.directory.searchPlaceholder}
-            className={`${input} pl-9`}
-          />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className={pageHeading}>{dict.directory.title}</h1>
+          <p className={mutedText}>{format(dict.directory.subtitleCount, { count: vendors.length + people.length })}</p>
         </div>
         {isOwner && (
           <AddMenu
@@ -182,6 +177,17 @@ export function DirectoryExplorer({
             onAddPerson={() => setInviteOpen(true)}
           />
         )}
+      </div>
+
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={dict.directory.searchPlaceholder}
+          className={`${input} pl-9`}
+        />
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -212,7 +218,7 @@ export function DirectoryExplorer({
               className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
                 emergencyOnly
                   ? "border-status-overdue-fg bg-status-overdue-fg text-white"
-                  : "border-status-overdue-fg/40 bg-status-overdue-bg text-status-overdue-fg hover:bg-status-overdue-fg/15"
+                  : "border-status-overdue-fg/40 bg-status-overdue-bg text-status-overdue-fg hover:bg-status-overdue-fg/15 active:bg-status-overdue-fg/15"
               }`}
             >
               <Siren className="size-3.5" /> {dict.directory.filterEmergency} · {emergencyCount}
@@ -367,13 +373,8 @@ function AddMenu({
 
   return (
     <div ref={ref} className="relative shrink-0">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label={dict.directory.addButton}
-        className="flex size-10 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:bg-primary-active"
-      >
-        <Plus className="size-5" />
+      <button type="button" onClick={() => setOpen((o) => !o)} className={buttonPrimary}>
+        <Plus className="size-4" /> {dict.directory.addButton}
       </button>
       {open && (
         <div className="absolute right-0 top-full z-20 mt-1 min-w-48 overflow-hidden rounded-lg border border-hairline bg-surface p-1 shadow-[var(--shadow-soft)]">
@@ -383,7 +384,7 @@ function AddMenu({
               setOpen(false);
               onAddVendor();
             }}
-            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
           >
             <Building2 className="size-4" /> {dict.directory.addVendorOption}
           </button>
@@ -393,7 +394,7 @@ function AddMenu({
               setOpen(false);
               onAddPerson();
             }}
-            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover"
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
           >
             <UserPlus className="size-4" /> {dict.directory.addPersonOption}
           </button>
@@ -565,32 +566,3 @@ function PersonCard({
   );
 }
 
-function Pill({
-  label,
-  active,
-  onClick,
-  small,
-  noShrink,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  small?: boolean;
-  noShrink?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full border font-medium transition-colors ${noShrink ? "shrink-0 whitespace-nowrap" : ""} ${
-        small ? "px-3 py-1 text-xs" : "px-3.5 py-1.5 text-sm"
-      } ${
-        active
-          ? "border-primary bg-primary-soft text-primary"
-          : "border-hairline bg-surface text-ink-muted hover:bg-surface-hover"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}

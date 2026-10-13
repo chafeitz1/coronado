@@ -20,6 +20,17 @@ const STYLES: Record<WorkOrderStatus, string> = {
   skipped: "bg-canvas-soft text-ink-muted",
 };
 
+// Same idea as WorkOrderStatusButtons: hovering a dropdown option
+// previews the color it would switch to, instead of a flat generic
+// hover — same colors, same affordance, whichever control you use.
+const HOVER_STYLES: Record<WorkOrderStatus, string> = {
+  open: "hover:bg-status-open-bg active:bg-status-open-bg hover:text-status-open-fg active:text-status-open-fg",
+  in_progress:
+    "hover:bg-status-progress-bg active:bg-status-progress-bg hover:text-status-progress-fg active:text-status-progress-fg",
+  done: "hover:bg-status-done-bg active:bg-status-done-bg hover:text-status-done-fg active:text-status-done-fg",
+  skipped: "hover:bg-surface-hover active:bg-surface-hover hover:text-ink active:text-ink",
+};
+
 const ORDER: WorkOrderStatus[] = ["open", "in_progress", "done", "skipped"];
 
 // Inline status chip you can change right from a list/table row, without
@@ -70,7 +81,7 @@ export function WorkOrderStatusChip({
           setOpen((o) => !o);
         }}
         disabled={pending}
-        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-opacity disabled:opacity-60 ${STYLES[status]}`}
+        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-opacity active:brightness-90 disabled:opacity-60 ${STYLES[status]}`}
       >
         <Icon className="size-3" strokeWidth={2.5} />
         {label}
@@ -99,7 +110,7 @@ export function WorkOrderStatusChip({
                     updateWorkOrderStatus(workOrderId, s);
                   });
                 }}
-                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-hover ${
+                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${HOVER_STYLES[s]} ${
                   s === status ? "font-medium text-primary" : "text-ink-secondary"
                 }`}
               >

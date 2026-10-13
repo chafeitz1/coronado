@@ -100,4 +100,32 @@ body {
   background: var(--canvas-soft);
   color: var(--ink);
   font-family: var(--font-sans), Inter, ui-sans-serif, system-ui, sans-serif;
+  /* Our own pull-to-refresh (components/pull-to-refresh.tsx) handles the
+     "pull down at the top" gesture — without this, a regular (non-installed)
+     mobile browser tab would also trigger its own native bounce/refresh on
+     top of ours, showing two indicators at once. */
+  overscroll-behavior-y: contain;
+}
+
+/* Mobile browsers draw their own gray/blue tap-highlight box on any tapped
+   element, which looks like a glitch layered on top of our own :active
+   styles — every interactive element here already gets a deliberate
+   pressed state (see lib/ui.ts's buttonPrimary/Secondary/etc.), so the
+   native overlay is redundant at best. */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari zooms the whole page in when a focused form field's computed
+   font-size is under 16px. Forcing it here — !important, since this has to
+   win over whatever text-size utility a field happens to use — means no
+   individual input/textarea/select has to remember to opt in, and new ones
+   added later can't regress this by accident. Desktop is unaffected: this
+   only applies under the same width Tailwind's own `md` breakpoint uses. */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }

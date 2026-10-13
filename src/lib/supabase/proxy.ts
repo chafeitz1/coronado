@@ -1,7 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login"];
+// /auth/confirm has to be public: it's where a magic-link/invite email lands
+// before the person has a session — gating it behind auth would bounce them
+// straight to /login without ever getting to verify the link.
+// /api/cron is called by Vercel's cron dispatcher, which has no session
+// cookie at all — it authenticates itself via a CRON_SECRET bearer token
+// checked inside the route handler, so it must never be redirected to /login.
+const PUBLIC_PATHS = ["/login", "/auth/confirm", "/api/cron"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

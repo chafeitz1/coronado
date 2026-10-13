@@ -1,78 +1,69 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, LayoutPanelLeft, Table2, CalendarDays } from "lucide-react";
+import { LayoutPanelLeft, Table2, CalendarDays, LayoutGrid, Columns3 } from "lucide-react";
 
-export type DisplayMode = "list" | "table" | "calendar";
+export type DisplayMode = "list" | "table" | "calendar" | "gallery" | "board";
 
 const ICONS: Record<DisplayMode, typeof LayoutPanelLeft> = {
   list: LayoutPanelLeft,
   table: Table2,
   calendar: CalendarDays,
+  gallery: LayoutGrid,
+  board: Columns3,
 };
 
-// Matches MaintainX's "◫ To Do View ⌄" control: switches how the same
-// underlying list is displayed via a `display` query param. Reads its own
-// current value from the URL so it can be dropped anywhere (e.g. next to a
-// server-rendered page heading) without a parent having to thread it down.
-export function ViewSwitcher({ options }: { options: { key: DisplayMode; label: string }[] }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+// A segmented toggle — every option visible and one click away, instead of
+// a dropdown that hides the other views behind an extra click. Switches how
+// the same underlying list is displayed via a `display` query param. Reads
+// its own current value from the URL so it can be dropped anywhere (e.g.
+// next to a server-rendered page heading) without a parent having to thread
+// it down. `defaultMode` is the mode assumed (and left out of the URL) when
+// the query param is absent — work orders default to "list", assets
+// default to "gallery".
+export function ViewSwitcher({
+  options,
+  defaultMode = "list",
+}: {
+  options: { key: DisplayMode; label: string }[];
+  defaultMode?: DisplayMode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const value = ((searchParams.get("display") as DisplayMode) ?? "list") as DisplayMode;
-  const Icon = ICONS[value];
-
-  useEffect(() => {
-    if (!open) return;
-    function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, [open]);
+  const value = ((searchParams.get("display") as DisplayMode) ?? defaultMode) as DisplayMode;
 
   function select(mode: DisplayMode) {
-    setOpen(false);
     const params = new URLSearchParams(searchParams.toString());
-    if (mode === "list") params.delete("display");
+    if (mode === defaultMode) params.delete("display");
     else params.set("display", mode);
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
   }
 
   return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-surface px-2.5 py-1.5 text-sm font-medium text-ink-secondary transition-colors hover:bg-surface-hover"
-      >
-        <Icon className="size-4" />
-        {options.find((o) => o.key === value)?.label}
-        <ChevronDown className="size-3.5" />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full z-20 mt-1 min-w-40 overflow-hidden rounded-lg border border-hairline bg-surface p-1 shadow-[var(--shadow-soft)]">
-          {options.map((opt) => {
-            const OptIcon = ICONS[opt.key];
-            return (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => select(opt.key)}
-                className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-surface-hover ${
-                  opt.key === value ? "font-medium text-primary" : "text-ink-secondary"
-                }`}
-              >
-                <OptIcon className="size-4" /> {opt.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+    <div className="inline-flex items-center gap-1 rounded-md border border-hairline bg-surface p-1">
+      {options.map((opt) => {
+        const Icon = ICONS[opt.key];
+        const active = opt.key === value;
+        return (
+          <button
+            key={opt.key}
+            type="button"
+            onClick={() => select(opt.key)}
+            aria-pressed={active}
+            title={opt.label}
+            className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-sm font-medium transition-colors ${
+              active
+                ? "bg-primary-soft text-primary"
+                : "text-ink-secondary hover:bg-surface-hover active:bg-surface-hover"
+            }`}
+          >
+            <Icon className="size-4" />
+            <span className="hidden sm:inline">{opt.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

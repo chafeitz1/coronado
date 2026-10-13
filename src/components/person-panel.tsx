@@ -133,7 +133,7 @@ export function PersonPanel({
                 className="group relative flex size-11 shrink-0 items-center justify-center rounded-full disabled:pointer-events-none"
               >
                 <Avatar fullName={person.full_name} avatarUrl={person.avatar_url} size="md" />
-                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white">
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white group-active:bg-black/40 group-active:text-white">
                   <Camera className="size-4" />
                 </span>
               </button>
@@ -471,7 +471,7 @@ function StaffDocumentSection({
             type="button"
             onClick={handleView}
             disabled={viewPending}
-            className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+            className="text-xs font-medium text-primary hover:underline active:underline disabled:opacity-50"
           >
             {dict.directory.viewDocument}
           </button>
@@ -479,7 +479,7 @@ function StaffDocumentSection({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploadPending}
-            className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+            className="text-xs font-medium text-primary hover:underline active:underline disabled:opacity-50"
           >
             {dict.directory.replaceDocument}
           </button>
@@ -488,7 +488,7 @@ function StaffDocumentSection({
             onClick={handleDelete}
             disabled={deletePending}
             aria-label={dict.directory.deleteDocument}
-            className="text-ink-faint hover:text-status-overdue-fg disabled:opacity-50"
+            className="text-ink-faint transition-colors hover:text-status-overdue-fg active:text-status-overdue-fg disabled:opacity-50"
           >
             <X className="size-4" />
           </button>

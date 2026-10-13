@@ -48,7 +48,7 @@ export function VendorContactsField({
                   type="button"
                   onClick={() => setContacts((cs) => cs.filter((_, idx) => idx !== i))}
                   aria-label={dict.vendorForm.removeContact}
-                  className="flex size-8 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-hover hover:text-status-overdue-fg"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-hover active:bg-surface-hover hover:text-status-overdue-fg"
                 >
                   <X className="size-4" />
                 </button>

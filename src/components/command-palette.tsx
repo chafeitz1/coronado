@@ -3,13 +3,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ClipboardList, Wrench, Building2, X } from "lucide-react";
+import { StatusBadge } from "@/components/ui/badge";
 import { card } from "@/lib/ui";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { format, getDictionary } from "@/lib/i18n/dictionaries";
+import { formatLongDate } from "@/lib/dates";
 import type { Locale } from "@/lib/types/database";
 
 export const OPEN_COMMAND_PALETTE_EVENT = "open-command-palette";
 
-type Result = { id: string; label: string; href: string; icon: typeof ClipboardList; group: string };
+// status/due_date/completed_at only ever set on a task result — several
+// recurring tasks commonly share the exact same title (every cycle of
+// "Mantenimiento X"), so without these a search for one could turn up two
+// or three identical-looking rows with no way to tell which is the
+// current/open one and which already happened.
+type Result = {
+  id: string;
+  label: string;
+  href: string;
+  icon: typeof ClipboardList;
+  group: string;
+  status?: string;
+  due_date?: string | null;
+  completed_at?: string | null;
+};
 
 export function CommandPalette({ locale }: { locale: Locale }) {
   const dict = getDictionary(locale);
@@ -64,13 +80,18 @@ export function CommandPalette({ locale }: { locale: Locale }) {
       if (!res.ok) return;
       const data = await res.json();
       const mapped: Result[] = [
-        ...data.workOrders.map((w: { id: string; title: string }) => ({
-          id: w.id,
-          label: w.title,
-          href: `/work-orders/${w.id}`,
-          icon: ClipboardList,
-          group: dict.commandPalette.groupTasks,
-        })),
+        ...data.workOrders.map(
+          (w: { id: string; title: string; status: string; due_date: string | null; completed_at: string | null }) => ({
+            id: w.id,
+            label: w.title,
+            href: `/work-orders/${w.id}`,
+            icon: ClipboardList,
+            group: dict.commandPalette.groupTasks,
+            status: w.status,
+            due_date: w.due_date,
+            completed_at: w.completed_at,
+          })
+        ),
         ...data.assets.map((a: { id: string; name: string }) => ({
           id: a.id,
           label: a.name,
@@ -139,7 +160,11 @@ export function CommandPalette({ locale }: { locale: Locale }) {
             placeholder={dict.commandPalette.placeholder}
             className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint"
           />
-          <button type="button" onClick={() => setOpen(false)} className="text-ink-faint hover:text-ink">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded p-0.5 text-ink-faint transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover active:text-ink"
+          >
             <X className="size-4" />
           </button>
         </div>
@@ -160,12 +185,28 @@ export function CommandPalette({ locale }: { locale: Locale }) {
                     type="button"
                     onClick={() => go(item)}
                     onMouseEnter={() => setActiveIndex(globalIndex)}
-                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm ${
+                    className={`flex w-full items-start gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors active:bg-primary-soft active:text-primary ${
                       globalIndex === activeIndex ? "bg-primary-soft text-primary" : "text-ink-secondary"
                     }`}
                   >
-                    <Icon className="size-4 shrink-0" />
-                    <span className="truncate">{item.label}</span>
+                    <Icon className="mt-0.5 size-4 shrink-0" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{item.label}</span>
+                      {item.status && (
+                        <span className="mt-1 flex items-center gap-1.5">
+                          <StatusBadge status={item.status} locale={locale} />
+                          {item.completed_at ? (
+                            <span className="truncate text-xs text-ink-faint">
+                              {format(dict.workOrderDetail.completedOn, { date: formatLongDate(item.completed_at.slice(0, 10), locale) })}
+                            </span>
+                          ) : item.due_date ? (
+                            <span className="truncate text-xs text-ink-faint">
+                              {format(dict.workOrders.dueDate, { date: formatLongDate(item.due_date, locale) })}
+                            </span>
+                          ) : null}
+                        </span>
+                      )}
+                    </span>
                   </button>
                 );
               })}

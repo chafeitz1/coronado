@@ -39,8 +39,10 @@ export async function upsertPayrollEntryAction(input: {
 }) {
   await requireOwner();
   const entry = await payroll.upsertEntry(input);
+  // Devuelve la quincena ya recalculada: un solo viaje en vez de guardar + recargar.
+  const registro = await payroll.getRegistroForPeriod(input.periodYear, input.periodMonth, input.periodHalf);
   revalidatePath(PATH);
-  return entry;
+  return { entry, registro };
 }
 
 const QUANTITY_FIELD_RATE = {
@@ -85,8 +87,9 @@ export async function upsertPayrollQuantityFieldAction(input: {
     [input.field]: input.quantity,
     [centsField]: cents,
   });
+  const registro = await payroll.getRegistroForPeriod(input.periodYear, input.periodMonth, input.periodHalf);
   revalidatePath(PATH);
-  return entry;
+  return { entry, registro };
 }
 
 export async function duplicatePreviousPeriodAction(year: number, month: number, half: 1 | 2) {
@@ -325,4 +328,16 @@ export async function deleteLoanRequestAction(requestId: string) {
   const { error } = await supabase.from("payroll_loan_requests").delete().eq("id", requestId);
   if (error) throw new Error(error.message);
   revalidatePath(PATH);
+}
+
+export async function getEmployeeLedgerBundleAction(employeeId: string) {
+  await requireOwner();
+  return await payroll.getEmployeeLedgerBundle(employeeId);
+}
+
+/** Dashboard: resumen anual + obligaciones con UNA sola carga del historial. */
+export async function getDashboardDataAction(year: number) {
+  await requireOwner();
+  const overview = await payroll.getPlanillaOverview(year);
+  return { rows: overview.rows, obligations: overview.obligations, composition: overview.composition };
 }

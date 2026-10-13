@@ -7,7 +7,7 @@ import type { PayrollLedgerEntry, PayrollLoanWithSchedule } from "@/lib/types/pl
 import { Button } from "@/components/payroll-ui/button";
 import { formatCents, MONTHS_ES } from "@/lib/planilla/payroll-period";
 import { formatDisplayDate } from "@/lib/planilla/format-date";
-import { getLedgerEntriesAction, getLedgerBalanceAction, deleteLedgerEntryAction, getLoansAction, cancelLoanAction } from "@/app/actions/planilla";
+import { getEmployeeLedgerBundleAction, deleteLedgerEntryAction, cancelLoanAction } from "@/app/actions/planilla";
 import { LedgerEntryDialog, type LedgerPeriodOption } from "@/components/planilla/ledger-entry-dialog";
 import { LoanDialog } from "@/components/planilla/loan-dialog";
 import { LEDGER_CATEGORY_LABEL } from "@/components/planilla/ledger-labels";
@@ -117,16 +117,25 @@ export function LedgerSection({
   const [loanDialog, setLoanDialog] = React.useState<"prestamo" | "adelanto" | null>(null);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
-  const load = React.useCallback(() => {
-    getLedgerEntriesAction(employeeId).then(setEntries);
-    getLoansAction(employeeId).then(setLoans);
-    getLedgerBalanceAction(employeeId).then(setBalanceCents);
-    onChanged?.();
-  }, [employeeId, onChanged]);
+  const fetchBundle = React.useCallback(() => {
+    getEmployeeLedgerBundleAction(employeeId).then((b) => {
+      setEntries(b.entries);
+      setLoans(b.loans);
+      setBalanceCents(b.balanceCents);
+    });
+  }, [employeeId]);
 
+  // After a mutation: refresh this section AND tell the parent sheet (its
+  // quincena table changes when a loan's cuotas are created/removed).
+  const load = React.useCallback(() => {
+    fetchBundle();
+    onChanged?.();
+  }, [fetchBundle, onChanged]);
+
+  // First load only fetches this section — the parent already loads its own.
   React.useEffect(() => {
-    load();
-  }, [load]);
+    fetchBundle();
+  }, [fetchBundle]);
 
   async function handleDelete(id: string) {
     setDeletingId(id);

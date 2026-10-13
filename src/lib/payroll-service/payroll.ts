@@ -371,9 +371,10 @@ export async function getRegistroForPeriod(year: number, month: number, half: 1 
   const supabase = await createClient();
   // Empleados, historial de sueldos y quincenas son independientes: en
   // paralelo (el ledger sí depende de las quincenas y va después).
+  const salaryPromise = getAllSalaryChanges();
   const [allEmployees, salaryByEmployee, entriesRes] = await Promise.all([
-    getPayrollEmployees(),
-    getAllSalaryChanges(),
+    getPayrollEmployees(salaryPromise),
+    salaryPromise,
     supabase
       .from("payroll_entries")
       .select("*")
@@ -530,9 +531,10 @@ async function loadAllHistories(): Promise<EmployeeHistory[]> {
   const supabase = await createClient();
   // Las cuatro lecturas son independientes: en paralelo, en vez de una
   // tras otra (cada una es un viaje de red completo a Supabase).
+  const salaryPromise = getAllSalaryChanges();
   const [employees, salaryByEmp, entryRows, ledgerRows] = await Promise.all([
-    getPayrollEmployees(),
-    getAllSalaryChanges(),
+    getPayrollEmployees(salaryPromise),
+    salaryPromise,
     selectAllRows((from, to) => supabase.from("payroll_entries").select("*").order("id").range(from, to)),
     selectAllRows((from, to) => supabase.from("payroll_ledger_entries").select("*").order("id").range(from, to)),
   ]);
@@ -1075,3 +1077,16 @@ export async function updateLoanNotes(loanId: string, notes: string | null): Pro
   if (error) throw new Error(error.message);
 }
 
+
+
+/** Todo lo que pinta la sección de movimientos de un empleado, en UNA
+ *  llamada (las server actions se encolan una por una desde el cliente, así
+ *  que tres acciones separadas eran tres viajes completos). */
+export async function getEmployeeLedgerBundle(employeeId: string) {
+  const [entries, loans, balanceCents] = await Promise.all([
+    getLedgerEntries(employeeId),
+    getLoansForEmployee(employeeId),
+    getLedgerBalance(employeeId),
+  ]);
+  return { entries, loans, balanceCents };
+}

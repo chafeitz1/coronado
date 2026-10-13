@@ -30,7 +30,15 @@ function readStoredColumns(): Record<ColumnKey, boolean> | null {
   }
 }
 
-export function PayrollClient({ employees, initialTab }: { employees: PayrollEmployee[]; initialTab?: string }) {
+export function PayrollClient({
+  employees,
+  initialTab,
+  initialRegistro,
+}: {
+  employees: PayrollEmployee[];
+  initialTab?: string;
+  initialRegistro?: React.ComponentProps<typeof RegistroView>["initialRegistro"];
+}) {
   const [activeTab, setActiveTab] = React.useState<TabKey>(
     (TABS as readonly string[]).includes(initialTab ?? "") ? (initialTab as TabKey) : "registro"
   );
@@ -94,6 +102,7 @@ export function PayrollClient({ employees, initialTab }: { employees: PayrollEmp
           visibleColumns={visibleColumns}
           onVisibleColumnsChange={setVisibleColumns}
           onViewDetail={setDetailEmployeeId}
+          initialRegistro={initialRegistro}
         />
       </TabsContent>
       <TabsContent value="resumen" className="pt-4">

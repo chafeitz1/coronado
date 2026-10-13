@@ -132,14 +132,25 @@ export function RegistroView({
   visibleColumns,
   onVisibleColumnsChange,
   onViewDetail,
+  initialRegistro,
 }: {
   employees: PayrollEmployee[];
   visibleColumns: Record<ColumnKey, boolean>;
   onVisibleColumnsChange: (columns: Record<ColumnKey, boolean>) => void;
   onViewDetail?: (employeeId: string) => void;
+  /** Quincena ya cargada en el servidor (evita un viaje al abrir la página). */
+  initialRegistro?: { period: { year: number; month: number; half: 1 | 2 }; rows: Row[] } | null;
 }) {
   const [period, setPeriod] = React.useState(() => currentPeriod());
-  const [rows, setRows] = React.useState<Row[] | null>(null);
+  const [rows, setRows] = React.useState<Row[] | null>(() =>
+    initialRegistro &&
+    initialRegistro.period.year === currentPeriod().year &&
+    initialRegistro.period.month === currentPeriod().month &&
+    initialRegistro.period.half === currentPeriod().half
+      ? initialRegistro.rows
+      : null
+  );
+  const skipFirstLoad = React.useRef(rows !== null);
   const [pending, startTransition] = React.useTransition();
   const [duplicating, setDuplicating] = React.useState(false);
   const [saveError, setSaveError] = React.useState<string | null>(null);
@@ -198,10 +209,17 @@ export function RegistroView({
 
   /** Every save goes through here so a failure is visible instead of
    *  silently leaving a number on screen that isn't in the database. */
-  async function runSave(fn: () => Promise<unknown>) {
+  async function runSave(fn: () => Promise<{ registro?: Row[] } | unknown>) {
     setSaveError(null);
+    const seq = ++loadSeq.current;
     try {
-      await fn();
+      const res = (await fn()) as { registro?: Row[] } | undefined;
+      // La acción devuelve la quincena recalculada: se pinta sin recargar.
+      // Si cambió de quincena mientras tanto, `seq` ya no coincide y se ignora.
+      if (res?.registro) {
+        if (seq === loadSeq.current) setRows(res.registro);
+        return;
+      }
     } catch (err) {
       console.error("payroll save failed", err);
       setSaveError("No se pudo guardar el último cambio. Revisa la conexión e intenta de nuevo.");
@@ -210,6 +228,10 @@ export function RegistroView({
   }
 
   React.useEffect(() => {
+    if (skipFirstLoad.current) {
+      skipFirstLoad.current = false;
+      return;
+    }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period.year, period.month, period.half]);

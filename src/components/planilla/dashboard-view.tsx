@@ -8,7 +8,7 @@ import type { UpcomingObligations } from "@/lib/types/planilla";
 import { Button } from "@/components/payroll-ui/button";
 import { MONTHS_ES, periodKey, currentPeriod, formatCents } from "@/lib/planilla/payroll-period";
 import { employeeAccentColor } from "@/lib/planilla/payroll-colors";
-import { getAnnualSummaryAction, getUpcomingObligationsAction } from "@/app/actions/planilla";
+import { getDashboardDataAction } from "@/app/actions/planilla";
 import { EmployeeAvatar } from "@/components/planilla/employee-avatar";
 import { PayrollKpiCard } from "@/components/planilla/payroll-kpi-card";
 import { MonthlyEvolutionChart } from "@/components/planilla/monthly-evolution-chart";
@@ -41,8 +41,10 @@ export function DashboardView({
   const [obligations, setObligations] = React.useState<UpcomingObligations | null>(null);
 
   React.useEffect(() => {
-    getAnnualSummaryAction(year).then(setRows);
-    getUpcomingObligationsAction().then(setObligations);
+    getDashboardDataAction(year).then((d) => {
+      setRows(d.rows);
+      setObligations(d.obligations);
+    });
   }, [year]);
 
   const loading = !rows || !obligations;

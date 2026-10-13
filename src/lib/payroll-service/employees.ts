@@ -52,14 +52,16 @@ function build(
   };
 }
 
-export async function getPayrollEmployees(): Promise<PayrollEmployee[]> {
+export async function getPayrollEmployees(
+  salaryPromise: Promise<Awaited<ReturnType<typeof getAllSalaryChanges>>> = getAllSalaryChanges()
+): Promise<PayrollEmployee[]> {
   const supabase = await createClient();
   const [profilesRes, detailsRes, salaryByEmployee] = await Promise.all([
     supabase.from("profiles").select("id, full_name").eq("role", "staff").order("full_name"),
     supabase
       .from("staff_details")
       .select("user_id, hire_date, termination_date, benefits_base_salary_cents, liquidation_notes"),
-    getAllSalaryChanges(),
+    salaryPromise,
   ]);
   if (profilesRes.error) throw new Error(profilesRes.error.message);
   if (detailsRes.error) throw new Error(detailsRes.error.message);

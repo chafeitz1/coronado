@@ -9,9 +9,11 @@ import type { PurchaseItemListType, PurchaseItemStatus } from "@/lib/types/datab
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
-async function getOwnerId(supabase: SupabaseClient) {
-  const { data } = await supabase.from("profiles").select("id").eq("role", "owner").limit(1).single();
-  return data?.id ?? null;
+// Every owner gets owner-level notifications, not just whichever one the
+// query happened to return first — see work-orders.ts' getOwnerIds.
+async function getOwnerIds(supabase: SupabaseClient) {
+  const { data } = await supabase.from("profiles").select("id").eq("role", "owner");
+  return (data ?? []).map((row) => row.id);
 }
 
 export type PurchaseItemState = { ok: true } | { ok: false; error: string } | null;
@@ -97,8 +99,9 @@ export async function createPurchaseItem(
   }
 
   if (listType === "urgent") {
-    const ownerId = await getOwnerId(supabase);
-    if (ownerId && ownerId !== profile.id) {
+    const ownerIds = await getOwnerIds(supabase);
+    const recipientIds = ownerIds.filter((id) => id !== profile.id);
+    if (recipientIds.length > 0) {
       const { data: otherPending } = await supabase
         .from("purchase_items")
         .select("title, quantity")
@@ -109,20 +112,24 @@ export async function createPurchaseItem(
 
       const imageUrl = imagePath ? supabase.storage.from("attachments").getPublicUrl(imagePath).data.publicUrl : null;
 
-      await notifyUser(ownerId, "purchase_urgent", {
-        body: `${profile.full_name} pidió comprar: ${title}`,
-        url: "/purchases",
-        emailEyebrow: "🛒 Compra urgente",
-        emailEyebrowColor: "#dc2626",
-        emailTitle: title,
-        emailHtml: urgentPurchaseEmailBody({
-          quantity,
-          notes,
-          requesterName: profile.full_name,
-          imageUrl,
-          otherPending: otherPending ?? [],
-        }),
-      });
+      await Promise.all(
+        recipientIds.map((id) =>
+          notifyUser(id, "purchase_urgent", {
+            body: `${profile.full_name} pidió comprar: ${title}`,
+            url: "/purchases",
+            emailEyebrow: "🛒 Compra urgente",
+            emailEyebrowColor: "#dc2626",
+            emailTitle: title,
+            emailHtml: urgentPurchaseEmailBody({
+              quantity,
+              notes,
+              requesterName: profile.full_name,
+              imageUrl,
+              otherPending: otherPending ?? [],
+            }),
+          })
+        )
+      );
     }
   }
 
@@ -151,13 +158,12 @@ export async function togglePurchaseItemStatus(itemId: string, nextStatus: Purch
   // meant as a quick heads-up when staff checks something off, not a formal
   // channel Carlos would want to configure or get emailed about.
   if (nextStatus === "purchased" && item) {
-    const ownerId = await getOwnerId(supabase);
-    if (ownerId && ownerId !== profile.id) {
-      await sendPushToUser(ownerId, "Compra recibida", {
-        body: `${profile.full_name}\n"${item.title}"`,
-        url: "/purchases",
-      });
-    }
+    const ownerIds = await getOwnerIds(supabase);
+    await Promise.all(
+      ownerIds
+        .filter((id) => id !== profile.id)
+        .map((id) => sendPushToUser(id, "Compra recibida", { body: `${profile.full_name}\n"${item.title}"`, url: "/purchases" }))
+    );
   }
 
   revalidatePath("/purchases");

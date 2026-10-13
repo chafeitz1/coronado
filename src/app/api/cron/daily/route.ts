@@ -27,15 +27,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: owner } = await supabase.from("profiles").select("id").eq("role", "owner").limit(1).single();
-  if (!owner) {
+  // Every owner, not just one — this house has three (Carlos, Salomón,
+  // Teófilo), and before this only whichever one the query happened to
+  // return first ever got the digest or a maintenance reminder.
+  const { data: owners } = await supabase.from("profiles").select("id").eq("role", "owner");
+  const ownerIds = (owners ?? []).map((row) => row.id);
+  if (ownerIds.length === 0) {
     await supabase.from("cron_runs").insert({ result: { ok: true, skipped: "no owner" } });
     return NextResponse.json({ ok: true, skipped: "no owner" });
   }
 
   const [digest, maintenance, announcements] = await Promise.all([
-    sendDailyDigest(supabase, owner.id),
-    sendMaintenanceReminders(supabase, owner.id),
+    sendDailyDigest(supabase, ownerIds),
+    sendMaintenanceReminders(supabase, ownerIds),
     sendAnnouncementReminders(supabase),
   ]);
 
@@ -51,7 +55,7 @@ type Supabase = ReturnType<typeof createAdminClient>;
 // the filter is what makes a stale task persist: it keeps matching on
 // every day's run until it's finally closed out (done or skipped), not
 // just the one day it was due.
-async function sendDailyDigest(supabase: Supabase, ownerId: string) {
+async function sendDailyDigest(supabase: Supabase, ownerIds: string[]) {
   const today = isoDateOffset(0);
 
   const { data: rows } = await supabase
@@ -139,14 +143,14 @@ async function sendDailyDigest(supabase: Supabase, ownerId: string) {
     notCompleted.length ? `, ${notCompleted.length} sin completar` : ""
   }.`;
 
-  await notifyUser(ownerId, "daily_digest", { body, url: "/work-orders", emailHtml });
+  await Promise.all(ownerIds.map((ownerId) => notifyUser(ownerId, "daily_digest", { body, url: "/work-orders", emailHtml })));
   return { sent: true, completed: completed.length, notCompleted: notCompleted.length };
 }
 
 // Fires once per maintenance task, the first time it's within 14 days of
 // its due date (a >= check, not ==, so a missed cron run doesn't lose the
 // reminder) — maintenance_reminder_sent_at then keeps it from repeating.
-async function sendMaintenanceReminders(supabase: Supabase, ownerId: string) {
+async function sendMaintenanceReminders(supabase: Supabase, ownerIds: string[]) {
   const cutoff = isoDateOffset(14);
 
   const { data: rows } = await supabase
@@ -166,10 +170,17 @@ async function sendMaintenanceReminders(supabase: Supabase, ownerId: string) {
     const days = daysUntil(row.due_date!);
     const when = days <= 0 ? "hoy o ya venció" : `en ${days} días`;
 
-    await notifyUser(ownerId, "maintenance_reminder", {
-      body: `Mantenimiento de ${assetName} (${row.title}) vence ${when} — coordiná al proveedor.`,
-      url: `/work-orders/${row.id}`,
-    });
+    // One flag per task, not per owner — fired to every owner here, then
+    // marked sent once so the next run's "is null" filter skips it for
+    // everyone, instead of only the first owner who happened to get it.
+    await Promise.all(
+      ownerIds.map((ownerId) =>
+        notifyUser(ownerId, "maintenance_reminder", {
+          body: `Mantenimiento de ${assetName} (${row.title}) vence ${when} — coordiná al proveedor.`,
+          url: `/work-orders/${row.id}`,
+        })
+      )
+    );
     await supabase.from("work_orders").update({ maintenance_reminder_sent_at: new Date().toISOString() }).eq("id", row.id);
     sent++;
   }

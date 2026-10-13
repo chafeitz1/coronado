@@ -129,3 +129,128 @@ html {
     font-size: 16px !important;
   }
 }
+
+/* =============================================================================
+   PLANILLA — capa de compatibilidad shadcn/ui + colores por categoría
+
+   El módulo de Planilla (portado de Atlas/Ebony) usa nombres de token estilo
+   shadcn/ui (bg-background, bg-card, text-muted-foreground, border-input…).
+   Acá se mapean a la paleta propia de Coronado — no a la de Atlas ni a la de
+   Ebony. --primary / --color-primary ya existen arriba (azul de Coronado);
+   solo se agregan los que faltan.
+   ============================================================================= */
+:root {
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary-foreground: var(--on-primary);
+  --secondary: var(--canvas-soft);
+  --secondary-foreground: var(--ink);
+  --muted: var(--canvas-soft);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--surface-hover);
+  --accent-foreground: var(--ink);
+  --destructive: var(--status-overdue-fg);
+  --destructive-foreground: #ffffff;
+  --success: var(--status-done-fg);
+  --warning: var(--status-progress-fg);
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: var(--primary);
+
+  /* Categorías de concepto de la planilla. Tonos SUTILES: los tintes de tabla
+     mezclan el token al 3-14% sobre el fondo, así que importa más el matiz
+     que la fuerza. */
+  --payroll-salario: oklch(62% 0.085 250); /* azul — alineado al primario de Coronado */
+  --payroll-bonos: oklch(60% 0.08 150); /* verde salvia */
+  --payroll-decimo: oklch(76% 0.11 95);
+  --payroll-vacacion: oklch(74% 0.1 104);
+  --payroll-prima: oklch(75% 0.115 82); /* prestaciones: familia amarilla */
+  --payroll-descuentos: oklch(46% 0.17 20); /* vino */
+  --payroll-descuento-prestamos: oklch(34% 0.12 12);
+  --payroll-prestamos: oklch(35% 0.01 80);
+  --payroll-total: var(--ink);
+  --payroll-total-due: var(--status-done-fg);
+  --payroll-next-pay: var(--primary);
+  --payroll-paid: var(--ink-muted);
+  --payroll-pending: var(--status-progress-fg);
+  --payroll-avg: var(--primary);
+
+  /* Realce de fila / columna: velo gris neutro por ENCIMA del fondo de cada
+     celda, para que se vea igual sobre blanco o sobre un tinte de categoría. */
+  --payroll-row-veil: oklch(0% 0 0 / 0.05);
+  --payroll-row-veil-focus: oklch(0% 0 0 / 0.09);
+  --payroll-col-veil: oklch(0% 0 0 / 0.04);
+
+  /* Grises neutros OPACOS del chrome de las tablas (columnas congeladas). */
+  --payroll-col-soft: oklch(98.2% 0 0);
+  --payroll-foot: oklch(95.8% 0 0);
+  --payroll-head: oklch(93% 0 0);
+
+  /* Realces opacos de fila para tablas con columna sticky. */
+  --row-hover: color-mix(in oklch, var(--muted) 60%, var(--background));
+  --row-focus: color-mix(in oklch, var(--primary) 7%, var(--background));
+
+  /* Identidad por empleado (eje independiente del de categorías). */
+  --employee-accent-1: oklch(58% 0.07 250);
+  --employee-accent-2: oklch(60% 0.06 145);
+  --employee-accent-3: oklch(62% 0.08 45);
+  --employee-accent-4: oklch(54% 0.07 320);
+  --employee-accent-5: oklch(66% 0.09 85);
+  --employee-accent-6: oklch(56% 0.06 200);
+  --employee-accent-7: oklch(62% 0.07 15);
+  --employee-accent-8: oklch(56% 0.03 70);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --destructive-foreground: #1c1c1c;
+    --payroll-row-veil: oklch(100% 0 0 / 0.06);
+    --payroll-row-veil-focus: oklch(100% 0 0 / 0.1);
+    --payroll-col-veil: oklch(100% 0 0 / 0.05);
+    --payroll-col-soft: oklch(24% 0 0);
+    --payroll-foot: oklch(27% 0 0);
+    --payroll-head: oklch(30% 0 0);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+}
+
+/* Cruz fila + columna de Auditoría: la clase la pone/quita auditoria-view.tsx
+   sobre las celdas de la columna bajo el mouse. */
+.payroll-col-hot {
+  background-image: linear-gradient(var(--payroll-col-veil), var(--payroll-col-veil)) !important;
+}
+tr:hover > .payroll-col-hot {
+  background-image: linear-gradient(var(--payroll-row-veil-focus), var(--payroll-row-veil-focus)) !important;
+}

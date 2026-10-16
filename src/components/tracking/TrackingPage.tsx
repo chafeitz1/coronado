@@ -1,0 +1,182 @@
+'use client'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { fetchTracking } from '@/lib/tracking/queries'
+import { computeHebrewYears, TrackingRecord, HebrewBucket } from '@/lib/tracking/constants'
+import KPICards       from './KPICards'
+import TablaResumen   from './TablaResumen'
+import Estadisticas   from './Estadisticas'
+import Historial      from './Historial'
+import Comparativo    from './Comparativo'
+import CalendarioView from './CalendarioView'
+import DatosCuriosos  from './DatosCuriosos'
+import NuevaVisitaModal from './NuevaVisitaModal'
+
+const CIVIL_YEARS = [0, 2021, 2022, 2023, 2024, 2025, 2026]
+
+const VIEWS = [
+  { id: 'resumen',       label: '📊 Resumen'       },
+  { id: 'estadisticas',  label: '📈 Estadísticas'  },
+  { id: 'historial',     label: '📋 Historial'     },
+  { id: 'calendario',    label: '🗓️ Calendario'    },
+  { id: 'curiosidades',  label: '✨ Datos Curiosos' },
+]
+
+export default function TrackingPage() {
+  const [data,       setData]       = useState<TrackingRecord[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState<string | null>(null)
+  const [activeYear, setActiveYear] = useState(0)
+  const [activeView, setActiveView] = useState('resumen')
+  const [showModal,  setShowModal]  = useState(false)
+  const [hebrewMode, setHebrewMode] = useState(false)
+
+  const loadData = useCallback(async () => {
+    try { setData(await fetchTracking()); setError(null) }
+    catch (e) { setError(e instanceof Error ? e.message : 'Error desconocido') }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchTracking()
+      .then(d => { if (!cancelled) { setData(d); setLoading(false) } })
+      .catch(e => { if (!cancelled) { setError(e instanceof Error ? e.message : 'Error desconocido'); setLoading(false) } })
+    return () => { cancelled = true }
+  }, [])
+
+  const reload = () => { setLoading(true); setError(null); loadData() }
+  const changeMode = (mode: boolean) => { setHebrewMode(mode); setActiveYear(0) }
+
+  const hebrewYears = useMemo<HebrewBucket[]>(() => computeHebrewYears(data), [data])
+
+  const yearOptions = hebrewMode
+    ? [{ value: 0, label: 'Todos' }, ...hebrewYears.map(b => ({ value: b.startYear, label: b.label }))]
+    : [{ value: 0, label: 'Todos' }, ...CIVIL_YEARS.filter(y => y > 0).map(y => ({ value: y, label: String(y) }))]
+
+  const filtered = useMemo<TrackingRecord[]>(() => {
+    if (activeYear === 0) return data
+    if (!hebrewMode) return data.filter(r => r.year === activeYear)
+    const bucket = hebrewYears.find(b => b.startYear === activeYear)
+    if (!bucket) return data
+    return data.filter(r => r.fecha_ini >= bucket.start && r.fecha_ini < bucket.end)
+  }, [data, activeYear, hebrewMode, hebrewYears])
+
+  const showYearBar = activeView !== 'calendario'
+  const totalEventos = new Set(data.map(r => r.eventoKey)).size
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center">
+        <div className="text-4xl mb-3 animate-pulse">🏖️</div>
+        <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>Cargando visitas...</p>
+      </div>
+    </div>
+  )
+
+  if (error) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center max-w-md">
+        <div className="text-4xl mb-3">⚠️</div>
+        <p className="font-medium mb-2" style={{ color: 'var(--status-overdue-fg)' }}>Error al cargar datos</p>
+        <p className="text-sm mb-4" style={{ color: 'var(--ink-muted)' }}>{error}</p>
+        <button onClick={reload}
+                className="px-4 py-2 rounded-lg text-sm font-medium"
+                style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}>
+          Reintentar
+        </button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="px-6 py-4 flex items-center justify-between"
+           style={{ borderBottom: '1px solid var(--hairline)', background: 'var(--canvas)' }}>
+        <div>
+          <h1 className="text-lg font-bold" style={{ color: 'var(--ink)' }}>Tracking de Visitas</h1>
+          <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+            {data.length} registros · {totalEventos} eventos
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={reload}
+                  className="px-3 py-1.5 rounded-lg text-xs border transition-colors"
+                  style={{ borderColor: 'var(--hairline)', color: 'var(--ink-muted)' }}>
+            ↻ Actualizar
+          </button>
+          <button onClick={() => setShowModal(true)}
+                  className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                  style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}>
+            + Nueva Visita
+          </button>
+        </div>
+      </div>
+
+      {/* Year bar */}
+      {showYearBar && (
+        <div className="px-6 py-2 flex items-center gap-2 flex-wrap"
+             style={{ borderBottom: '1px solid var(--hairline)', background: 'var(--canvas-soft)' }}>
+          {/* Fiscal / Hebreo toggle */}
+          <div className="flex items-center rounded-lg overflow-hidden mr-2 shrink-0"
+               style={{ border: '1px solid var(--hairline)' }}>
+            {[['fiscal', false], ['hebreo', true]].map(([label, mode]) => (
+              <button key={String(mode)}
+                      onClick={() => changeMode(mode as boolean)}
+                      className="px-2.5 py-1 text-xs font-medium transition-all capitalize"
+                      style={hebrewMode === mode
+                        ? { background: 'var(--primary)', color: 'var(--on-primary)' }
+                        : { background: 'transparent', color: 'var(--ink-muted)' }}>
+                {label as string}
+              </button>
+            ))}
+          </div>
+          {/* Year pills */}
+          {yearOptions.map(({ value, label }) => (
+            <button key={value} onClick={() => setActiveYear(value)}
+                    className="px-3 py-1 rounded-full text-xs font-medium transition-all border"
+                    style={activeYear === value
+                      ? { background: 'var(--primary)', borderColor: 'var(--primary)', color: 'var(--on-primary)' }
+                      : { background: 'transparent', borderColor: 'var(--hairline)', color: 'var(--ink-muted)' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* View tabs */}
+      <div className="flex px-6 overflow-x-auto"
+           style={{ borderBottom: '1px solid var(--hairline)', background: 'var(--canvas)' }}>
+        {VIEWS.map(v => (
+          <button key={v.id} onClick={() => setActiveView(v.id)}
+                  className="px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap shrink-0"
+                  style={activeView === v.id
+                    ? { borderColor: 'var(--primary)', color: 'var(--primary)' }
+                    : { borderColor: 'transparent', color: 'var(--ink-muted)' }}>
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-auto p-6" style={{ background: 'var(--canvas-soft)' }}>
+        {!['curiosidades','calendario'].includes(activeView) && (
+          <KPICards data={filtered} allData={data} activeYear={activeYear} />
+        )}
+
+        {activeView === 'resumen'      && <><TablaResumen data={filtered} allData={data} hebrewMode={hebrewMode} hebrewYears={hebrewYears} /><Comparativo data={data} activeYear={activeYear} /></>}
+        {activeView === 'estadisticas' && <Estadisticas data={filtered} allData={data} />}
+        {activeView === 'historial'    && <Historial data={filtered} />}
+        {activeView === 'calendario'   && <CalendarioView allData={data} activeYear={activeYear} />}
+        {activeView === 'curiosidades' && <DatosCuriosos data={filtered} allData={data} hebrewMode={hebrewMode} hebrewYears={hebrewYears} />}
+      </div>
+
+      {showModal && (
+        <NuevaVisitaModal
+          onClose={() => setShowModal(false)}
+          onSaved={() => { setShowModal(false); reload() }}
+        />
+      )}
+    </div>
+  )
+}

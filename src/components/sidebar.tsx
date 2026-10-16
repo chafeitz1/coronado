@@ -37,6 +37,11 @@ export async function Sidebar() {
     { href: "/announcements", label: dict.sidebar.announcements, icon: "announcements" },
   ];
 
+  // Visitas: dueño y residentes (la tabla no es legible para el personal).
+  if (profile.role !== "staff") {
+    workLinks.push({ href: "/visitas", label: dict.sidebar.visits, icon: "visits" });
+  }
+
   if (profile.role === "owner") {
     workLinks.push({ href: "/finance/payroll", label: dict.sidebar.finance, icon: "finance" });
   }

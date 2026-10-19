@@ -407,6 +407,8 @@ export function AuditoriaView({
   const cols = isMonthly ? Array.from({ length: 12 }, (_, i) => i) : Array.from({ length: 24 }, (_, i) => i);
   const d = DENSITY[vista];
   const displayPeriods = (periods: number[]) => (isMonthly ? toMonthly(periods) : periods);
+  // Los acumulados (décimo/vacación/prima) no se suman por mes: se muestra el pico del mes.
+  const monthlyPeak = (periods: number[]) => Array.from({ length: 12 }, (_, m) => Math.max(periods[m * 2] ?? 0, periods[m * 2 + 1] ?? 0));
 
   function renderEmployeeRow(row: AuditoriaEmployeeRow) {
     const isOpen = expanded.has(row.employee.id);
@@ -495,7 +497,7 @@ export function AuditoriaView({
                       </span>
                     </div>
                   </td>
-                  {g.periods.map((v, i) => (
+                  {displayPeriods(g.periods).map((v, i) => (
                     <td key={i} className={`px-1.5 ${d.groupRow} text-right font-medium tabular-nums`} style={{ ...headerBorder, color }}>
                       {v !== 0 ? fmtSigned(v) : "–"}
                     </td>
@@ -522,7 +524,7 @@ export function AuditoriaView({
                         >
                           {li.label}
                         </td>
-                        {li.periods.map((v, i) => {
+                        {displayPeriods(li.periods).map((v, i) => {
                           // Décimo/Vacación/Prima only: a real payout
                           // (v !== 0) always wins and displays exactly
                           // as before. Otherwise, when the "Proyección
@@ -532,7 +534,7 @@ export function AuditoriaView({
                           // real recorded transaction, and never part
                           // of any total (li.totalCents/g.totalCents
                           // stay real-money-only regardless).
-                          const preview = li.previewPeriods?.[i];
+                          const preview = li.previewPeriods ? (isMonthly ? monthlyPeak(li.previewPeriods) : li.previewPeriods)[i] : undefined;
                           const showingPreview = v === 0 && showPrestacionesPreview && preview !== undefined && preview !== 0;
                           const display = v !== 0 ? v : showingPreview ? preview! : 0;
                           return (

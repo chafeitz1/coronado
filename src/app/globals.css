@@ -166,9 +166,9 @@ html {
      que la fuerza. */
   --payroll-salario: oklch(62% 0.085 250); /* azul — alineado al primario de Coronado */
   --payroll-bonos: oklch(60% 0.08 150); /* verde salvia */
-  --payroll-decimo: oklch(76% 0.11 95);
-  --payroll-vacacion: oklch(74% 0.1 104);
-  --payroll-prima: oklch(75% 0.115 82); /* prestaciones: familia amarilla */
+  --payroll-decimo: oklch(77% 0.14 88); /* ámbar */
+  --payroll-vacacion: oklch(62% 0.1 190); /* verde azulado */
+  --payroll-prima: oklch(56% 0.14 305); /* violeta */
   --payroll-descuentos: oklch(46% 0.17 20); /* vino */
   --payroll-descuento-prestamos: oklch(34% 0.12 12);
   --payroll-prestamos: oklch(35% 0.01 80);

@@ -71,15 +71,17 @@ function StatBlock({
   label,
   value,
   pct,
+  hint,
 }: {
   icon: LucideIcon;
   color: string;
   label: string;
   value: string;
   pct?: number;
+  hint?: string;
 }) {
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-2" title={hint}>
       <Icon className="mt-0.5 size-4 shrink-0" style={{ color }} />
       <div>
         <p className="whitespace-nowrap text-[11px] text-muted-foreground">{label}</p>
@@ -162,7 +164,7 @@ function MonthlyBarChart({
               onMouseLeave={() => setHover((h) => (h === b.mb.month ? null : h))}
               onClick={() => setHover((h) => (h === b.mb.month ? null : b.mb.month))}
             >
-              {active && <BarTooltip b={b} year={year} />}
+              {active && <BarTooltip b={b} year={year} side={b.mb.month <= 6 ? "right" : "left"} />}
               {(b.gross > 0 || b.projected > 0) && (
                 <span className={`text-[10px] font-medium tabular-nums ${b.gross ? "text-foreground" : "italic text-muted-foreground/60"}`}>
                   {formatCents(b.gross || b.projected)}
@@ -202,7 +204,7 @@ function MonthlyBarChart({
   );
 }
 
-function BarTooltip({ b, year }: { b: { mb: PayrollEmployeeAnnualSummary["monthly"][number]; salario: number; gross: number }; year: number }) {
+function BarTooltip({ b, year, side }: { b: { mb: PayrollEmployeeAnnualSummary["monthly"][number]; salario: number; gross: number }; year: number; side: "left" | "right" }) {
   const { mb } = b;
   const line = (label: string, value: number, opts?: { color?: PayrollCategoryKey; strong?: boolean; sign?: "-" | "+" }) => (
     <div className={`flex items-center justify-between gap-4 ${opts?.strong ? "border-t border-border pt-1 font-semibold" : ""}`}>
@@ -217,7 +219,7 @@ function BarTooltip({ b, year }: { b: { mb: PayrollEmployeeAnnualSummary["monthl
     </div>
   );
   return (
-    <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-56 -translate-x-1/2 rounded-lg border border-border bg-popover p-2.5 text-[11px] shadow-lg">
+    <div className={`pointer-events-none absolute top-0 z-30 w-56 rounded-lg border border-border bg-popover p-2.5 text-[11px] shadow-lg ${side === "right" ? "left-full ml-1" : "right-full mr-1"}`}>
       <p className="mb-1 text-xs font-semibold text-foreground">
         {MONTHS_ES[mb.month - 1]} {year}
       </p>
@@ -362,9 +364,10 @@ export function ResumenView({
             </div>
 
             <div className="ml-auto flex flex-wrap items-center gap-5">
-              <StatBlock icon={Coins} color="var(--success)" label="Total Anual" value={formatCents(row.totalPaidCents)} />
+              <StatBlock icon={Coins} color="var(--success)" hint="Todo lo registrado en el año (quincenas, décimo, vacación…), pagado o no." label="Total Anual" value={formatCents(row.totalPaidCents)} />
               <StatBlock
                 icon={CheckCircle2}
+                hint="La parte del total en quincenas que ya marcaste como Pagado. Si marcas todas, es igual al total anual."
                 color="var(--chart-1)"
                 label={`Pagado (${row.monthsPaid} meses)`}
                 value={formatCents(row.paidCents)}
@@ -372,6 +375,7 @@ export function ResumenView({
               />
               <StatBlock
                 icon={Clock}
+                hint="Lo registrado pero todavía sin marcar como Pagado (por ejemplo la quincena en curso)."
                 color="var(--chart-3)"
                 label={`Pendiente (${monthsPending} meses)`}
                 value={formatCents(pendienteCents)}
@@ -478,11 +482,11 @@ export function ResumenView({
       )}
 
       {inactive.length > 0 && (
-        <div className="overflow-hidden rounded-lg border" style={{ borderColor: "color-mix(in oklch, var(--payroll-vacacion) 45%, var(--border))" }}>
+        <div className="overflow-hidden rounded-lg border" style={{ borderColor: "color-mix(in oklch, var(--foreground) 25%, var(--border))" }}>
           <button
             type="button"
             className="flex w-full items-center gap-1.5 px-3 py-2 text-xs font-semibold uppercase tracking-wide hover:brightness-95"
-            style={{ backgroundColor: "color-mix(in oklch, var(--payroll-vacacion) 18%, var(--card))", color: "color-mix(in oklch, var(--payroll-vacacion) 55%, black)" }}
+            style={{ backgroundColor: "color-mix(in oklch, var(--foreground) 12%, var(--card))", color: "var(--foreground)" }}
             onClick={() => setShowInactive((v) => !v)}
           >
             <ChevronDown className={`size-3.5 shrink-0 transition-transform ${showInactive ? "" : "-rotate-90"}`} />

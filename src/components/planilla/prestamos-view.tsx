@@ -1,14 +1,29 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, HandCoins, Wallet, CheckCircle2, Clock } from "lucide-react";
+import { ChevronDown, HandCoins, Wallet, CheckCircle2, Clock, Printer } from "lucide-react";
 
 import type { LoanOverviewEmployee } from "@/lib/payroll-service/payroll";
 import { Badge } from "@/components/payroll-ui/badge";
+import { Button } from "@/components/payroll-ui/button";
+import { loanStatementHtml } from "@/lib/planilla/loan-statement-html";
 import { formatCents, MONTHS_ES } from "@/lib/planilla/payroll-period";
 import { formatDisplayDate } from "@/lib/planilla/format-date";
 import { EmployeeAvatar } from "@/components/planilla/employee-avatar";
 import { PayrollKpiCard } from "@/components/planilla/payroll-kpi-card";
+
+/** Abre el estado de cuenta en una pestaña nueva, listo para imprimir o guardar como PDF. */
+function openStatement(row: LoanOverviewEmployee, loanId?: string) {
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const w = window.open("", "_blank");
+  if (!w) {
+    window.alert("El navegador bloqueó la ventana. Permite ventanas emergentes para este sitio e intenta de nuevo.");
+    return;
+  }
+  w.document.write(loanStatementHtml(row, today, loanId));
+  w.document.close();
+}
 
 const CATEGORY_LABEL = { prestamo: "Préstamo", adelanto: "Adelanto" } as const;
 
@@ -45,7 +60,7 @@ export function PrestamosView({ rows }: { rows: LoanOverviewEmployee[] }) {
         </div>
         <label className="flex items-center gap-2 text-sm text-foreground">
           <input type="checkbox" className="size-4 accent-primary" checked={onlyPending} onChange={(e) => setOnlyPending(e.target.checked)} />
-          Solo con saldo pendiente
+          Ocultar a quienes ya no deben nada
         </label>
       </div>
 
@@ -69,6 +84,10 @@ export function PrestamosView({ rows }: { rows: LoanOverviewEmployee[] }) {
               </div>
               <p className="text-xs text-muted-foreground">{r.loans.length} préstamo(s) · prestado {formatCents(r.lentCents)}</p>
             </div>
+            <Button variant="outline" size="sm" onClick={() => openStatement(r)} title="Estado de cuenta de todos sus préstamos, para imprimir o guardar como PDF">
+              <Printer className="size-3.5" />
+              Estado de cuenta
+            </Button>
             <div className="flex items-center gap-5 text-right">
               <div>
                 <p className="text-[11px] text-muted-foreground">Descontado</p>
@@ -92,6 +111,7 @@ export function PrestamosView({ rows }: { rows: LoanOverviewEmployee[] }) {
                   <th className="px-3 py-2 text-right font-medium">Descontado</th>
                   <th className="px-3 py-2 text-right font-medium">Pendiente</th>
                   <th className="px-3 py-2 text-left font-medium">Estado</th>
+                  <th className="w-10 px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
@@ -118,11 +138,25 @@ export function PrestamosView({ rows }: { rows: LoanOverviewEmployee[] }) {
                             <Badge variant="outline">Con saldo</Badge>
                           )}
                         </td>
+                        <td className="px-3 py-2 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7"
+                            title="Estado de cuenta de este préstamo"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openStatement(r, l.id);
+                            }}
+                          >
+                            <Printer className="size-3.5" />
+                          </Button>
+                        </td>
                       </tr>
                       {isOpen && (
                         <tr className="border-b border-border bg-muted/20">
                           <td />
-                          <td colSpan={6} className="px-3 py-2">
+                          <td colSpan={7} className="px-3 py-2">
                             {l.installments.length === 0 ? (
                               <p className="text-xs text-muted-foreground">Sin descuentos registrados todavía.</p>
                             ) : (
@@ -153,6 +187,7 @@ export function PrestamosView({ rows }: { rows: LoanOverviewEmployee[] }) {
                     </td>
                     <td />
                     <td className="px-3 py-2 text-right tabular-nums">{formatCents(r.unlinkedPaidCents)}</td>
+                    <td />
                     <td />
                   </tr>
                 )}

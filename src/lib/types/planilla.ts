@@ -181,6 +181,30 @@ export interface PayrollPeriodTotal {
   totalCents: number;
 }
 
+/** Desglose de un mes de un empleado (para la gráfica de barras apiladas y su
+ *  detalle al pasar el mouse). `bruto` = salario + décimo + vacación + prima;
+ *  el descuento de préstamo se muestra aparte y `neto` es lo que se pagó. */
+export interface PayrollMonthBreakdown {
+  month: number;
+  /** hubo al menos una quincena registrada ese mes */
+  hasEntry: boolean;
+  /** quincena base (según historial de sueldos) */
+  baseCents: number;
+  /** horas/días extra, viáticos, bonos y días libres */
+  extrasCents: number;
+  /** horas/días descontados y otros descuentos (positivo = se descontó) */
+  descuentosCents: number;
+  decimoCents: number;
+  vacacionCents: number;
+  primaCents: number;
+  /** cuotas de préstamo descontadas en planilla */
+  prestamoDescuentoCents: number;
+  /** préstamos/adelantos otorgados ese mes (no es pago) */
+  prestamoOtorgadoCents: number;
+  /** lo que realmente se pagó (igual que Registro) */
+  netCents: number;
+}
+
 /** Una fila del pivot de Resumen Anual: totales de un empleado a lo
  *  largo de las 24 quincenas de un año, más el total anual. Portado de
  *  Atlas `EmployeeAnnualSummary`. */
@@ -188,6 +212,8 @@ export interface PayrollEmployeeAnnualSummary {
   employee: PayrollEmployee;
   /** Keyed "month-half", ej. "3-1" para la 1ra quincena de marzo. */
   totalsByPeriod: Record<string, number>;
+  /** 12 meses, en orden Ene–Dic */
+  monthly: PayrollMonthBreakdown[];
   totalPaidCents: number;
   conceptTotals: {
     salarioCents: number;

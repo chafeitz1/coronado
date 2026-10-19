@@ -22,7 +22,7 @@ import type { PayrollEmployee, PayrollEmployeeAnnualSummary } from "@/lib/types/
 import { Button } from "@/components/payroll-ui/button";
 import { Badge } from "@/components/payroll-ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/payroll-ui/popover";
-import { MONTHS_ES, periodKey, currentPeriod, periodOrdinal, formatCents } from "@/lib/planilla/payroll-period";
+import { MONTHS_ES, currentPeriod, periodOrdinal, formatCents } from "@/lib/planilla/payroll-period";
 import { formatDisplayDate } from "@/lib/planilla/format-date";
 import { setEmployeeLiquidationAction, getEmployeeAnnualDetailAction } from "@/app/actions/planilla";
 import { EmployeeAvatar } from "@/components/planilla/employee-avatar";
@@ -92,37 +92,34 @@ function StatBlock({
   );
 }
 
-/** The expanded card's monthly bar chart -- real months in the
- *  employee's own accent color (see employeeAccentColor's comment on
- *  why identity color is a separate axis from category color), months
- *  with no data yet a thin dashed placeholder outline.
+const SEGMENTS: { key: "salario" | "decimo" | "vacacion" | "prima"; label: string; category: PayrollCategoryKey }[] = [
+  { key: "salario", label: "Salario", category: "salario" },
+  { key: "decimo", label: "Décimo", category: "decimo" },
+  { key: "vacacion", label: "Vacación", category: "vacacion" },
+  { key: "prima", label: "Prima", category: "prima" },
+];
+
+/** Gráfica de barras apiladas por mes: salario (base + extras − descuentos)
+ *  en su color y, encima, décimo, vacación y prima cuando se pagaron ese mes.
+ *  Al pasar el mouse (o tocar) una barra sale el desglose completo. El
+ *  descuento de préstamo y los préstamos otorgados se muestran aparte, en el
+ *  detalle, para no mezclarlos con lo que gana el empleado.
  *
- *  When "Proyectar próximos meses" is on, a STRICTLY FUTURE month
- *  (never the current or a past one, even if it happens to be real
- *  $0 -- a past empty month is just zero, not something to estimate)
- *  for an active employee gets a projected bar. That projection is
- *  the REAL formula output, not a flat base-salary guess: it fetches
- *  `getEmployeeAnnualDetailAction(employeeId, year, true)` -- the
- *  exact same projection machinery Registro's own projected cells and
- *  EmployeeDetailSheet already use -- so a Décimo/Vacación/Prima
- *  installment month (Abr/Ago/Dic) correctly projects HIGHER than a
- *  regular month instead of flatlining at bare salary. Fetched lazily
- *  (only while this card is expanded AND projecting is on, since
- *  MonthlyBarChart only ever mounts inside an open card), cached per
- *  employee/year so toggling the card open/closed doesn't refetch. */
+ *  Con "Proyectar próximos meses", un mes FUTURO sin datos reales se dibuja
+ *  con una barra tenue a partir de la misma fórmula que usa Registro. */
 function MonthlyBarChart({
   row,
-  accent,
   projecting,
   year,
 }: {
   row: PayrollEmployeeAnnualSummary;
-  accent: string;
+  accent?: string;
   projecting: boolean;
   year: number;
 }) {
   const canProject = projecting && row.employee.status === "ACTIVE" && row.employee.baseSalaryCents > 0;
   const [projectedDetail, setProjectedDetail] = React.useState<DetailRow[] | null>(null);
+  const [hover, setHover] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     if (!canProject) return;
@@ -135,52 +132,113 @@ function MonthlyBarChart({
     };
   }, [canProject, row.employee.id, year]);
 
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const monthTotals = months.map((m) => (row.totalsByPeriod[periodKey(m, 1)] ?? 0) + (row.totalsByPeriod[periodKey(m, 2)] ?? 0));
   const current = currentPeriod();
   const currentOrdinal = periodOrdinal(current.year, current.month, current.half);
 
-  function projectedMonthTotal(m: number): number {
-    if (!projectedDetail) return 0;
-    return projectedDetail.filter((r) => r.month === m).reduce((sum, r) => sum + r.totalCents, 0);
-  }
-
-  const allTotals = months.map((m, i) => {
-    if (monthTotals[i] > 0) return monthTotals[i];
-    const monthIsFuture = periodOrdinal(year, m, 1) > currentOrdinal;
-    return canProject && monthIsFuture ? projectedMonthTotal(m) : 0;
+  const bars = row.monthly.map((mb) => {
+    const salario = mb.baseCents + mb.extrasCents - mb.descuentosCents;
+    const gross = Math.max(salario, 0) + mb.decimoCents + mb.vacacionCents + mb.primaCents;
+    const monthIsFuture = periodOrdinal(year, mb.month, 1) > currentOrdinal;
+    const projected =
+      !mb.hasEntry && canProject && monthIsFuture && projectedDetail
+        ? projectedDetail.filter((r) => r.month === mb.month).reduce((sum, r) => sum + r.totalCents, 0)
+        : 0;
+    return { mb, salario, gross, projected };
   });
-  const max = Math.max(...allTotals, 1);
+  const max = Math.max(...bars.map((b) => Math.max(b.gross, b.projected)), 1);
+  const segValue = (b: (typeof bars)[number], key: (typeof SEGMENTS)[number]["key"]) =>
+    key === "salario" ? Math.max(b.salario, 0) : key === "decimo" ? b.mb.decimoCents : key === "vacacion" ? b.mb.vacacionCents : b.mb.primaCents;
 
   return (
-    <div className="flex items-end gap-2" style={{ height: CHART_HEIGHT + 34 }}>
-      {months.map((m, i) => {
-        const real = monthTotals[i];
-        const monthIsFuture = periodOrdinal(year, m, 1) > currentOrdinal;
-        const projected = !real && canProject && monthIsFuture ? projectedMonthTotal(m) : 0;
-        const value = real || projected;
-        const barHeight = value > 0 ? Math.max((value / max) * CHART_HEIGHT, 10) : 22;
-        return (
-          <div key={m} className="flex flex-1 flex-col items-center justify-end gap-1">
-            {value > 0 && (
-              <span className={`text-[10px] font-medium tabular-nums ${real ? "text-foreground" : "italic text-muted-foreground/60"}`}>
-                {formatCents(value)}
-              </span>
-            )}
+    <div>
+      <div className="flex items-end gap-2" style={{ height: CHART_HEIGHT + 34 }}>
+        {bars.map((b) => {
+          const active = hover === b.mb.month;
+          return (
             <div
-              className="w-full rounded-t-sm"
-              style={
-                real
-                  ? { height: barHeight, backgroundColor: accent }
-                  : projected
-                    ? { height: barHeight, backgroundColor: `color-mix(in oklch, ${accent} 30%, transparent)` }
-                    : { height: barHeight, border: "1px dashed var(--border)" }
-              }
-            />
-            <span className="text-[10px] text-muted-foreground">{MONTHS_ES[m - 1].slice(0, 3)}</span>
-          </div>
-        );
-      })}
+              key={b.mb.month}
+              className="relative flex flex-1 flex-col items-center justify-end gap-1"
+              onMouseEnter={() => setHover(b.mb.month)}
+              onMouseLeave={() => setHover((h) => (h === b.mb.month ? null : h))}
+              onClick={() => setHover((h) => (h === b.mb.month ? null : b.mb.month))}
+            >
+              {active && <BarTooltip b={b} year={year} />}
+              {(b.gross > 0 || b.projected > 0) && (
+                <span className={`text-[10px] font-medium tabular-nums ${b.gross ? "text-foreground" : "italic text-muted-foreground/60"}`}>
+                  {formatCents(b.gross || b.projected)}
+                </span>
+              )}
+              {b.gross > 0 ? (
+                <div className="flex w-full flex-col-reverse overflow-hidden rounded-t-sm" style={{ height: Math.max((b.gross / max) * CHART_HEIGHT, 10) }}>
+                  {SEGMENTS.map((seg) => {
+                    const v = segValue(b, seg.key);
+                    if (v <= 0) return null;
+                    return <div key={seg.key} style={{ flex: v, backgroundColor: PAYROLL_CATEGORY[seg.category].color }} />;
+                  })}
+                </div>
+              ) : b.projected > 0 ? (
+                <div
+                  className="w-full rounded-t-sm"
+                  style={{ height: Math.max((b.projected / max) * CHART_HEIGHT, 10), backgroundColor: `color-mix(in oklch, ${PAYROLL_CATEGORY.salario.color} 30%, transparent)` }}
+                />
+              ) : (
+                <div className="w-full rounded-t-sm" style={{ height: 22, border: "1px dashed var(--border)" }} />
+              )}
+              <span className={`text-[10px] ${active ? "font-semibold text-foreground" : "text-muted-foreground"}`}>{MONTHS_ES[b.mb.month - 1].slice(0, 3)}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+        {SEGMENTS.map((seg) => (
+          <span key={seg.key} className="flex items-center gap-1">
+            <span className="size-2 rounded-sm" style={{ backgroundColor: PAYROLL_CATEGORY[seg.category].color }} />
+            {seg.label}
+          </span>
+        ))}
+        <span className="ml-auto">Pasa el mouse (o toca) una barra para ver el detalle del mes.</span>
+      </div>
+    </div>
+  );
+}
+
+function BarTooltip({ b, year }: { b: { mb: PayrollEmployeeAnnualSummary["monthly"][number]; salario: number; gross: number }; year: number }) {
+  const { mb } = b;
+  const line = (label: string, value: number, opts?: { color?: PayrollCategoryKey; strong?: boolean; sign?: "-" | "+" }) => (
+    <div className={`flex items-center justify-between gap-4 ${opts?.strong ? "border-t border-border pt-1 font-semibold" : ""}`}>
+      <span className="flex items-center gap-1.5 text-muted-foreground">
+        {opts?.color && <span className="size-2 rounded-sm" style={{ backgroundColor: PAYROLL_CATEGORY[opts.color].color }} />}
+        {label}
+      </span>
+      <span className="tabular-nums text-foreground">
+        {opts?.sign === "-" ? "−" : ""}
+        {formatCents(Math.abs(value))}
+      </span>
+    </div>
+  );
+  return (
+    <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-56 -translate-x-1/2 rounded-lg border border-border bg-popover p-2.5 text-[11px] shadow-lg">
+      <p className="mb-1 text-xs font-semibold text-foreground">
+        {MONTHS_ES[mb.month - 1]} {year}
+      </p>
+      {!mb.hasEntry ? (
+        <p className="text-muted-foreground">Sin quincenas registradas este mes.</p>
+      ) : (
+        <div className="flex flex-col gap-0.5">
+          {line("Quincenas (salario base)", mb.baseCents, { color: "salario" })}
+          {mb.extrasCents > 0 && line("Extras / bonos", mb.extrasCents, { color: "bonos" })}
+          {mb.descuentosCents > 0 && line("Descuentos varios", mb.descuentosCents, { color: "descuentos", sign: "-" })}
+          {mb.decimoCents > 0 && line("Décimo", mb.decimoCents, { color: "decimo" })}
+          {mb.vacacionCents > 0 && line("Vacación", mb.vacacionCents, { color: "vacacion" })}
+          {mb.primaCents > 0 && line("Prima de antigüedad", mb.primaCents, { color: "prima" })}
+          {line("Total devengado", b.gross, { strong: true })}
+          {mb.prestamoDescuentoCents > 0 && line("Descuento de préstamo", mb.prestamoDescuentoCents, { color: "descuentoPrestamos", sign: "-" })}
+          {line("Pagado (neto)", mb.netCents, { strong: true })}
+        </div>
+      )}
+      {mb.prestamoOtorgadoCents > 0 && (
+        <div className="mt-1.5 border-t border-border pt-1.5">{line("Préstamo otorgado (no es pago)", mb.prestamoOtorgadoCents, { color: "prestamos" })}</div>
+      )}
     </div>
   );
 }
@@ -351,7 +409,7 @@ export function ResumenView({
 
         {isOpen && (
           <div className="border-t border-border bg-muted/10 px-4 py-4">
-            <MonthlyBarChart row={row} accent={accent} projecting={projecting} year={year} />
+            <MonthlyBarChart row={row} projecting={projecting} year={year} />
             <p className="mb-2 mt-4 text-xs font-medium text-muted-foreground">Desglose anual por concepto</p>
             <div className="flex flex-wrap items-center gap-2">
               {CONCEPT_BADGES.map((b) => {

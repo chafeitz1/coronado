@@ -63,6 +63,7 @@ export function EmployeeDetailSheet({
   // same "scannable first, exhaustive on request" idea as Resumen
   // Anual's cards.
   const [breakdownOpen, setBreakdownOpen] = React.useState(false);
+  const [granularity, setGranularity] = React.useState<"quincena" | "mes">("quincena");
 
   // Extracted so LedgerSection can trigger a refetch after it creates
   // a loan, cancels one, or edits a generic movement -- those all
@@ -98,6 +99,33 @@ export function EmployeeDetailSheet({
   const periodOptions: LedgerPeriodOption[] = (rows ?? [])
     .filter((r) => r.entry !== null)
     .map((r) => ({ payrollEntryId: r.entry!.id, year: r.year, month: r.month, half: r.half }));
+
+  // Filas de la tabla principal: por quincena o sumadas por mes.
+  interface TableRow { key: string; label: string; base: number; extras: number; decimo: number; vacacion: number; descuentos: number; prestamo: number; total: number }
+  const money = (cents: number) => (cents ? formatCents(cents) : "–");
+  const toRow = (r: DetailRow): Omit<TableRow, "key" | "label"> => ({
+    base: r.entry?.basePayCents ?? 0,
+    extras: r.entry ? r.entry.extraHoursCents + r.entry.extraDaysCents + r.entry.viaticosCents + r.entry.bonusCents + r.entry.diasLibresCents : 0,
+    decimo: r.entry?.decimoPaidCents ?? 0,
+    vacacion: (r.entry?.vacationPaidCents ?? 0) + (r.entry?.primaAntiguedadPaidCents ?? 0),
+    descuentos: r.entry ? r.entry.horasDescontadasCents + r.entry.diasDescontadosCents + r.entry.otherDeductionCents : 0,
+    prestamo: r.ledgerPaymentCents,
+    total: r.totalCents,
+  });
+  const tableRows: TableRow[] =
+    granularity === "quincena"
+      ? withActivity.map((r) => ({ key: `${r.month}-${r.half}`, label: `${MONTHS_ES[r.month - 1]} · ${r.half === 1 ? "1ra" : "2da"}`, ...toRow(r) }))
+      : Array.from({ length: 12 }, (_, i) => i + 1).flatMap((m) => {
+          const rowsOfMonth = withActivity.filter((r) => r.month === m);
+          if (rowsOfMonth.length === 0) return [];
+          const acc: Omit<TableRow, "key" | "label"> = { base: 0, extras: 0, decimo: 0, vacacion: 0, descuentos: 0, prestamo: 0, total: 0 };
+          for (const r of rowsOfMonth) {
+            const x = toRow(r);
+            (Object.keys(acc) as (keyof typeof acc)[]).forEach((k) => (acc[k] += x[k]));
+          }
+          return [{ key: `m-${m}`, label: MONTHS_ES[m - 1], ...acc }];
+        });
+  const sum = (k: keyof Omit<TableRow, "key" | "label">) => tableRows.reduce((s, r) => s + r[k], 0);
 
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const current = currentPeriod();
@@ -161,7 +189,7 @@ export function EmployeeDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full gap-0 sm:max-w-2xl">
+      <SheetContent className="w-full gap-0 sm:max-w-3xl">
         <SheetHeader>
           <SheetTitle>{employee?.name ?? ""}</SheetTitle>
           <SheetDescription>Detalle de planilla — {year}</SheetDescription>
@@ -170,68 +198,67 @@ export function EmployeeDetailSheet({
           {withActivity.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">Sin pagos registrados en {year}.</p>
           )}
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                <th className="py-2 font-medium">Quincena</th>
-                <th className="py-2 text-right font-medium">Base</th>
-                <th className="py-2 text-right font-medium">Extras</th>
-                <th className="py-2 text-right font-medium">Descuentos</th>
-                <th className="py-2 text-right font-medium">Préstamos</th>
-                <th className="py-2 text-right font-medium">Total</th>
-                <th className="py-2 text-right font-medium">Saldo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {withActivity.map((row) => (
-                <tr key={`${row.month}-${row.half}`} className="border-b border-border last:border-0">
-                  <td className="py-1.5 text-foreground">
-                    {MONTHS_ES[row.month - 1]} · {row.half === 1 ? "1ra" : "2da"}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-muted-foreground">
-                    {row.entry ? formatCents(row.entry.basePayCents) : "–"}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-muted-foreground">
-                    {row.entry
-                      ? formatCents(
-                          row.entry.extraHoursCents +
-                            row.entry.extraDaysCents +
-                            row.entry.viaticosCents +
-                            row.entry.bonusCents +
-                            row.entry.diasLibresCents +
-                            row.entry.decimoPaidCents +
-                            row.entry.vacationPaidCents
-                        )
-                      : "–"}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-muted-foreground">
-                    {row.entry ? formatCents(row.entry.otherDeductionCents + row.ledgerPaymentCents) : "–"}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-muted-foreground">
-                    {row.ledgerDebtCents > 0 ? `+${formatCents(row.ledgerDebtCents)}` : "–"}
-                  </td>
-                  <td className="py-1.5 text-right font-medium tabular-nums text-foreground">
-                    {formatCents(row.totalCents)}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-muted-foreground">
-                    {formatCents(row.runningLedgerBalanceCents)}
-                  </td>
-                </tr>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              {granularity === "mes" ? "Un renglón por mes" : "Un renglón por quincena"}
+            </p>
+            <div className="flex items-center rounded-md border border-border p-0.5 text-xs">
+              {(["quincena", "mes"] as const).map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setGranularity(g)}
+                  className={`rounded px-2.5 py-1 font-medium transition-colors ${granularity === g ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  {g === "quincena" ? "Por quincena" : "Por mes"}
+                </button>
               ))}
-            </tbody>
-            {withActivity.length > 0 && (
-              <tfoot>
-                <tr className="border-t border-border font-medium">
-                  <td className="py-2 text-foreground">Total {year}</td>
-                  <td colSpan={4} />
-                  <td className="py-2 text-right tabular-nums text-foreground">
-                    {formatCents(withActivity.reduce((sum, r) => sum + r.totalCents, 0))}
-                  </td>
-                  <td />
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                  <th className="py-2 font-medium">{granularity === "mes" ? "Mes" : "Quincena"}</th>
+                  <th className="py-2 text-right font-medium">Base</th>
+                  <th className="py-2 text-right font-medium">Extras</th>
+                  <th className="py-2 text-right font-medium">Décimo</th>
+                  <th className="py-2 text-right font-medium" title="Vacación y prima de antigüedad">Vac./Prima</th>
+                  <th className="py-2 text-right font-medium">Descuentos</th>
+                  <th className="py-2 text-right font-medium">Préstamo</th>
+                  <th className="py-2 text-right font-medium">Total</th>
                 </tr>
-              </tfoot>
-            )}
-          </table>
+              </thead>
+              <tbody>
+                {tableRows.map((r) => (
+                  <tr key={r.key} className="border-b border-border last:border-0">
+                    <td className="py-1.5 text-foreground">{r.label}</td>
+                    <td className="py-1.5 text-right tabular-nums text-muted-foreground">{money(r.base)}</td>
+                    <td className="py-1.5 text-right tabular-nums text-muted-foreground">{money(r.extras)}</td>
+                    <td className="py-1.5 text-right tabular-nums text-muted-foreground">{money(r.decimo)}</td>
+                    <td className="py-1.5 text-right tabular-nums text-muted-foreground">{money(r.vacacion)}</td>
+                    <td className="py-1.5 text-right tabular-nums text-muted-foreground">{r.descuentos ? `−${formatCents(r.descuentos)}` : "–"}</td>
+                    <td className="py-1.5 text-right tabular-nums text-muted-foreground">{r.prestamo ? `−${formatCents(r.prestamo)}` : "–"}</td>
+                    <td className="py-1.5 text-right font-medium tabular-nums text-foreground">{formatCents(r.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              {tableRows.length > 0 && (
+                <tfoot>
+                  <tr className="border-t border-border font-medium">
+                    <td className="py-2 text-foreground">Total {year}</td>
+                    <td className="py-2 text-right tabular-nums">{money(sum("base"))}</td>
+                    <td className="py-2 text-right tabular-nums">{money(sum("extras"))}</td>
+                    <td className="py-2 text-right tabular-nums">{money(sum("decimo"))}</td>
+                    <td className="py-2 text-right tabular-nums">{money(sum("vacacion"))}</td>
+                    <td className="py-2 text-right tabular-nums">{sum("descuentos") ? `−${formatCents(sum("descuentos"))}` : "–"}</td>
+                    <td className="py-2 text-right tabular-nums">{sum("prestamo") ? `−${formatCents(sum("prestamo"))}` : "–"}</td>
+                    <td className="py-2 text-right tabular-nums text-foreground">{formatCents(sum("total"))}</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
 
           {rows && (
             <div className="mt-4 rounded-lg border border-border">

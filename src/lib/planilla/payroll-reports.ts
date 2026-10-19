@@ -16,6 +16,7 @@ import type {
   PayrollEmployee,
   PayrollEmployeeAnnualSummary,
   PayrollEntry,
+  PayrollMonthBreakdown,
   UpcomingObligations,
 } from "@/lib/types/planilla";
 import { periodKey, periodOrdinal, type Period } from "@/lib/planilla/payroll-period";
@@ -78,6 +79,24 @@ export function computeAnnualSummary(
   let prestamosCents = 0;
   let paidCents = 0;
 
+  const monthly: PayrollMonthBreakdown[] = Array.from({ length: 12 }, (_, i) => ({
+    month: i + 1,
+    hasEntry: false,
+    baseCents: 0,
+    extrasCents: 0,
+    descuentosCents: 0,
+    decimoCents: 0,
+    vacacionCents: 0,
+    primaCents: 0,
+    prestamoDescuentoCents: 0,
+    prestamoOtorgadoCents: 0,
+    netCents: 0,
+  }));
+  for (const r of history.ledger) {
+    if (r.direction !== "debt" || (r.category !== "prestamo" && r.category !== "adelanto")) continue;
+    const p = periodFromDateString(r.entryDate);
+    if (p && p.year === year) monthly[p.month - 1].prestamoOtorgadoCents += r.amountCents;
+  }
   const monthHasActivity = new Array(12).fill(false) as boolean[];
   const monthFullyPaid = new Array(12).fill(true) as boolean[];
   const monthHasEntry = new Array(12).fill(false) as boolean[];
@@ -87,8 +106,18 @@ export function computeAnnualSummary(
     totalsByPeriod[periodKey(month, half)] = total.totalCents;
     totalPaidCents += total.totalCents;
     prestamosCents += total.ledgerDebtCents;
+    const mb = monthly[month - 1];
+    mb.netCents += total.totalCents;
+    mb.prestamoDescuentoCents += total.ledgerPaymentCents;
     if (total.entry) {
       const e = total.entry;
+      mb.hasEntry = true;
+      mb.baseCents += e.basePayCents;
+      mb.extrasCents += e.extraHoursCents + e.extraDaysCents + e.viaticosCents + e.bonusCents + e.diasLibresCents;
+      mb.descuentosCents += e.horasDescontadasCents + e.diasDescontadosCents + e.otherDeductionCents;
+      mb.decimoCents += e.decimoPaidCents;
+      mb.vacacionCents += e.vacationPaidCents;
+      mb.primaCents += e.primaAntiguedadPaidCents;
       salarioCents +=
         e.basePayCents + e.extraHoursCents + e.extraDaysCents + e.viaticosCents + e.bonusCents + e.diasLibresCents;
       decimoCents += e.decimoPaidCents;
@@ -112,6 +141,7 @@ export function computeAnnualSummary(
   return {
     employee: history.employee,
     totalsByPeriod,
+    monthly,
     totalPaidCents,
     conceptTotals: { salarioCents, decimoCents, vacacionCents, primaCents, descuentosCents, prestamosCents },
     monthsWithActivity,

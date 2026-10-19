@@ -100,7 +100,50 @@ export function PrestamosView({ rows }: { rows: LoanOverviewEmployee[] }) {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="flex flex-col divide-y divide-border sm:hidden">
+            {r.loans.map((l) => {
+              const pending = l.principalCents - l.paidCents;
+              return (
+                <div key={l.id} className="px-4 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {CATEGORY_LABEL[l.category]} · {formatCents(l.principalCents)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{formatDisplayDate(l.requestDate)}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {l.status === "cancelled" ? <Badge variant="outline">Cancelado</Badge> : pending <= 0 ? <Badge variant="success">Pagado</Badge> : <Badge variant="outline">Con saldo</Badge>}
+                      <Button variant="ghost" size="icon" className="size-8" title="Estado de cuenta de este préstamo" onClick={() => openStatement(r, l.id)}>
+                        <Printer className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Descontado {formatCents(l.paidCents)}</span>
+                    <span className={pending > 0 ? "font-semibold text-destructive" : "text-muted-foreground"}>Pendiente {formatCents(pending)}</span>
+                  </div>
+                  {l.installments.length > 0 && (
+                    <details className="mt-1.5 text-[11px] text-muted-foreground">
+                      <summary className="cursor-pointer">Ver descuentos ({l.installments.length})</summary>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {l.installments.map((i) => (
+                          <span key={i.ledgerEntryId} className={`rounded border px-1.5 py-0.5 tabular-nums ${i.paid ? "border-border" : "border-dashed"}`}>
+                            {periodLabel(i.period)} · {formatCents(i.amountCents)}
+                          </span>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              );
+            })}
+            {r.unlinkedPaidCents > 0 && (
+              <p className="px-4 py-2 text-xs text-muted-foreground">Descuentos sin préstamo asociado: {formatCents(r.unlinkedPaidCents)}</p>
+            )}
+          </div>
+
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[640px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/40 text-xs text-muted-foreground">

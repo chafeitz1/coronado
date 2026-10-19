@@ -166,6 +166,10 @@ const STATUS_FILTERS: { key: "todos" | "activo" | "inactivo"; label: string }[] 
  *  classes (bg-muted/40, bg-foreground/90 ...) let those numbers show
  *  through the names (Oct 2026 report). Same tints, mixed into the page
  *  background instead of see-through. */
+/** Columna congelada: en el celular se estrecha (nombres cortados con …) para
+ *  que no ocupe toda la pantalla y se pueda ver el resto de la tabla. */
+const STICKY_W = "w-28 min-w-28 max-w-28 overflow-hidden sm:w-auto sm:min-w-0 sm:max-w-none sm:overflow-visible";
+
 const STICKY_BG: Record<"head" | "muted" | "planilla", React.CSSProperties> = {
   head: { backgroundColor: "color-mix(in oklch, var(--muted) 40%, var(--background))", boxShadow: "1px 0 0 var(--border)" },
   muted: { backgroundColor: "color-mix(in oklch, var(--muted) 30%, var(--background))", boxShadow: "1px 0 0 var(--border)" },
@@ -416,11 +420,13 @@ export function AuditoriaView({
     return (
       <React.Fragment key={row.employee.id}>
         <tr className={`cursor-pointer border-b border-border hover:bg-accent/40`} onClick={() => toggleEmployee(row.employee.id)}>
-          <td className={`sticky left-0 z-10 bg-background px-2 ${d.empRow}`}>
+          <td className={`sticky left-0 z-10 bg-background px-2 ${STICKY_W} ${d.empRow}`}>
             <div className="flex items-center gap-1.5">
               <ChevronDown className={`size-3 shrink-0 text-muted-foreground transition-transform ${isOpen ? "" : "-rotate-90"}`} />
-              <EmployeeAvatar name={row.employee.name} employeeId={row.employee.id} sortOrder={row.employee.sortOrder} />
-              <span className="whitespace-nowrap font-medium text-foreground">{row.employee.name}</span>
+              <span className="hidden sm:inline-flex">
+                <EmployeeAvatar name={row.employee.name} employeeId={row.employee.id} sortOrder={row.employee.sortOrder} />
+              </span>
+              <span className="min-w-0 truncate font-medium text-foreground">{row.employee.name}</span>
             </div>
           </td>
           {displayPeriods(row.periods).map((v, i) => (
@@ -440,7 +446,7 @@ export function AuditoriaView({
           // out (text-muted-foreground/40) since there's nothing to
           // flag there.
           <tr className="border-b border-border/50 text-[11px]">
-            <td className={`sticky left-0 z-10 bg-background pl-8 pr-2 ${d.groupRow} text-muted-foreground italic`}>Quincena Base</td>
+            <td className={`sticky left-0 z-10 bg-background pl-3 pr-2 sm:pl-8 ${STICKY_W} ${d.groupRow} truncate text-muted-foreground italic`}>Quincena Base</td>
             {displayPeriods(row.basePeriods).map((v, i) => {
               const totalV = displayPeriods(row.periods)[i];
               const differs = v !== totalV;
@@ -487,12 +493,12 @@ export function AuditoriaView({
               <React.Fragment key={g.key}>
                 <tr className={`cursor-pointer text-[11px] ${d.groupRow}`} onClick={() => toggleGroup(groupKey)}>
                   <td
-                    className={`sticky left-0 z-10 pl-8 pr-2 ${d.groupRow} ${hasLineItems ? "rounded-t-md" : "rounded-md"}`}
+                    className={`sticky left-0 z-10 pl-3 pr-2 sm:pl-8 ${STICKY_W} ${d.groupRow} ${hasLineItems ? "rounded-t-md" : "rounded-md"}`}
                     style={{ ...headerBorder, borderLeft: `1px solid ${borderColor}` }}
                   >
                     <div className="flex items-center gap-1">
                       <ChevronDown className={`size-2.5 shrink-0 transition-transform ${groupOpen ? "" : "-rotate-90"}`} style={{ color }} />
-                      <span className="whitespace-nowrap font-semibold" style={{ color }}>
+                      <span className="min-w-0 truncate font-semibold" style={{ color }}>
                         {g.label}
                       </span>
                     </div>
@@ -519,7 +525,7 @@ export function AuditoriaView({
                     return (
                       <tr key={li.key} className={`text-[11px] ${d.lineRow}`}>
                         <td
-                          className={`sticky left-0 z-10 pl-14 pr-2 ${d.lineRow} text-foreground/80 ${isLastLine ? "rounded-bl-md" : ""}`}
+                          className={`sticky left-0 z-10 pl-5 pr-2 sm:pl-14 ${STICKY_W} ${d.lineRow} truncate text-foreground/80 ${isLastLine ? "rounded-bl-md" : ""}`}
                           style={{ ...lineBorder, borderLeft: `1px solid ${borderColor}` }}
                         >
                           {li.label}
@@ -768,7 +774,7 @@ export function AuditoriaView({
             <thead>
               {isMonthly ? (
                 <tr className="border-b border-border bg-muted/40 text-muted-foreground">
-                  <th className={`sticky left-0 z-10 px-2 ${d.head} text-left font-medium`} style={STICKY_BG.head}>Empleado</th>
+                  <th className={`sticky left-0 z-10 px-2 ${STICKY_W} ${d.head} text-left font-medium`} style={STICKY_BG.head}>Empleado</th>
                   {MONTHS_ES.map((m, i) => (
                     <th key={i} className={`border-l border-border px-1.5 ${d.head} text-center font-medium`}>
                       {m.slice(0, 3)}
@@ -779,7 +785,7 @@ export function AuditoriaView({
               ) : (
                 <>
                   <tr className="border-b border-border bg-muted/40 text-muted-foreground">
-                    <th rowSpan={2} className={`sticky left-0 z-10 px-2 ${d.head} text-left align-bottom font-medium`} style={STICKY_BG.head}>
+                    <th rowSpan={2} className={`sticky left-0 z-10 px-2 ${STICKY_W} ${d.head} text-left align-bottom font-medium`} style={STICKY_BG.head}>
                       Empleado
                     </th>
                     {MONTHS_ES.map((m, i) => (
@@ -803,7 +809,7 @@ export function AuditoriaView({
             </thead>
             <tbody>
               <tr className="border-b-2 border-border bg-foreground/90 text-background">
-                <td className={`sticky left-0 z-10 px-2 ${d.empRow} font-semibold uppercase tracking-wide`} style={STICKY_BG.planilla}>Total Planilla</td>
+                <td className={`sticky left-0 z-10 px-2 ${STICKY_W} ${d.empRow} truncate font-semibold uppercase tracking-wide`} style={STICKY_BG.planilla}>Total Planilla</td>
                 {displayPeriods(data.periodTotals).map((v, i) => (
                   <td key={i} className={`px-1.5 ${d.empRow} text-right tabular-nums`}>
                     {formatCents(v)}
@@ -831,7 +837,7 @@ export function AuditoriaView({
             )}
             <tfoot>
               <tr className="border-t-2 border-border bg-muted/30 font-semibold text-foreground">
-                <td className={`sticky left-0 z-10 px-2 ${d.empRow}`} style={STICKY_BG.muted}>Total General</td>
+                <td className={`sticky left-0 z-10 px-2 ${STICKY_W} ${d.empRow}`} style={STICKY_BG.muted}>Total General</td>
                 {displayPeriods(data.periodTotals).map((v, i) => (
                   <td key={i} className={`px-1.5 ${d.empRow} text-right tabular-nums`}>
                     {formatCents(v)}

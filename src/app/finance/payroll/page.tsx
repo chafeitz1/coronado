@@ -8,7 +8,7 @@ import { mutedText, pageHeading } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";
 
-const TABS: PayrollTab[] = ["dashboard", "registro", "resumen", "auditoria", "prestamos", "solicitudes"];
+const TABS: PayrollTab[] = ["dashboard", "registro", "resumen", "auditoria", "solicitudes"];
 
 /**
  * Cada pestaña trae sus datos con la página (Server Component), igual que
@@ -16,11 +16,13 @@ const TABS: PayrollTab[] = ["dashboard", "registro", "resumen", "auditoria", "pr
  * Antes cada pestaña pedía sus datos con server actions, que Next despacha
  * de una en una y que se quedaban en cola.
  */
-export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ tab?: string; year?: string }> }) {
+export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ tab?: string; year?: string; section?: string }> }) {
   await requireOwner();
   const params = await searchParams;
   const period = currentPeriod();
-  const tab: PayrollTab = TABS.includes(params.tab as PayrollTab) ? (params.tab as PayrollTab) : "registro";
+  // "prestamos" ahora vive dentro de Resumen Anual (como "Historial de préstamos").
+  const asksLoans = params.tab === "prestamos" || params.section === "prestamos";
+  const tab: PayrollTab = asksLoans ? "resumen" : TABS.includes(params.tab as PayrollTab) ? (params.tab as PayrollTab) : "registro";
   const parsedYear = Number(params.year);
   const year = Number.isInteger(parsedYear) && parsedYear > 2000 && parsedYear < 2100 ? parsedYear : period.year;
 
@@ -36,9 +38,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
         break;
       }
       case "resumen": {
-        const [emps, rows] = await Promise.all([employeesPromise, getAnnualSummary(year)]);
+        const [emps, rows, loans] = await Promise.all([employeesPromise, getAnnualSummary(year), getLoansOverview()]);
         employees = emps;
-        data = { kind: "resumen", rows };
+        data = { kind: "resumen", rows, loans, section: asksLoans ? "prestamos" : "empleados" };
         break;
       }
       case "auditoria": {
@@ -51,12 +53,6 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
         const [emps, overview] = await Promise.all([employeesPromise, getPlanillaOverview(year)]);
         employees = emps;
         data = { kind: "dashboard", rows: overview.rows, obligations: overview.obligations };
-        break;
-      }
-      case "prestamos": {
-        const [emps, loans] = await Promise.all([employeesPromise, getLoansOverview()]);
-        employees = emps;
-        data = { kind: "prestamos", rows: loans };
         break;
       }
       default: {

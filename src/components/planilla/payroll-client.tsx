@@ -16,21 +16,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/payroll-u
 import { Button } from "@/components/payroll-ui/button";
 import { DashboardView } from "@/components/planilla/dashboard-view";
 import { AuditoriaView } from "@/components/planilla/auditoria-view";
-import { PrestamosView } from "@/components/planilla/prestamos-view";
 import { SolicitudesView } from "@/components/planilla/solicitudes-view";
 import { RegistroView } from "@/components/planilla/registro-view";
 import { ResumenView } from "@/components/planilla/resumen-view";
 import { EmployeeDetailSheet } from "@/components/planilla/employee-detail-sheet";
 import { type ColumnKey, defaultVisibleColumns, REGISTRO_COLUMNS_STORAGE_KEY } from "@/components/planilla/registro-columns";
 
-export type PayrollTab = "dashboard" | "registro" | "resumen" | "auditoria" | "prestamos" | "solicitudes";
+export type PayrollTab = "dashboard" | "registro" | "resumen" | "auditoria" | "solicitudes";
 
 export type PayrollTabData =
   | { kind: "registro"; period: { year: number; month: number; half: 1 | 2 }; rows: RegistroRow[] }
-  | { kind: "resumen"; rows: PayrollEmployeeAnnualSummary[] }
+  | { kind: "resumen"; rows: PayrollEmployeeAnnualSummary[]; loans: LoanOverviewEmployee[]; section: "empleados" | "prestamos" }
   | { kind: "auditoria"; data: AuditoriaData }
   | { kind: "dashboard"; rows: PayrollEmployeeAnnualSummary[]; obligations: UpcomingObligations }
-  | { kind: "prestamos"; rows: LoanOverviewEmployee[] }
   | { kind: "solicitudes"; requests: LoanRequestRow[] }
   | { kind: "error"; message: string };
 
@@ -96,7 +94,6 @@ export function PayrollClient({
     registro: "Registro",
     resumen: "Resumen Anual",
     auditoria: "Auditoría",
-    prestamos: "Préstamos",
     solicitudes: "Solicitudes",
   };
 
@@ -146,6 +143,8 @@ export function PayrollClient({
           <TabsContent value="resumen" forceMount className="m-0">
             <ResumenView
               rows={data.rows}
+              loans={data.loans}
+              initialSection={data.section}
               year={year}
               onYearChange={(y) => go("resumen", y)}
               onViewDetail={setDetailEmployeeId}
@@ -161,11 +160,6 @@ export function PayrollClient({
         {data.kind === "dashboard" && (
           <TabsContent value="dashboard" forceMount className="m-0">
             <DashboardView rows={data.rows} obligations={data.obligations} year={year} onYearChange={(y) => go("dashboard", y)} />
-          </TabsContent>
-        )}
-        {data.kind === "prestamos" && (
-          <TabsContent value="prestamos" forceMount className="m-0">
-            <PrestamosView rows={data.rows} />
           </TabsContent>
         )}
         {data.kind === "solicitudes" && (

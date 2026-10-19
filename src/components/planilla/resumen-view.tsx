@@ -26,6 +26,8 @@ import { MONTHS_ES, currentPeriod, periodOrdinal, formatCents } from "@/lib/plan
 import { formatDisplayDate } from "@/lib/planilla/format-date";
 import { setEmployeeLiquidationAction, getEmployeeAnnualDetailAction } from "@/app/actions/planilla";
 import { EmployeeAvatar } from "@/components/planilla/employee-avatar";
+import { PrestamosView } from "@/components/planilla/prestamos-view";
+import type { LoanOverviewEmployee } from "@/lib/payroll-service/payroll";
 import { LiquidationDialog } from "@/components/planilla/liquidation-dialog";
 import {
   PAYROLL_CATEGORY,
@@ -153,7 +155,7 @@ function MonthlyBarChart({
 
   return (
     <div>
-      <div className="flex items-end gap-2" style={{ height: CHART_HEIGHT + 34 }}>
+      <div className="flex items-end gap-1 sm:gap-2" style={{ height: CHART_HEIGHT + 34 }}>
         {bars.map((b) => {
           const active = hover === b.mb.month;
           return (
@@ -166,7 +168,7 @@ function MonthlyBarChart({
             >
               {active && <BarTooltip b={b} year={year} side={b.mb.month <= 6 ? "right" : "left"} />}
               {(b.gross > 0 || b.projected > 0) && (
-                <span className={`text-[10px] font-medium tabular-nums ${b.gross ? "text-foreground" : "italic text-muted-foreground/60"}`}>
+                <span className={`hidden text-[10px] font-medium tabular-nums sm:inline ${b.gross ? "text-foreground" : "italic text-muted-foreground/60"}`}>
                   {formatCents(b.gross || b.projected)}
                 </span>
               )}
@@ -219,7 +221,7 @@ function BarTooltip({ b, year, side }: { b: { mb: PayrollEmployeeAnnualSummary["
     </div>
   );
   return (
-    <div className={`pointer-events-none absolute top-0 z-30 w-56 rounded-lg border border-border bg-popover p-2.5 text-[11px] shadow-lg ${side === "right" ? "left-full ml-1" : "right-full mr-1"}`}>
+    <div className={`pointer-events-none absolute top-0 z-30 w-52 rounded-lg border border-border bg-popover sm:w-56 p-2.5 text-[11px] shadow-lg ${side === "right" ? "left-full ml-1" : "right-full mr-1"}`}>
       <p className="mb-1 text-xs font-semibold text-foreground">
         {MONTHS_ES[mb.month - 1]} {year}
       </p>
@@ -247,18 +249,23 @@ function BarTooltip({ b, year, side }: { b: { mb: PayrollEmployeeAnnualSummary["
 
 export function ResumenView({
   rows,
+  loans,
+  initialSection = "empleados",
   year,
   onYearChange,
   onViewDetail,
   onRefresh,
 }: {
   rows: PayrollEmployeeAnnualSummary[];
+  loans: LoanOverviewEmployee[];
+  initialSection?: "empleados" | "prestamos";
   year: number;
   onYearChange: (year: number) => void;
   onViewDetail: (employeeId: string) => void;
   /** Recarga los datos de la página (router.refresh). */
   onRefresh: () => void;
 }) {
+  const [section, setSection] = React.useState<"empleados" | "prestamos">(initialSection);
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
   // Terminated employees are real historical data that must stay
   // accessible (never hidden permanently, per CLAUDE.md), but there's
@@ -363,7 +370,7 @@ export function ResumenView({
               )}
             </div>
 
-            <div className="ml-auto flex flex-wrap items-center gap-5">
+            <div className="grid w-full grid-cols-2 gap-3 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-5">
               <StatBlock icon={Coins} color="var(--success)" hint="Todo lo registrado en el año (quincenas, décimo, vacación…), pagado o no." label="Total Anual" value={formatCents(row.totalPaidCents)} />
               <StatBlock
                 icon={CheckCircle2}
@@ -437,7 +444,7 @@ export function ResumenView({
     );
   }
 
-  return (
+  const empleadosSection = (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -519,6 +526,24 @@ export function ResumenView({
           onSaved={onRefresh}
         />
       )}
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex w-fit items-center rounded-md border border-border p-0.5 text-sm">
+        {([["empleados", "Por empleado"], ["prestamos", "Historial de préstamos"]] as const).map(([k, label]) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setSection(k)}
+            className={`rounded px-3 py-1.5 font-medium transition-colors ${section === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {section === "prestamos" ? <PrestamosView rows={loans} /> : empleadosSection}
     </div>
   );
 }

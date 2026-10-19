@@ -1,45 +1,47 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { fetchTracking } from '@/lib/tracking/queries'
-import { computeHebrewYears, TrackingRecord, HebrewBucket } from '@/lib/tracking/constants'
+import { fetchTrackingData } from '@/lib/tracking/queries'
+import { computeHebrewYears, TrackingRecord, TrackingEvent, HebrewBucket } from '@/lib/tracking/constants'
 import KPICards       from './KPICards'
 import TablaResumen   from './TablaResumen'
 import Estadisticas   from './Estadisticas'
 import Historial      from './Historial'
 import Comparativo    from './Comparativo'
-import CalendarioView from './CalendarioView'
 import DatosCuriosos  from './DatosCuriosos'
 import NuevaVisitaModal from './NuevaVisitaModal'
+import RellenarModal from './RellenarModal'
 
-const CIVIL_YEARS = [0, 2021, 2022, 2023, 2024, 2025, 2026]
+const CIVIL_YEARS = [0, 2021, 2022, 2023, 2024, 2025, 2026, 2027]
 
 const VIEWS = [
   { id: 'resumen',       label: '📊 Resumen'       },
   { id: 'estadisticas',  label: '📈 Estadísticas'  },
-  { id: 'historial',     label: '📋 Historial'     },
-  { id: 'calendario',    label: '🗓️ Calendario'    },
+  { id: 'historial',     label: '📋 Historial / Calendario' },
   { id: 'curiosidades',  label: '✨ Datos Curiosos' },
 ]
 
 export default function TrackingPage() {
   const [data,       setData]       = useState<TrackingRecord[]>([])
+  const [events,     setEvents]     = useState<TrackingEvent[]>([])
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState<string | null>(null)
   const [activeYear, setActiveYear] = useState(0)
   const [activeView, setActiveView] = useState('resumen')
   const [showModal,  setShowModal]  = useState(false)
+  const [editing,    setEditing]    = useState<TrackingEvent | null>(null)
+  const [showFill,   setShowFill]   = useState(false)
   const [hebrewMode, setHebrewMode] = useState(false)
 
   const loadData = useCallback(async () => {
-    try { setData(await fetchTracking()); setError(null) }
+    try { const r = await fetchTrackingData(); setData(r.records); setEvents(r.events); setError(null) }
     catch (e) { setError(e instanceof Error ? e.message : 'Error desconocido') }
     finally { setLoading(false) }
   }, [])
 
   useEffect(() => {
     let cancelled = false
-    fetchTracking()
-      .then(d => { if (!cancelled) { setData(d); setLoading(false) } })
+    fetchTrackingData()
+      .then(r => { if (!cancelled) { setData(r.records); setEvents(r.events); setLoading(false) } })
       .catch(e => { if (!cancelled) { setError(e instanceof Error ? e.message : 'Error desconocido'); setLoading(false) } })
     return () => { cancelled = true }
   }, [])
@@ -61,8 +63,16 @@ export default function TrackingPage() {
     return data.filter(r => r.fecha_ini >= bucket.start && r.fecha_ini < bucket.end)
   }, [data, activeYear, hebrewMode, hebrewYears])
 
-  const showYearBar = activeView !== 'calendario'
-  const totalEventos = new Set(data.map(r => r.eventoKey)).size
+  const filteredEvents = useMemo<TrackingEvent[]>(() => {
+    if (activeYear === 0) return events
+    if (!hebrewMode) return events.filter(e => e.year === activeYear)
+    const bucket = hebrewYears.find(b => b.startYear === activeYear)
+    if (!bucket) return events
+    return events.filter(e => e.fecha_ini >= bucket.start && e.fecha_ini < bucket.end)
+  }, [events, activeYear, hebrewMode, hebrewYears])
+
+  const showYearBar = true
+  const totalEventos = events.length
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -96,7 +106,7 @@ export default function TrackingPage() {
         <div>
           <h1 className="text-lg font-bold" style={{ color: 'var(--ink)' }}>Tracking de Visitas</h1>
           <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
-            {data.length} registros · {totalEventos} eventos
+            {totalEventos} eventos (fines de semana y fiestas) · {data.length} registros de asistencia
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -160,21 +170,27 @@ export default function TrackingPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-6" style={{ background: 'var(--canvas-soft)' }}>
-        {!['curiosidades','calendario'].includes(activeView) && (
-          <KPICards data={filtered} allData={data} activeYear={activeYear} />
+        {activeView !== 'curiosidades' && (
+          <KPICards data={filtered} allData={data} events={filteredEvents} activeYear={activeYear} />
         )}
 
         {activeView === 'resumen'      && <><TablaResumen data={filtered} allData={data} hebrewMode={hebrewMode} hebrewYears={hebrewYears} /><Comparativo data={data} activeYear={activeYear} /></>}
         {activeView === 'estadisticas' && <Estadisticas data={filtered} allData={data} />}
-        {activeView === 'historial'    && <Historial data={filtered} />}
-        {activeView === 'calendario'   && <CalendarioView allData={data} activeYear={activeYear} />}
+        {activeView === 'historial'    && <Historial events={filteredEvents} onEdit={setEditing} onGenerate={() => setShowFill(true)} />}
         {activeView === 'curiosidades' && <DatosCuriosos data={filtered} allData={data} hebrewMode={hebrewMode} hebrewYears={hebrewYears} />}
       </div>
 
-      {showModal && (
+      {(showModal || editing) && (
         <NuevaVisitaModal
-          onClose={() => setShowModal(false)}
-          onSaved={() => { setShowModal(false); reload() }}
+          evento={editing}
+          onClose={() => { setShowModal(false); setEditing(null) }}
+          onSaved={() => { setShowModal(false); setEditing(null); reload() }}
+        />
+      )}
+      {showFill && (
+        <RellenarModal
+          onClose={() => setShowFill(false)}
+          onSaved={() => { setShowFill(false); reload() }}
         />
       )}
     </div>

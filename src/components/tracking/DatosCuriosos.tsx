@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { FAMILIAS, MESES, TrackingRecord, HebrewBucket } from '@/lib/tracking/constants'
+import { FAMILIAS, MESES, TrackingRecord, HebrewBucket, fmtFecha } from '@/lib/tracking/constants'
 
 const CORE_KEYS = ['Papi y Mami','Flia Harari','Flia Hayo','Flia Hafeitz Assis','Flia Hafeitz Abadi','Flia Hafeitz Hanono']
 const PAPI = 'Papi y Mami'
@@ -81,7 +81,7 @@ export default function DatosCuriosos({ data, allData, hebrewMode = false }: Pro
               <div>
                 <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>Último</div>
                 <div className="text-xs font-medium" style={{ color: 'var(--ink)' }}>{lastTJ.evento}</div>
-                <div className="text-xs" style={{ color: 'var(--ink-faint)' }}>{lastTJ.fecha_ini}</div>
+                <div className="text-xs" style={{ color: 'var(--ink-faint)' }}>{fmtFecha(lastTJ.fecha_ini)}</div>
               </div>
             )}
           </div>
@@ -101,7 +101,7 @@ export default function DatosCuriosos({ data, allData, hebrewMode = false }: Pro
                   {isOpen && evts.map((e,i) => (
                     <div key={i} className="flex justify-between text-xs py-0.5 pl-4" style={{ color: 'var(--ink-muted)' }}>
                       <span className="truncate pr-2">{e.evento || '—'}</span>
-                      <span className="shrink-0">{e.fecha_ini}</span>
+                      <span className="shrink-0">{fmtFecha(e.fecha_ini)}</span>
                     </div>
                   ))}
                 </div>
@@ -124,7 +124,7 @@ export default function DatosCuriosos({ data, allData, hebrewMode = false }: Pro
                     <div>
                       <span className="text-sm font-bold" style={{ color: 'var(--ink)' }}>{n}</span>
                       <span className="text-xs ml-1" style={{ color: 'var(--ink-muted)' }}>v</span>
-                      {last && <span className="text-xs ml-2" style={{ color: 'var(--ink-faint)' }}>{last}</span>}
+                      {last && <span className="text-xs ml-2" style={{ color: 'var(--ink-faint)' }}>{fmtFecha(last)}</span>}
                     </div>
                   </div>
                   <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--canvas-soft)' }}>
@@ -178,7 +178,7 @@ export default function DatosCuriosos({ data, allData, hebrewMode = false }: Pro
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>{e.fecha_ini}</div>
+                      <div className="text-xs" style={{ color: 'var(--ink-muted)' }}>{fmtFecha(e.fecha_ini)}</div>
                       <div className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{isOpen ? '▲' : '▼'}</div>
                     </div>
                   </button>

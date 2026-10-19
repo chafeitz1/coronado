@@ -90,3 +90,43 @@ export interface TrackingRecord {
   tipo:       string
   notas:      string
 }
+
+// ── Evento (una fila por evento, incluso si nadie fue) ─────────────────────────
+export interface TrackingEvent {
+  key:          string
+  evento:       string
+  fecha_ini:    string
+  fecha_salida: string | null
+  tipo:         string
+  notas:        string
+  year:         number
+  /** noches por familia; vacío = nadie fue */
+  asistencia:   Record<string, number>
+}
+
+// ── Formato de fecha: 25-Sep-26 (como el Google Sheet) ─────────────────────────
+const MES_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+export function fmtFecha(iso?: string | null): string {
+  const m = iso ? /^(\d{4})-(\d{2})-(\d{2})/.exec(iso) : null
+  if (!m) return iso || '—'
+  return `${Number(m[3])}-${MES_EN[Number(m[2]) - 1]}-${m[1].slice(2)}`
+}
+
+const DIAS = ['dom','lun','mar','mié','jue','vie','sáb']
+export function diaSemana(iso?: string | null): string {
+  const m = iso ? /^(\d{4})-(\d{2})-(\d{2})/.exec(iso) : null
+  if (!m) return ''
+  return DIAS[new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))).getUTCDay()]
+}
+
+/** Noches entre dos fechas ISO (salida - llegada). */
+export function nochesEntre(ini?: string | null, fin?: string | null): number {
+  if (!ini || !fin) return 0
+  const a = Date.parse(ini + 'T00:00:00Z'), b = Date.parse(fin + 'T00:00:00Z')
+  return Number.isNaN(a) || Number.isNaN(b) ? 0 : Math.max(0, Math.round((b - a) / 86400000))
+}
+
+export function hoyISO(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}

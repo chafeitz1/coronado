@@ -4,7 +4,7 @@ import {
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
 } from 'recharts'
-import { FAMILIAS, TIPOS_EVENTO, TrackingRecord } from '@/lib/tracking/constants'
+import { FAMILIAS, TIPOS_EVENTO, TrackingRecord, fmtFecha } from '@/lib/tracking/constants'
 
 // Tooltip styling for Coronado light theme
 const TT = {
@@ -206,7 +206,7 @@ function TendenciaTipoChart({ data, allData }: Props) {
                         })}
                       </div>
                     </div>
-                    <span className="text-xs ml-2 shrink-0" style={{ color: 'var(--ink-muted)' }}>{e.fecha_ini}</span>
+                    <span className="text-xs ml-2 shrink-0" style={{ color: 'var(--ink-muted)' }}>{fmtFecha(e.fecha_ini)}</span>
                   </div>
                 ))}
               </div>

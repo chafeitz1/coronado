@@ -10,6 +10,7 @@ import Comparativo    from './Comparativo'
 import DatosCuriosos  from './DatosCuriosos'
 import NuevaVisitaModal from './NuevaVisitaModal'
 import RellenarModal from './RellenarModal'
+import type { ResumenMetric, ResumenView } from './TablaResumen'
 
 const CIVIL_YEARS = [0, 2021, 2022, 2023, 2024, 2025, 2026, 2027]
 
@@ -20,17 +21,40 @@ const VIEWS = [
   { id: 'curiosidades',  label: '✨ Datos Curiosos' },
 ]
 
+// Vista predeterminada (se guarda en este navegador). Por defecto: Resumen,
+// anual, año fiscal, todos los años.
+interface ViewPrefs {
+  activeView: string
+  tablaView: ResumenView
+  metric: ResumenMetric
+  hebrewMode: boolean
+  activeYear: number
+}
+const DEFAULT_PREFS: ViewPrefs = { activeView: 'resumen', tablaView: 'anual', metric: 'visitas', hebrewMode: false, activeYear: 0 }
+const PREFS_KEY = 'coronado:visitas-default-view'
+
+function readPrefs(): ViewPrefs {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(PREFS_KEY) : null
+    return raw ? { ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<ViewPrefs>) } : DEFAULT_PREFS
+  } catch { return DEFAULT_PREFS }
+}
+
 export default function TrackingPage() {
   const [data,       setData]       = useState<TrackingRecord[]>([])
   const [events,     setEvents]     = useState<TrackingEvent[]>([])
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState<string | null>(null)
-  const [activeYear, setActiveYear] = useState(0)
-  const [activeView, setActiveView] = useState('resumen')
+  const [initialPrefs] = useState<ViewPrefs>(readPrefs)
+  const [activeYear, setActiveYear] = useState(initialPrefs.activeYear)
+  const [activeView, setActiveView] = useState(initialPrefs.activeView)
+  const [tablaView, setTablaView] = useState<ResumenView>(initialPrefs.tablaView)
+  const [metric, setMetric] = useState<ResumenMetric>(initialPrefs.metric)
+  const [savedPrefs, setSavedPrefs] = useState<ViewPrefs>(initialPrefs)
   const [showModal,  setShowModal]  = useState(false)
   const [editing,    setEditing]    = useState<TrackingEvent | null>(null)
   const [showFill,   setShowFill]   = useState(false)
-  const [hebrewMode, setHebrewMode] = useState(false)
+  const [hebrewMode, setHebrewMode] = useState(initialPrefs.hebrewMode)
 
   const loadData = useCallback(async () => {
     try { const r = await fetchTrackingData(); setData(r.records); setEvents(r.events); setError(null) }
@@ -45,6 +69,13 @@ export default function TrackingPage() {
       .catch(e => { if (!cancelled) { setError(e instanceof Error ? e.message : 'Error desconocido'); setLoading(false) } })
     return () => { cancelled = true }
   }, [])
+
+  const currentPrefs: ViewPrefs = { activeView, tablaView, metric, hebrewMode, activeYear }
+  const isDefault = JSON.stringify(currentPrefs) === JSON.stringify(savedPrefs)
+  const saveDefault = () => {
+    try { window.localStorage.setItem(PREFS_KEY, JSON.stringify(currentPrefs)) } catch { /* sin almacenamiento */ }
+    setSavedPrefs(currentPrefs)
+  }
 
   const reload = () => { setLoading(true); setError(null); loadData() }
   const changeMode = (mode: boolean) => { setHebrewMode(mode); setActiveYear(0) }
@@ -115,6 +146,12 @@ export default function TrackingPage() {
                   style={{ borderColor: 'var(--hairline)', color: 'var(--ink-muted)' }}>
             ↻ Actualizar
           </button>
+          <button onClick={saveDefault} disabled={isDefault}
+                  className="px-3 py-1.5 rounded-lg text-xs border transition-colors disabled:cursor-default"
+                  style={{ borderColor: 'var(--hairline)', color: isDefault ? 'var(--ink-faint)' : 'var(--ink-muted)' }}
+                  title="Guarda la vista actual (pestaña, anual/mensual, fiscal/hebreo, año) como la que se abre por defecto">
+            {isDefault ? '★ Vista predeterminada' : '☆ Guardar como predeterminada'}
+          </button>
           <button onClick={() => setShowModal(true)}
                   className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                   style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}>
@@ -174,7 +211,7 @@ export default function TrackingPage() {
           <KPICards data={filtered} allData={data} events={filteredEvents} activeYear={activeYear} />
         )}
 
-        {activeView === 'resumen'      && <><TablaResumen data={filtered} allData={data} hebrewMode={hebrewMode} hebrewYears={hebrewYears} /><Comparativo data={data} activeYear={activeYear} /></>}
+        {activeView === 'resumen'      && <><TablaResumen data={filtered} allData={data} hebrewMode={hebrewMode} hebrewYears={hebrewYears} metric={metric} onMetricChange={setMetric} view={tablaView} onViewChange={setTablaView} /><Comparativo data={data} activeYear={activeYear} /></>}
         {activeView === 'estadisticas' && <Estadisticas data={filtered} allData={data} />}
         {activeView === 'historial'    && <Historial events={filteredEvents} onEdit={setEditing} onGenerate={() => setShowFill(true)} />}
         {activeView === 'curiosidades' && <DatosCuriosos data={filtered} allData={data} hebrewMode={hebrewMode} hebrewYears={hebrewYears} />}

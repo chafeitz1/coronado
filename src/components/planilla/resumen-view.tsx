@@ -406,17 +406,29 @@ export function ResumenView({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">{active.map(renderCard)}</div>
+      {active.length > 0 && (
+        <div className="overflow-hidden rounded-lg border" style={{ borderColor: "color-mix(in oklch, var(--success) 40%, var(--border))" }}>
+          <div
+            className="flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide"
+            style={{ backgroundColor: "color-mix(in oklch, var(--success) 14%, var(--card))", color: "var(--success)" }}
+          >
+            <span className="size-2 rounded-full" style={{ backgroundColor: "var(--success)" }} />
+            Empleados activos ({active.length})
+          </div>
+          <div className="flex flex-col gap-3 p-3">{active.map(renderCard)}</div>
+        </div>
+      )}
 
       {inactive.length > 0 && (
-        <div className="rounded-lg border border-border">
+        <div className="overflow-hidden rounded-lg border" style={{ borderColor: "color-mix(in oklch, var(--payroll-vacacion) 45%, var(--border))" }}>
           <button
             type="button"
-            className="flex w-full items-center gap-1.5 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:bg-muted/40"
+            className="flex w-full items-center gap-1.5 px-3 py-2 text-xs font-semibold uppercase tracking-wide hover:brightness-95"
+            style={{ backgroundColor: "color-mix(in oklch, var(--payroll-vacacion) 18%, var(--card))", color: "color-mix(in oklch, var(--payroll-vacacion) 55%, black)" }}
             onClick={() => setShowInactive((v) => !v)}
           >
             <ChevronDown className={`size-3.5 shrink-0 transition-transform ${showInactive ? "" : "-rotate-90"}`} />
-            Empleados que no laboran más ({inactive.length})
+            Empleados que ya no laboran ({inactive.length})
           </button>
           {showInactive && <div className="flex flex-col gap-3 border-t border-border bg-muted/10 p-3">{inactive.map(renderCard)}</div>}
         </div>

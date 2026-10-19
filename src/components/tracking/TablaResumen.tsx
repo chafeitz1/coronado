@@ -1,21 +1,26 @@
 'use client'
-import { useState } from 'react'
 import { FAMILIAS, MESES, TrackingRecord, HebrewBucket } from '@/lib/tracking/constants'
 
 const CIVIL_ORDER  = [0,1,2,3,4,5,6,7,8,9,10,11]
 const HEBREW_ORDER = [8,9,10,11,0,1,2,3,4,5,6,7]
 const HEBREW_MESES = ['Sep','Oct','Nov','Dic','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago']
 
+export type ResumenMetric = 'visitas' | 'noches'
+export type ResumenView = 'mensual' | 'anual'
+
 interface Props {
   data: TrackingRecord[]
   allData: TrackingRecord[]
   hebrewMode?: boolean
   hebrewYears?: HebrewBucket[]
+  /** Controlados desde la página para poder guardarlos como vista predeterminada. */
+  metric: ResumenMetric
+  onMetricChange: (m: ResumenMetric) => void
+  view: ResumenView
+  onViewChange: (v: ResumenView) => void
 }
 
-export default function TablaResumen({ data, allData, hebrewMode = false, hebrewYears = [] }: Props) {
-  const [metric, setMetric] = useState<'visitas'|'noches'>('visitas')
-  const [view,   setView]   = useState<'mensual'|'anual'>('mensual')
+export default function TablaResumen({ data, allData, hebrewMode = false, hebrewYears = [], metric, onMetricChange: setMetric, view, onViewChange: setView }: Props) {
 
   const monthOrder  = hebrewMode ? HEBREW_ORDER : CIVIL_ORDER
   const monthLabels = hebrewMode ? HEBREW_MESES : [...MESES]

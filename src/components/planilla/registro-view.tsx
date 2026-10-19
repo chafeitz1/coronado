@@ -471,10 +471,125 @@ export function RegistroView({
         </Popover>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border">
+      {/* Celular: una tarjeta por empleado con los campos en dos columnas */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {(rows ?? []).map(({ employee, total }) => {
+          const key = employee.id;
+          const periodKeySuffix = `${period.year}-${period.month}-${period.half}`;
+          const entry = total.entry;
+          return (
+            <div key={`${key}-${periodKeySuffix}`} className="rounded-xl border border-border bg-card p-3">
+              <div className="flex items-center gap-2">
+                <EmployeeAvatar name={employee.name} employeeId={employee.id} sortOrder={employee.sortOrder} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">{employee.name}</p>
+                  <p className="text-[11px] text-muted-foreground">Base {formatCents(entry?.basePayCents ?? 0)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-muted-foreground">Total a pagar</p>
+                  <p className="text-base font-bold tabular-nums text-foreground">{formatCents(total.totalCents)}</p>
+                </div>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+                {allFieldColumns
+                  .filter((c) => c.key !== "basePayCents")
+                  .map((c) => {
+                    const value = (entry?.[c.key] ?? 0) as number;
+                    const quantityMeta = QUANTITY_FIELD_META[c.key];
+                    const color = c.category && !sober ? PAYROLL_CATEGORY[c.category].color : undefined;
+                    const input =
+                      "w-full rounded-md border border-input bg-background px-2 py-2 text-right text-base tabular-nums focus:border-ring focus:outline-none";
+                    return (
+                      <label key={c.key} className="flex flex-col gap-0.5">
+                        <span className="text-[11px] font-medium" style={color ? { color } : { color: "var(--muted-foreground)" }}>
+                          {c.label}
+                        </span>
+                        {quantityMeta ? (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                step="0.01"
+                                defaultValue={(entry?.[quantityMeta.quantityField] ?? 0) ? String(entry?.[quantityMeta.quantityField]) : ""}
+                                placeholder="0"
+                                onBlur={(e) => saveQuantityField(key, quantityMeta.quantityField, e.target.value)}
+                                className={input}
+                              />
+                              <span className="text-xs text-muted-foreground">{quantityMeta.unit}</span>
+                            </div>
+                            <span className="text-right text-[11px] tabular-nums text-muted-foreground">{formatCents(value)}</span>
+                          </>
+                        ) : (
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            defaultValue={value ? (value / 100).toFixed(2) : ""}
+                            placeholder="0.00"
+                            onBlur={(e) => saveField(key, c.key, e.target.value)}
+                            className={input}
+                          />
+                        )}
+                      </label>
+                    );
+                  })}
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                {visibleColumns.paymentMethod && (
+                  <Select value={entry?.paymentMethod ?? "efectivo"} onValueChange={(v) => savePaymentMethod(key, v as PaymentMethod)}>
+                    <SelectTrigger className="h-9 w-36 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(PAYMENT_METHOD_LABEL).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {visibleColumns.paid && (
+                  <label className="flex items-center gap-2 text-sm text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={entry?.paid ?? false}
+                      onChange={(e) => togglePaid(key, e.target.checked)}
+                      className="size-5 rounded border-input accent-primary"
+                    />
+                    Pagado
+                  </label>
+                )}
+                <div className="ml-auto flex items-center gap-1">
+                  <Button variant="outline" size="sm" onClick={() => setPayBenefitsFor({ employee, total })} title="Pagar prestaciones">
+                    <Gift className="size-4" />
+                    Prestaciones
+                  </Button>
+                  {onViewDetail && (
+                    <Button variant="ghost" size="icon" className="size-8" onClick={() => onViewDetail(employee.id)} title="Ver detalle anual">
+                      <ChevronRight className="size-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {rows && rows.length > 0 && (
+          <div className={`flex items-center justify-between rounded-xl border border-border px-4 py-3 text-sm font-semibold ${sober ? "bg-foreground/10" : "bg-muted/40"}`}>
+            <span>Total quincena</span>
+            <span className="tabular-nums">{formatCents(rows.reduce((sum, r) => sum + r.total.totalCents, 0))}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
         <table className="w-full min-w-[1040px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
+            <tr className={`border-b border-border text-xs ${sober ? "bg-foreground/10 font-semibold text-foreground" : "bg-muted/40 text-muted-foreground"}`}>
               <th className="px-3 py-2 text-left font-medium">Empleado</th>
               {fieldColumns.map((c) => (
                 <th
@@ -645,7 +760,7 @@ export function RegistroView({
           </tbody>
           {rows && rows.length > 0 && (
             <tfoot>
-              <tr className="border-t border-border bg-muted/30 text-sm font-medium">
+              <tr className={`border-t border-border text-sm font-medium ${sober ? "bg-foreground/10 font-semibold" : "bg-muted/30"}`}>
                 <td className="px-3 py-2 text-foreground" colSpan={visibleCount}>
                   Total quincena
                 </td>

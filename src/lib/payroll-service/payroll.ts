@@ -1090,3 +1090,112 @@ export async function getEmployeeLedgerBundle(employeeId: string) {
   ]);
   return { entries, loans, balanceCents };
 }
+
+// ============================================================================
+// Historial global de préstamos
+// ============================================================================
+
+export interface LoanOverviewLoan {
+  id: string;
+  category: LoanCategory;
+  requestDate: string;
+  principalCents: number;
+  status: "active" | "cancelled";
+  notes: string | null;
+  /** lo ya descontado (cuota en una quincena pagada, o sin quincena) */
+  paidCents: number;
+  /** lo programado en quincenas aún no pagadas */
+  scheduledCents: number;
+  installments: PayrollLoanInstallment[];
+}
+
+export interface LoanOverviewEmployee {
+  employee: PayrollEmployee;
+  loans: LoanOverviewLoan[];
+  lentCents: number;
+  paidCents: number;
+  /** descuentos del mes sin préstamo asociado (movimientos sueltos) */
+  unlinkedPaidCents: number;
+  balanceCents: number;
+}
+
+/** Todos los préstamos/adelantos de todos los empleados con lo pagado y lo
+ *  pendiente — la vista global de la pestaña Préstamos. */
+export async function getLoansOverview(): Promise<LoanOverviewEmployee[]> {
+  const supabase = await createClient();
+  const [employees, loanRows, ledgerRows, entryRows] = await Promise.all([
+    getPayrollEmployees(),
+    selectAllRows<LoanRow>((from, to) => supabase.from("payroll_loans").select("*").order("id").range(from, to)),
+    selectAllRows<LedgerRow>((from, to) =>
+      supabase.from("payroll_ledger_entries").select("*").in("category", ["prestamo", "adelanto"]).order("id").range(from, to)
+    ),
+    selectAllRows<Pick<EntryRow, "id" | "period_year" | "period_month" | "period_half" | "paid">>((from, to) =>
+      supabase.from("payroll_entries").select("id, period_year, period_month, period_half, paid").order("id").range(from, to)
+    ),
+  ]);
+  const entryById = new Map(entryRows.map((e) => [e.id, e]));
+
+  const byEmployee = new Map<string, LoanOverviewEmployee>();
+  for (const employee of employees) {
+    byEmployee.set(employee.id, { employee, loans: [], lentCents: 0, paidCents: 0, unlinkedPaidCents: 0, balanceCents: 0 });
+  }
+
+  const loanById = new Map<string, LoanOverviewLoan>();
+  for (const r of loanRows) {
+    const target = byEmployee.get(r.employee_id);
+    if (!target) continue;
+    const loan: LoanOverviewLoan = {
+      id: r.id,
+      category: toLoanCategory(r.category),
+      requestDate: r.request_date,
+      principalCents: r.principal_cents,
+      status: r.status === "cancelled" ? "cancelled" : "active",
+      notes: r.notes,
+      paidCents: 0,
+      scheduledCents: 0,
+      installments: [],
+    };
+    target.loans.push(loan);
+    loanById.set(r.id, loan);
+  }
+
+  for (const l of ledgerRows) {
+    if (l.direction !== "payment") continue;
+    const entry = l.payroll_entry_id ? entryById.get(l.payroll_entry_id) : undefined;
+    const realized = !l.payroll_entry_id || entry?.paid === true;
+    const target = byEmployee.get(l.employee_id);
+    if (!target) continue;
+    const loan = l.loan_id ? loanById.get(l.loan_id) : undefined;
+    if (loan) {
+      if (realized) loan.paidCents += l.amount_cents;
+      else loan.scheduledCents += l.amount_cents;
+      if (entry) {
+        loan.installments.push({
+          ledgerEntryId: l.id,
+          period: { year: entry.period_year, month: entry.period_month, half: entry.period_half === 2 ? 2 : 1 },
+          amountCents: l.amount_cents,
+          paid: realized,
+        });
+      }
+    } else if (realized) {
+      target.unlinkedPaidCents += l.amount_cents;
+    }
+  }
+
+  const out: LoanOverviewEmployee[] = [];
+  for (const row of byEmployee.values()) {
+    if (row.loans.length === 0 && row.unlinkedPaidCents === 0) continue;
+    const active = row.loans.filter((l) => l.status === "active");
+    row.lentCents = active.reduce((s, l) => s + l.principalCents, 0);
+    row.paidCents = active.reduce((s, l) => s + l.paidCents, 0) + row.unlinkedPaidCents;
+    row.balanceCents = row.lentCents - row.paidCents;
+    for (const l of row.loans) {
+      l.installments.sort(
+        (a, b) => periodOrdinal(a.period.year, a.period.month, a.period.half) - periodOrdinal(b.period.year, b.period.month, b.period.half)
+      );
+    }
+    row.loans.sort((a, b) => b.requestDate.localeCompare(a.requestDate));
+    out.push(row);
+  }
+  return out.sort((a, b) => b.balanceCents - a.balanceCents || a.employee.name.localeCompare(b.employee.name));
+}

@@ -1,14 +1,14 @@
 import { requireOwner } from "@/lib/auth";
 import { getPayrollEmployees } from "@/lib/payroll-service/employees";
 import { getLoanRequests } from "@/lib/payroll-service/loan-requests";
-import { getAnnualSummary, getAuditoriaData, getPlanillaOverview, getRegistroForPeriod } from "@/lib/payroll-service/payroll";
+import { getAnnualSummary, getAuditoriaData, getLoansOverview, getPlanillaOverview, getRegistroForPeriod } from "@/lib/payroll-service/payroll";
 import { PayrollClient, type PayrollTab, type PayrollTabData } from "@/components/planilla/payroll-client";
 import { currentPeriod } from "@/lib/planilla/payroll-period";
 import { mutedText, pageHeading } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";
 
-const TABS: PayrollTab[] = ["dashboard", "registro", "resumen", "auditoria", "solicitudes"];
+const TABS: PayrollTab[] = ["dashboard", "registro", "resumen", "auditoria", "prestamos", "solicitudes"];
 
 /**
  * Cada pestaña trae sus datos con la página (Server Component), igual que
@@ -51,6 +51,12 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
         const [emps, overview] = await Promise.all([employeesPromise, getPlanillaOverview(year)]);
         employees = emps;
         data = { kind: "dashboard", rows: overview.rows, obligations: overview.obligations };
+        break;
+      }
+      case "prestamos": {
+        const [emps, loans] = await Promise.all([employeesPromise, getLoansOverview()]);
+        employees = emps;
+        data = { kind: "prestamos", rows: loans };
         break;
       }
       default: {

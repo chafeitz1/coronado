@@ -10,25 +10,27 @@ import type {
   PayrollEmployeeAnnualSummary,
   UpcomingObligations,
 } from "@/lib/types/planilla";
-import type { RegistroRow } from "@/lib/payroll-service/payroll";
+import type { LoanOverviewEmployee, RegistroRow } from "@/lib/payroll-service/payroll";
 import type { LoanRequestRow } from "@/lib/payroll-service/loan-requests";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/payroll-ui/tabs";
 import { Button } from "@/components/payroll-ui/button";
 import { DashboardView } from "@/components/planilla/dashboard-view";
 import { AuditoriaView } from "@/components/planilla/auditoria-view";
+import { PrestamosView } from "@/components/planilla/prestamos-view";
 import { SolicitudesView } from "@/components/planilla/solicitudes-view";
 import { RegistroView } from "@/components/planilla/registro-view";
 import { ResumenView } from "@/components/planilla/resumen-view";
 import { EmployeeDetailSheet } from "@/components/planilla/employee-detail-sheet";
 import { type ColumnKey, defaultVisibleColumns, REGISTRO_COLUMNS_STORAGE_KEY } from "@/components/planilla/registro-columns";
 
-export type PayrollTab = "dashboard" | "registro" | "resumen" | "auditoria" | "solicitudes";
+export type PayrollTab = "dashboard" | "registro" | "resumen" | "auditoria" | "prestamos" | "solicitudes";
 
 export type PayrollTabData =
   | { kind: "registro"; period: { year: number; month: number; half: 1 | 2 }; rows: RegistroRow[] }
   | { kind: "resumen"; rows: PayrollEmployeeAnnualSummary[] }
   | { kind: "auditoria"; data: AuditoriaData }
   | { kind: "dashboard"; rows: PayrollEmployeeAnnualSummary[]; obligations: UpcomingObligations }
+  | { kind: "prestamos"; rows: LoanOverviewEmployee[] }
   | { kind: "solicitudes"; requests: LoanRequestRow[] }
   | { kind: "error"; message: string };
 
@@ -94,13 +96,14 @@ export function PayrollClient({
     registro: "Registro",
     resumen: "Resumen Anual",
     auditoria: "Auditoría",
+    prestamos: "Préstamos",
     solicitudes: "Solicitudes",
   };
 
   return (
-    <Tabs value={tab} onValueChange={(v) => go(v as PayrollTab, year)}>
+    <Tabs value={tab} onValueChange={(v) => go(v as PayrollTab, year)} className="min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <TabsList>
+        <TabsList className="max-w-full justify-start overflow-x-auto">
           {(Object.keys(tabLabel) as PayrollTab[]).map((t) => (
             <TabsTrigger key={t} value={t}>
               {tabLabel[t]}
@@ -158,6 +161,11 @@ export function PayrollClient({
         {data.kind === "dashboard" && (
           <TabsContent value="dashboard" forceMount className="m-0">
             <DashboardView rows={data.rows} obligations={data.obligations} year={year} onYearChange={(y) => go("dashboard", y)} />
+          </TabsContent>
+        )}
+        {data.kind === "prestamos" && (
+          <TabsContent value="prestamos" forceMount className="m-0">
+            <PrestamosView rows={data.rows} />
           </TabsContent>
         )}
         {data.kind === "solicitudes" && (

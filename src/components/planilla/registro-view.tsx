@@ -202,8 +202,18 @@ export function RegistroView({
   const load = React.useCallback(() => {
     const seq = ++loadSeq.current;
     startTransition(async () => {
-      const data = await getRegistroAction(period.year, period.month, period.half);
-      if (seq === loadSeq.current) setRows(data);
+      try {
+        const res = await getRegistroAction(period.year, period.month, period.half);
+        if (seq !== loadSeq.current) return;
+        if (res.ok) {
+          setRows(res.data);
+          setSaveError(null);
+        } else {
+          setSaveError(`No se pudo cargar la quincena: ${res.error}`);
+        }
+      } catch (e) {
+        if (seq === loadSeq.current) setSaveError(e instanceof Error ? e.message : "Error de conexión");
+      }
     });
   }, [period]);
 

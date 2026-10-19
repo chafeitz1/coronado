@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/payroll-ui
 import { MultiSelectFilter, type MultiSelectOption } from "@/components/planilla/multi-select-filter";
 import { MONTHS_ES, formatCents } from "@/lib/planilla/payroll-period";
 import { PAYROLL_CATEGORY, PAYROLL_CATEGORY_LABEL, type PayrollCategoryKey } from "@/lib/planilla/payroll-colors";
+import { LoadError } from "@/components/planilla/load-error";
 import { getAuditoriaDataAction } from "@/app/actions/planilla";
 import { EmployeeAvatar } from "@/components/planilla/employee-avatar";
 import { MenuSection, SwitchRow, CheckRow, SaveDefaultLink } from "@/components/planilla/view-menu";
@@ -345,13 +346,25 @@ export function AuditoriaView({
     applyLevelRef.current = applyLevel;
   }, [applyLevel]);
 
-  React.useEffect(() => {
-    getAuditoriaDataAction(year).then((d) => {
-      setData(d);
-      applyLevel(nivelRef.current, d);
-    });
+  const [loadError, setLoadError] = React.useState<string | null>(null);
+  const loadAuditoria = React.useCallback(() => {
+    getAuditoriaDataAction(year)
+      .then((res) => {
+        if (res.ok) {
+          setData(res.data);
+          setLoadError(null);
+          applyLevel(nivelRef.current, res.data);
+        } else {
+          setLoadError(res.error);
+        }
+      })
+      .catch((e) => setLoadError(e instanceof Error ? e.message : "Error de conexión"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year]);
+
+  React.useEffect(() => {
+    loadAuditoria();
+  }, [loadAuditoria]);
 
   React.useEffect(() => {
     if (!onExportReady) return;
@@ -759,7 +772,7 @@ export function AuditoriaView({
       )}
 
       {!data ? (
-        <p className="text-xs text-muted-foreground">Cargando…</p>
+        loadError ? <LoadError message={loadError} onRetry={loadAuditoria} /> : <p className="text-xs text-muted-foreground">Cargando…</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className={`w-full ${isMonthly ? "min-w-[1200px]" : "min-w-[2400px]"} ${d.table}`} style={{ borderCollapse: "separate", borderSpacing: 0 }}>

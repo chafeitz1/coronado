@@ -8,6 +8,7 @@ import * as payroll from "@/lib/payroll-service/payroll";
 import { getSalaryChanges, toSalaryChanges } from "@/lib/payroll-service/salary";
 import { dailyRateCents, hourlyRateCents, quantityToCents } from "@/lib/planilla/payroll-rates";
 import { monthlySalaryAt } from "@/lib/planilla/salary-history";
+import type { ActionResult } from "@/lib/planilla/action-result";
 import type { LedgerCategory, LedgerDirection, LoanCategory, LoanPaymentMethod, PaymentMethod } from "@/lib/types/planilla";
 
 /**
@@ -17,6 +18,15 @@ import type { LedgerCategory, LedgerDirection, LoanCategory, LoanPaymentMethod, 
  */
 
 const PATH = "/finance/payroll";
+
+async function safe<T>(fn: () => Promise<T>): Promise<ActionResult<T>> {
+  try {
+    return { ok: true, data: await fn() };
+  } catch (e) {
+    console.error("planilla read failed", e);
+    return { ok: false, error: e instanceof Error ? e.message : "Error desconocido" };
+  }
+}
 
 export async function upsertPayrollEntryAction(input: {
   employeeId: string;
@@ -101,7 +111,7 @@ export async function duplicatePreviousPeriodAction(year: number, month: number,
 
 export async function getRegistroAction(year: number, month: number, half: 1 | 2) {
   await requireOwner();
-  return await payroll.getRegistroForPeriod(year, month, half);
+  return safe(() => payroll.getRegistroForPeriod(year, month, half));
 }
 
 export async function getEmployeeAnnualDetailAction(employeeId: string, year: number, projectFuture = false) {
@@ -113,12 +123,12 @@ export async function getEmployeeAnnualDetailAction(employeeId: string, year: nu
 
 export async function getAnnualSummaryAction(year: number) {
   await requireOwner();
-  return await payroll.getAnnualSummary(year);
+  return safe(() => payroll.getAnnualSummary(year));
 }
 
 export async function getAuditoriaDataAction(year: number) {
   await requireOwner();
-  return await payroll.getAuditoriaData(year);
+  return safe(() => payroll.getAuditoriaData(year));
 }
 
 export async function getPlanillaOverviewAction(year: number) {
@@ -338,6 +348,8 @@ export async function getEmployeeLedgerBundleAction(employeeId: string) {
 /** Dashboard: resumen anual + obligaciones con UNA sola carga del historial. */
 export async function getDashboardDataAction(year: number) {
   await requireOwner();
-  const overview = await payroll.getPlanillaOverview(year);
-  return { rows: overview.rows, obligations: overview.obligations, composition: overview.composition };
+  return safe(async () => {
+    const overview = await payroll.getPlanillaOverview(year);
+    return { rows: overview.rows, obligations: overview.obligations, composition: overview.composition };
+  });
 }

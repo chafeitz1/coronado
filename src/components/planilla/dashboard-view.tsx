@@ -8,6 +8,7 @@ import type { UpcomingObligations } from "@/lib/types/planilla";
 import { Button } from "@/components/payroll-ui/button";
 import { MONTHS_ES, periodKey, currentPeriod, formatCents } from "@/lib/planilla/payroll-period";
 import { employeeAccentColor } from "@/lib/planilla/payroll-colors";
+import { LoadError } from "@/components/planilla/load-error";
 import { getDashboardDataAction } from "@/app/actions/planilla";
 import { EmployeeAvatar } from "@/components/planilla/employee-avatar";
 import { PayrollKpiCard } from "@/components/planilla/payroll-kpi-card";
@@ -40,12 +41,24 @@ export function DashboardView({
   const [rows, setRows] = React.useState<PayrollEmployeeAnnualSummary[] | null>(null);
   const [obligations, setObligations] = React.useState<UpcomingObligations | null>(null);
 
-  React.useEffect(() => {
-    getDashboardDataAction(year).then((d) => {
-      setRows(d.rows);
-      setObligations(d.obligations);
-    });
+  const [loadError, setLoadError] = React.useState<string | null>(null);
+  const load = React.useCallback(() => {
+    getDashboardDataAction(year)
+      .then((res) => {
+        if (res.ok) {
+          setRows(res.data.rows);
+          setObligations(res.data.obligations);
+          setLoadError(null);
+        } else {
+          setLoadError(res.error);
+        }
+      })
+      .catch((e) => setLoadError(e instanceof Error ? e.message : "Error de conexión"));
   }, [year]);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
 
   const loading = !rows || !obligations;
 
@@ -104,7 +117,7 @@ export function DashboardView({
       </div>
 
       {loading ? (
-        <p className="text-xs text-muted-foreground">Cargando…</p>
+        loadError ? <LoadError message={loadError} onRetry={load} /> : <p className="text-xs text-muted-foreground">Cargando…</p>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

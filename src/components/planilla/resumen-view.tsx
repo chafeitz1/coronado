@@ -24,6 +24,7 @@ import { Badge } from "@/components/payroll-ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/payroll-ui/popover";
 import { MONTHS_ES, periodKey, currentPeriod, periodOrdinal, formatCents } from "@/lib/planilla/payroll-period";
 import { formatDisplayDate } from "@/lib/planilla/format-date";
+import { LoadError } from "@/components/planilla/load-error";
 import { getAnnualSummaryAction, setEmployeeLiquidationAction, getEmployeeAnnualDetailAction } from "@/app/actions/planilla";
 import { EmployeeAvatar } from "@/components/planilla/employee-avatar";
 import { LiquidationDialog } from "@/components/planilla/liquidation-dialog";
@@ -214,11 +215,21 @@ export function ResumenView({
     window.localStorage.setItem(PROJECTING_STORAGE_KEY, String(projecting));
   }, [projecting]);
 
+  const [loadError, setLoadError] = React.useState<string | null>(null);
   const loadSummary = React.useCallback(() => {
     startTransition(async () => {
-      const data = await getAnnualSummaryAction(year);
-      setRows(data);
-      setExpanded(new Set());
+      try {
+        const res = await getAnnualSummaryAction(year);
+        if (res.ok) {
+          setRows(res.data);
+          setLoadError(null);
+          setExpanded(new Set());
+        } else {
+          setLoadError(res.error);
+        }
+      } catch (e) {
+        setLoadError(e instanceof Error ? e.message : "Error de conexión");
+      }
     });
   }, [year]);
 
@@ -432,7 +443,8 @@ export function ResumenView({
         </div>
       )}
 
-      {pending && <p className="text-xs text-muted-foreground">Cargando…</p>}
+      {loadError && <LoadError message={loadError} onRetry={loadSummary} />}
+      {pending && !loadError && <p className="text-xs text-muted-foreground">Cargando…</p>}
       {!pending && active.length === 0 && inactive.length === 0 && (
         <p className="text-sm text-muted-foreground">Sin empleados todavía.</p>
       )}

@@ -36,18 +36,18 @@ export const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct
 export function clasificarEvento(nombre: string): string {
   if (!nombre) return 'Weekend'
   const n = nombre.toLowerCase()
-  if (n.includes('sucot') || n.includes('sukkot'))         return 'Sukkot'
+  if (/su[ck]+ot/.test(n))                                 return 'Sukkot'
   if (n.includes('pésaj') || n.includes('pesaj'))          return 'Pesaj'
   if (n.includes('shavuot'))                               return 'Shavuot'
   if (n.includes('fiestas patrias') || n.includes('independencia')) return 'Fiestas Patrias'
   if (n.includes('navidad') || n.includes('nochebuena'))   return 'Navidad'
   if (n.includes('fin de año') || n.includes('año nuevo')) return 'Fin de Año'
   if (n.includes('carnaval'))                              return 'Carnavales'
-  if (n.includes('vacaciones'))                            return 'Vacaciones'
-  if (n.includes('cumpleaños'))                            return 'Cumpleaños'
+  if (n.includes('vacaciones') || n.includes('vaciones'))   return 'Vacaciones'
+  if (n.includes('cumple'))                                return 'Cumpleaños'
   if (n.includes('madre'))                                 return 'Dia de la Madre'
   if (n.includes('padre'))                                 return 'Dia del Padre'
-  if (n.includes('feriado') || n.includes('viernes santo')) return 'Feriado'
+  if (/feriado|viernes santo|del trabajo|martires|mártires|posesion|posesión/.test(n)) return 'Feriado'
   return 'Weekend'
 }
 
@@ -62,7 +62,7 @@ export interface HebrewBucket {
 export function computeHebrewYears(records: TrackingRecord[]): HebrewBucket[] {
   const sukkotStart: Record<number, string> = {}
   records.forEach(r => {
-    if (/sucot|sukkot/i.test(r.evento) && r.fecha_ini) {
+    if (/su[ck]+ot/i.test(r.evento) && r.fecha_ini) {
       const cy = r.year
       if (!sukkotStart[cy] || r.fecha_ini < sukkotStart[cy]) sukkotStart[cy] = r.fecha_ini
     }

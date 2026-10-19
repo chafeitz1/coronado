@@ -27,31 +27,25 @@ function SheetOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
-  return (
-    <DialogPrimitive.Overlay
-      data-slot="sheet-overlay"
-      className={cn("fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px]", className)}
-      {...props}
-    />
-  );
+  return <DialogPrimitive.Overlay data-slot="sheet-overlay" className={cn("fixed inset-0 z-50 bg-black/30", className)} {...props} />;
 }
 
-const sheetVariants = cva(
-  "fixed z-50 flex flex-col gap-4 border-border bg-card shadow-lg transition ease-in-out",
-  {
-    variants: {
-      side: {
-        top: "inset-x-0 top-0 border-b",
-        bottom: "inset-x-0 bottom-0 border-t",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-xs",
-        right: "inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-xs",
-      },
-    },
-    defaultVariants: {
-      side: "right",
+// Same chrome as the app's own SidePanel (components/ui/side-panel.tsx) —
+// w-full max-w-md (not a narrow w-3/4), flat elevated shadow, safe-area
+// top padding for an installed PWA's status bar.
+const sheetVariants = cva("fixed z-50 flex flex-col gap-4 border-border bg-canvas shadow-[var(--shadow-elevated)] transition ease-in-out", {
+  variants: {
+    side: {
+      top: "inset-x-0 top-0 border-b",
+      bottom: "inset-x-0 bottom-0 border-t",
+      left: "inset-y-0 left-0 h-full w-full max-w-md border-r",
+      right: "inset-y-0 right-0 h-full w-full max-w-md border-l",
     },
   },
-);
+  defaultVariants: {
+    side: "right",
+  },
+});
 
 function SheetContent({
   className,
@@ -66,13 +60,13 @@ function SheetContent({
       <SheetOverlay />
       <DialogPrimitive.Content
         data-slot="sheet-content"
-        className={cn(sheetVariants({ side }), className)}
+        className={cn(sheetVariants({ side }), "overflow-y-auto pt-[env(safe-area-inset-top)]", className)}
         {...props}
       >
         {children}
         {showCloseButton && (
-          <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-60 transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <XIcon className="size-4" />
+          <DialogPrimitive.Close className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent active:bg-accent hover:text-foreground">
+            <XIcon className="size-5" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

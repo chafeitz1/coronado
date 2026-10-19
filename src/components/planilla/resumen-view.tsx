@@ -221,7 +221,7 @@ function BarTooltip({ b, year, side }: { b: { mb: PayrollEmployeeAnnualSummary["
     </div>
   );
   return (
-    <div className={`pointer-events-none absolute top-0 z-30 w-52 rounded-lg border border-border bg-popover sm:w-56 p-2.5 text-[11px] shadow-lg ${side === "right" ? "left-full ml-1" : "right-full mr-1"}`}>
+    <div className={`pointer-events-none absolute top-0 z-30 w-52 rounded-lg border border-border bg-popover sm:w-56 p-2.5 text-[11px] shadow-[var(--shadow-soft)] ${side === "right" ? "left-full ml-1" : "right-full mr-1"}`}>
       <p className="mb-1 text-xs font-semibold text-foreground">
         {MONTHS_ES[mb.month - 1]} {year}
       </p>
@@ -329,7 +329,7 @@ export function ResumenView({
     return (
       <div
         key={row.employee.id}
-        className="overflow-hidden rounded-xl border bg-card"
+        className="overflow-hidden rounded-md border bg-card"
         style={{
           borderLeftWidth: 4,
           borderLeftColor: accent,

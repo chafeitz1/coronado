@@ -50,9 +50,11 @@ export function FormDialog({
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
-        <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto py-1">
-          {children}
-        </div>
+        {/* No inner max-height cap — DialogContent is now a full-height
+            slide-over (see payroll-ui/dialog.tsx), not a centered modal
+            with limited vertical room, so the body can grow and the
+            panel's own scroll handles overflow. */}
+        <div className="flex flex-1 flex-col gap-4 py-1">{children}</div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange?.(false)}>

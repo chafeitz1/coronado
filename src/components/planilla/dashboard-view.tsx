@@ -133,7 +133,7 @@ export function DashboardView({
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {obligations && <ProximasObligacionesCard obligations={obligations} />}
 
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-md border border-border bg-card p-4">
               <p className="mb-3 text-sm font-medium text-foreground">Distribución por empleado</p>
               {withData.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Sin datos de planilla este año.</p>

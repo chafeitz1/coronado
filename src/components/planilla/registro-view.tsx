@@ -478,7 +478,7 @@ export function RegistroView({
           const periodKeySuffix = `${period.year}-${period.month}-${period.half}`;
           const entry = total.entry;
           return (
-            <div key={`${key}-${periodKeySuffix}`} className="rounded-xl border border-border bg-card p-3">
+            <div key={`${key}-${periodKeySuffix}`} className="rounded-md border border-border bg-card p-3">
               <div className="flex items-center gap-2">
                 <EmployeeAvatar name={employee.name} employeeId={employee.id} sortOrder={employee.sortOrder} />
                 <div className="min-w-0 flex-1">
@@ -579,7 +579,7 @@ export function RegistroView({
           );
         })}
         {rows && rows.length > 0 && (
-          <div className={`flex items-center justify-between rounded-xl border border-border px-4 py-3 text-sm font-semibold ${sober ? "bg-foreground/10" : "bg-muted/40"}`}>
+          <div className={`flex items-center justify-between rounded-md border border-border px-4 py-3 text-sm font-semibold ${sober ? "bg-foreground/10" : "bg-muted/40"}`}>
             <span>Total quincena</span>
             <span className="tabular-nums">{formatCents(rows.reduce((sum, r) => sum + r.total.totalCents, 0))}</span>
           </div>

@@ -74,7 +74,7 @@ export function PrestamosView({ rows }: { rows: LoanOverviewEmployee[] }) {
       {visible.length === 0 && <p className="text-sm text-muted-foreground">No hay préstamos que mostrar.</p>}
 
       {visible.map((r) => (
-        <div key={r.employee.id} className="overflow-hidden rounded-xl border border-border bg-card">
+        <div key={r.employee.id} className="overflow-hidden rounded-md border border-border bg-card">
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
             <EmployeeAvatar name={r.employee.name} employeeId={r.employee.id} sortOrder={r.employee.sortOrder} size="md" />
             <div className="min-w-0 flex-1">

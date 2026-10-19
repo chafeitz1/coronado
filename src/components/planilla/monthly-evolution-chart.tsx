@@ -70,7 +70,7 @@ export function MonthlyEvolutionChart({ rows, title }: { rows: PayrollEmployeeAn
   const max = Math.max(...monthTotals, 1);
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-md border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-medium text-foreground">{title ?? "Evolución mensual del gasto total en planilla"}</p>
         <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5 text-xs">

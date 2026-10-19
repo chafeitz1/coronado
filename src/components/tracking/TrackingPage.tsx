@@ -166,16 +166,26 @@ export default function TrackingPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    // Plain content flow, same as every other module (WorkOrdersShell,
+    // AssetsExplorer, DirectoryExplorer) — the page scrolls with the
+    // document, inside <main>'s own padding. This used to be its own
+    // h-full/overflow-auto app shell with a fixed header, which fought the
+    // rest of the app in two concrete ways on mobile: PullToRefresh gates
+    // its gesture on `window.scrollY`, which never moves when the page has
+    // its own internal scroll container, so pulling down inside a long
+    // table could misfire the pull-to-refresh animation instead of just
+    // scrolling the list; and the header/toolbar's own px-6 stacked on top
+    // of <main>'s px-4, eating ~40px of width per side on a phone screen.
+    <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline bg-canvas px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className={pageHeading}>Tracking de Visitas</h1>
           <p className={mutedText}>
             {totalEventos} eventos (fines de semana y fiestas) · {data.length} registros de asistencia
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={reload} className={buttonUtility}>
             ↻ Actualizar
           </button>
@@ -194,8 +204,11 @@ export default function TrackingPage() {
         </div>
       </div>
 
-      {/* Year bar */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-hairline bg-canvas-soft px-6 py-2">
+      {/* Year bar — breaks out of <main>'s padding to scroll edge-to-edge on
+          mobile, same convention as the filter-chip rows in
+          assets-explorer.tsx/directory-explorer.tsx, since this row can run
+          to 9+ pills (8 years + "Todos") plus the fiscal/hebreo toggle. */}
+      <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
         {/* Fiscal / Hebreo toggle */}
         <div className="mr-2 flex shrink-0 items-center overflow-hidden rounded-md border border-hairline">
           {([["fiscal", false], ["hebreo", true]] as const).map(([label, mode]) => (
@@ -203,7 +216,7 @@ export default function TrackingPage() {
               key={label}
               type="button"
               onClick={() => changeMode(mode)}
-              className={`px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
+              className={`shrink-0 px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
                 hebrewMode === mode ? "bg-primary text-on-primary" : "text-ink-muted hover:bg-surface-hover active:bg-surface-hover"
               }`}
             >
@@ -213,28 +226,31 @@ export default function TrackingPage() {
         </div>
         {/* Year pills */}
         {yearOptions.map(({ value, label }) => (
-          <Pill key={value} label={label} active={activeYear === value} onClick={() => setActiveYear(value)} small />
+          <Pill key={value} label={label} active={activeYear === value} onClick={() => setActiveYear(value)} small noShrink />
         ))}
       </div>
 
-      {/* View tabs */}
-      <div className="flex overflow-x-auto border-b border-hairline bg-canvas px-6">
-        {VIEWS.map((v) => (
-          <button
-            key={v.id}
-            type="button"
-            onClick={() => setActiveView(v.id)}
-            className={`shrink-0 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
-              activeView === v.id ? "border-primary text-primary" : "border-transparent text-ink-muted hover:text-ink active:text-ink"
-            }`}
-          >
-            {v.label}
-          </button>
-        ))}
+      {/* View tabs — same breakout, so the 4 tabs (one with a long label)
+          scroll instead of wrapping onto a second line on a phone. */}
+      <div className="-mx-4 overflow-x-auto border-b border-hairline px-4 sm:mx-0 sm:px-0">
+        <div className="flex">
+          {VIEWS.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => setActiveView(v.id)}
+              className={`shrink-0 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+                activeView === v.id ? "border-primary text-primary" : "border-transparent text-ink-muted hover:text-ink active:text-ink"
+              }`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto bg-canvas-soft p-6">
+      <div>
         {activeView !== "curiosidades" && <KPICards data={filtered} allData={data} events={filteredEvents} activeYear={activeYear} />}
 
         {activeView === "resumen" && (

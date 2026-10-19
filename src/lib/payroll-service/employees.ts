@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { PayrollEmployee } from "@/lib/types/planilla";
 import { currentPeriod } from "@/lib/planilla/payroll-period";
 import { earliestSalary, salaryInEffect } from "@/lib/planilla/salary-history";
-import { getAllSalaryChanges, toSalaryChanges } from "@/lib/payroll-service/salary";
+import { getAllSalaryChanges, isMissingTable, toSalaryChanges } from "@/lib/payroll-service/salary";
 
 /**
  * Empleados de la Planilla = personal (`profiles.role = 'staff'`). Nombre,
@@ -24,6 +24,16 @@ interface DetailsRow {
   termination_date: string | null;
   benefits_base_salary_cents: number | null;
   liquidation_notes: string | null;
+}
+
+interface FormerRow {
+  id: string;
+  full_name: string;
+  hire_date: string | null;
+  end_date: string | null;
+  benefits_base_salary_cents: number | null;
+  liquidation_notes: string | null;
+  notes: string | null;
 }
 
 function todayIso(): string {
@@ -56,23 +66,44 @@ export async function getPayrollEmployees(
   salaryPromise: Promise<Awaited<ReturnType<typeof getAllSalaryChanges>>> = getAllSalaryChanges()
 ): Promise<PayrollEmployee[]> {
   const supabase = await createClient();
-  const [profilesRes, detailsRes, salaryByEmployee] = await Promise.all([
+  const [profilesRes, detailsRes, salaryByEmployee, formerRes] = await Promise.all([
     supabase.from("profiles").select("id, full_name").eq("role", "staff").order("full_name"),
     supabase
       .from("staff_details")
       .select("user_id, hire_date, termination_date, benefits_base_salary_cents, liquidation_notes"),
     salaryPromise,
+    supabase.from("payroll_former_staff").select("id, full_name, hire_date, end_date, benefits_base_salary_cents, liquidation_notes, notes"),
   ]);
+  if (formerRes.error && !isMissingTable(formerRes.error)) throw new Error(formerRes.error.message);
   if (profilesRes.error) throw new Error(profilesRes.error.message);
   if (detailsRes.error) throw new Error(detailsRes.error.message);
 
   const detailsByUser = new Map(((detailsRes.data ?? []) as DetailsRow[]).map((d) => [d.user_id, d]));
   const now = currentPeriod();
-  return ((profilesRes.data ?? []) as ProfileRow[]).map((p) => {
+  const staff = ((profilesRes.data ?? []) as ProfileRow[]).map((p) => {
     const changes = toSalaryChanges(salaryByEmployee.get(p.id) ?? []);
     const current = salaryInEffect(changes, now.year, now.month, now.half) ?? earliestSalary(changes);
     return build(p, detailsByUser.get(p.id), current?.monthlySalaryCents ?? 0, current?.benefitsBaseSalaryCents ?? null);
   });
+  // Personal que ya no trabaja: datos propios de Planilla, sin cuenta (payroll_former_staff).
+  const former = ((formerRes.data ?? []) as FormerRow[]).map((f) => {
+    const changes = toSalaryChanges(salaryByEmployee.get(f.id) ?? []);
+    const current = salaryInEffect(changes, now.year, now.month, now.half) ?? earliestSalary(changes);
+    return {
+      id: f.id,
+      name: f.full_name,
+      position: null,
+      startDate: f.hire_date,
+      endDate: f.end_date,
+      status: f.end_date && f.end_date <= todayIso() ? ("INACTIVE" as const) : ("ACTIVE" as const),
+      baseSalaryCents: current?.monthlySalaryCents ?? 0,
+      benefitsBaseSalaryCents: f.benefits_base_salary_cents ?? current?.benefitsBaseSalaryCents ?? null,
+      notes: f.notes,
+      liquidationNotes: f.liquidation_notes,
+      sortOrder: 0,
+    } satisfies PayrollEmployee;
+  });
+  return [...staff, ...former];
 }
 
 export async function getPayrollEmployee(id: string): Promise<PayrollEmployee | null> {
@@ -86,6 +117,15 @@ export async function updatePayrollEmployeeBenefits(
   patch: { benefitsBaseSalaryCents?: number | null; liquidationNotes?: string | null }
 ): Promise<void> {
   const supabase = await createClient();
+  if (await isFormerStaff(supabase, id)) {
+    const patchFormer: Record<string, unknown> = {};
+    if (patch.benefitsBaseSalaryCents !== undefined) patchFormer.benefits_base_salary_cents = patch.benefitsBaseSalaryCents;
+    if (patch.liquidationNotes !== undefined) patchFormer.liquidation_notes = patch.liquidationNotes;
+    if (Object.keys(patchFormer).length === 0) return;
+    const { error } = await supabase.from("payroll_former_staff").update(patchFormer).eq("id", id);
+    if (error) throw new Error(error.message);
+    return;
+  }
   const update: Record<string, unknown> = { user_id: id, updated_at: new Date().toISOString() };
   if (patch.benefitsBaseSalaryCents !== undefined) update.benefits_base_salary_cents = patch.benefitsBaseSalaryCents;
   if (patch.liquidationNotes !== undefined) update.liquidation_notes = patch.liquidationNotes;
@@ -103,8 +143,24 @@ export async function setEmployeeLiquidation(
   liquidationNotes?: string | null
 ): Promise<void> {
   const supabase = await createClient();
+  if (await isFormerStaff(supabase, id)) {
+    const patchFormer: Record<string, unknown> = { end_date: endDate };
+    if (liquidationNotes !== undefined) patchFormer.liquidation_notes = liquidationNotes;
+    const { error } = await supabase.from("payroll_former_staff").update(patchFormer).eq("id", id);
+    if (error) throw new Error(error.message);
+    return;
+  }
   const row: Record<string, unknown> = { user_id: id, termination_date: endDate, updated_at: new Date().toISOString() };
   if (liquidationNotes !== undefined) row.liquidation_notes = liquidationNotes;
   const { error } = await supabase.from("staff_details").upsert(row, { onConflict: "user_id" });
   if (error) throw new Error(error.message);
+}
+
+async function isFormerStaff(supabase: Awaited<ReturnType<typeof createClient>>, id: string): Promise<boolean> {
+  const { data, error } = await supabase.from("payroll_former_staff").select("id").eq("id", id).maybeSingle();
+  if (error) {
+    if (isMissingTable(error)) return false;
+    throw new Error(error.message);
+  }
+  return !!data;
 }

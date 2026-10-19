@@ -29,6 +29,25 @@ interface StaffDetailsRow {
   benefits_base_salary_cents: number | null;
 }
 
+/** Si la migración de personal histórico aún no se aplicó, esas tablas no
+ *  existen: se trata como "no hay personal histórico" en vez de romper Planilla. */
+export function isMissingTable(error: { code?: string } | null): boolean {
+  return !!error && (error.code === "42P01" || error.code === "PGRST205" || error.code === "PGRST200");
+}
+
+interface FormerStaffRow {
+  id: string;
+  hire_date: string | null;
+  benefits_base_salary_cents: number | null;
+}
+interface FormerSalaryRow {
+  id: string;
+  employee_id: string;
+  salary: number | string;
+  effective_date: string;
+  created_at: string;
+}
+
 function periodOfDate(d: string): { year: number; month: number; half: 1 | 2 } {
   const [y, m, day] = d.split("-").map(Number);
   return { year: y, month: m, half: day <= 15 ? 1 : 2 };
@@ -70,12 +89,16 @@ function buildChanges(rows: SalaryRow[], details: StaffDetailsRow | undefined): 
 /** Todos los historiales agrupados por empleado (2 queries). */
 export async function getAllSalaryChanges(): Promise<Map<string, PayrollSalaryChange[]>> {
   const supabase = await createClient();
-  const [historyRes, detailsRes] = await Promise.all([
+  const [historyRes, detailsRes, formerRes, formerHistRes] = await Promise.all([
     supabase.from("staff_salary_history").select("id, user_id, salary, effective_date, created_at"),
     supabase.from("staff_details").select("user_id, hire_date, benefits_base_salary_cents"),
+    supabase.from("payroll_former_staff").select("id, hire_date, benefits_base_salary_cents"),
+    supabase.from("payroll_former_salary_history").select("id, employee_id, salary, effective_date, created_at"),
   ]);
   if (historyRes.error) throw new Error(historyRes.error.message);
   if (detailsRes.error) throw new Error(detailsRes.error.message);
+  if (formerRes.error && !isMissingTable(formerRes.error)) throw new Error(formerRes.error.message);
+  if (formerHistRes.error && !isMissingTable(formerHistRes.error)) throw new Error(formerHistRes.error.message);
 
   const rowsByUser = new Map<string, SalaryRow[]>();
   for (const r of (historyRes.data ?? []) as SalaryRow[]) {
@@ -84,6 +107,15 @@ export async function getAllSalaryChanges(): Promise<Map<string, PayrollSalaryCh
     rowsByUser.set(r.user_id, list);
   }
   const detailsByUser = new Map(((detailsRes.data ?? []) as StaffDetailsRow[]).map((d) => [d.user_id, d]));
+  // Personal histórico (sin cuenta): mismo formato, con su propio id como user_id.
+  for (const f of (formerRes.data ?? []) as FormerStaffRow[]) {
+    detailsByUser.set(f.id, { user_id: f.id, hire_date: f.hire_date, benefits_base_salary_cents: f.benefits_base_salary_cents });
+  }
+  for (const r of (formerHistRes.data ?? []) as FormerSalaryRow[]) {
+    const list = rowsByUser.get(r.employee_id) ?? [];
+    list.push({ id: r.id, user_id: r.employee_id, salary: r.salary, effective_date: r.effective_date, created_at: r.created_at });
+    rowsByUser.set(r.employee_id, list);
+  }
 
   const out = new Map<string, PayrollSalaryChange[]>();
   for (const [userId, rows] of rowsByUser) out.set(userId, buildChanges(rows, detailsByUser.get(userId)));
@@ -106,7 +138,21 @@ export async function getSalaryChanges(employeeId: string): Promise<PayrollSalar
   ]);
   if (historyRes.error) throw new Error(historyRes.error.message);
   if (detailsRes.error) throw new Error(detailsRes.error.message);
-  return buildChanges((historyRes.data ?? []) as SalaryRow[], (detailsRes.data ?? undefined) as StaffDetailsRow | undefined);
+  if ((historyRes.data ?? []).length > 0 || detailsRes.data) {
+    return buildChanges((historyRes.data ?? []) as SalaryRow[], (detailsRes.data ?? undefined) as StaffDetailsRow | undefined);
+  }
+  // Personal histórico (sin cuenta)
+  const [formerRes, formerHistRes] = await Promise.all([
+    supabase.from("payroll_former_staff").select("id, hire_date, benefits_base_salary_cents").eq("id", employeeId).maybeSingle(),
+    supabase.from("payroll_former_salary_history").select("id, employee_id, salary, effective_date, created_at").eq("employee_id", employeeId),
+  ]);
+  if (formerRes.error && !isMissingTable(formerRes.error)) throw new Error(formerRes.error.message);
+  if (formerHistRes.error && !isMissingTable(formerHistRes.error)) throw new Error(formerHistRes.error.message);
+  const f = (formerRes.data ?? null) as FormerStaffRow | null;
+  return buildChanges(
+    ((formerHistRes.data ?? []) as FormerSalaryRow[]).map((r) => ({ id: r.id, user_id: r.employee_id, salary: r.salary, effective_date: r.effective_date, created_at: r.created_at })),
+    f ? { user_id: f.id, hire_date: f.hire_date, benefits_base_salary_cents: f.benefits_base_salary_cents } : undefined
+  );
 }
 
 /** Forma que consume el helper puro `src/lib/planilla/salary-history.ts`. */

@@ -8,8 +8,6 @@ import type { UpcomingObligations } from "@/lib/types/planilla";
 import { Button } from "@/components/payroll-ui/button";
 import { MONTHS_ES, periodKey, currentPeriod, formatCents } from "@/lib/planilla/payroll-period";
 import { employeeAccentColor } from "@/lib/planilla/payroll-colors";
-import { LoadError } from "@/components/planilla/load-error";
-import { getDashboardDataAction } from "@/app/actions/planilla";
 import { EmployeeAvatar } from "@/components/planilla/employee-avatar";
 import { PayrollKpiCard } from "@/components/planilla/payroll-kpi-card";
 import { MonthlyEvolutionChart } from "@/components/planilla/monthly-evolution-chart";
@@ -32,40 +30,22 @@ import { ProximasObligacionesCard } from "@/components/planilla/proximas-obligac
  * instead, since that's meaningful even within a single property.
  */
 export function DashboardView({
+  rows,
+  obligations,
   year,
   onYearChange,
 }: {
+  rows: PayrollEmployeeAnnualSummary[];
+  obligations: UpcomingObligations;
   year: number;
   onYearChange: (year: number) => void;
 }) {
-  const [rows, setRows] = React.useState<PayrollEmployeeAnnualSummary[] | null>(null);
-  const [obligations, setObligations] = React.useState<UpcomingObligations | null>(null);
-
-  const [loadError, setLoadError] = React.useState<string | null>(null);
-  const load = React.useCallback(() => {
-    getDashboardDataAction(year)
-      .then((res) => {
-        if (res.ok) {
-          setRows(res.data.rows);
-          setObligations(res.data.obligations);
-          setLoadError(null);
-        } else {
-          setLoadError(res.error);
-        }
-      })
-      .catch((e) => setLoadError(e instanceof Error ? e.message : "Error de conexión"));
-  }, [year]);
-
-  React.useEffect(() => {
-    load();
-  }, [load]);
-
-  const loading = !rows || !obligations;
+  const loading = false;
 
   // "Activos ahora" -- current roster headcount, used only for the KPI
   // sublabel below. Deliberately status-based (it's a real "who's on
   // payroll today" fact), unlike `withData` below.
-  const active = React.useMemo(() => (rows ?? []).filter((r) => r.employee.status === "ACTIVE"), [rows]);
+  const active = React.useMemo(() => rows.filter((r) => r.employee.status === "ACTIVE"), [rows]);
   // Everyone with real paid history THIS year, regardless of current
   // status -- an employee who left still has real, already-paid
   // months that year (e.g. Jessica's whole 2025), and CLAUDE.md's own
@@ -74,24 +54,24 @@ export function DashboardView({
   // never drop a real paid month just because someone is INACTIVE
   // *today*. See monthly-evolution-chart.tsx's doc comment for the
   // same reasoning in more detail.
-  const withData = React.useMemo(() => (rows ?? []).filter((r) => r.monthsWithActivity > 0), [rows]);
-  const totalYTD = React.useMemo(() => (rows ?? []).reduce((s, r) => s + r.totalPaidCents, 0), [rows]);
+  const withData = React.useMemo(() => rows.filter((r) => r.monthsWithActivity > 0), [rows]);
+  const totalYTD = React.useMemo(() => rows.reduce((s, r) => s + r.totalPaidCents, 0), [rows]);
   const current = currentPeriod();
   const currentMonthCents = React.useMemo(
     () =>
-      (rows ?? []).reduce(
+      rows.reduce(
         (s, r) => s + (r.totalsByPeriod[periodKey(current.month, 1)] ?? 0) + (r.totalsByPeriod[periodKey(current.month, 2)] ?? 0),
         0
       ),
     [rows, current.month]
   );
-  const salariosCents = React.useMemo(() => (rows ?? []).reduce((s, r) => s + r.conceptTotals.salarioCents, 0), [rows]);
+  const salariosCents = React.useMemo(() => rows.reduce((s, r) => s + r.conceptTotals.salarioCents, 0), [rows]);
   const prestacionesCents = React.useMemo(
-    () => (rows ?? []).reduce((s, r) => s + r.conceptTotals.decimoCents + r.conceptTotals.vacacionCents + r.conceptTotals.primaCents, 0),
+    () => rows.reduce((s, r) => s + r.conceptTotals.decimoCents + r.conceptTotals.vacacionCents + r.conceptTotals.primaCents, 0),
     [rows]
   );
-  const descuentosCents = React.useMemo(() => (rows ?? []).reduce((s, r) => s + r.conceptTotals.descuentosCents, 0), [rows]);
-  const prestamosCents = React.useMemo(() => (rows ?? []).reduce((s, r) => s + r.conceptTotals.prestamosCents, 0), [rows]);
+  const descuentosCents = React.useMemo(() => rows.reduce((s, r) => s + r.conceptTotals.descuentosCents, 0), [rows]);
+  const prestamosCents = React.useMemo(() => rows.reduce((s, r) => s + r.conceptTotals.prestamosCents, 0), [rows]);
   const obligacionesPendientesCents = obligations
     ? obligations.decimoPendingCents + obligations.vacacionPendingCents + obligations.prestamosPendingCents
     : 0;
@@ -117,7 +97,7 @@ export function DashboardView({
       </div>
 
       {loading ? (
-        loadError ? <LoadError message={loadError} onRetry={load} /> : <p className="text-xs text-muted-foreground">Cargando…</p>
+        <p className="text-xs text-muted-foreground">Cargando…</p>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

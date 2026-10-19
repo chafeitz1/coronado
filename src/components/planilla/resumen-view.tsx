@@ -24,8 +24,7 @@ import { Badge } from "@/components/payroll-ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/payroll-ui/popover";
 import { MONTHS_ES, periodKey, currentPeriod, periodOrdinal, formatCents } from "@/lib/planilla/payroll-period";
 import { formatDisplayDate } from "@/lib/planilla/format-date";
-import { LoadError } from "@/components/planilla/load-error";
-import { getAnnualSummaryAction, setEmployeeLiquidationAction, getEmployeeAnnualDetailAction } from "@/app/actions/planilla";
+import { setEmployeeLiquidationAction, getEmployeeAnnualDetailAction } from "@/app/actions/planilla";
 import { EmployeeAvatar } from "@/components/planilla/employee-avatar";
 import { LiquidationDialog } from "@/components/planilla/liquidation-dialog";
 import {
@@ -187,16 +186,19 @@ function MonthlyBarChart({
 }
 
 export function ResumenView({
+  rows,
   year,
   onYearChange,
   onViewDetail,
+  onRefresh,
 }: {
+  rows: PayrollEmployeeAnnualSummary[];
   year: number;
   onYearChange: (year: number) => void;
   onViewDetail: (employeeId: string) => void;
+  /** Recarga los datos de la página (router.refresh). */
+  onRefresh: () => void;
 }) {
-  const [rows, setRows] = React.useState<PayrollEmployeeAnnualSummary[] | null>(null);
-  const [pending, startTransition] = React.useTransition();
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
   // Terminated employees are real historical data that must stay
   // accessible (never hidden permanently, per CLAUDE.md), but there's
@@ -215,29 +217,6 @@ export function ResumenView({
     window.localStorage.setItem(PROJECTING_STORAGE_KEY, String(projecting));
   }, [projecting]);
 
-  const [loadError, setLoadError] = React.useState<string | null>(null);
-  const loadSummary = React.useCallback(() => {
-    startTransition(async () => {
-      try {
-        const res = await getAnnualSummaryAction(year);
-        if (res.ok) {
-          setRows(res.data);
-          setLoadError(null);
-          setExpanded(new Set());
-        } else {
-          setLoadError(res.error);
-        }
-      } catch (e) {
-        setLoadError(e instanceof Error ? e.message : "Error de conexión");
-      }
-    });
-  }, [year]);
-
-  React.useEffect(() => {
-    loadSummary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year]);
-
   /** Deliberately separate from LiquidationDialog -- see its own
    *  comment for why. Whether an employee is currently active is its
    *  own fact, changed with its own explicit click, never a
@@ -250,7 +229,7 @@ export function ResumenView({
         employeeId: employee.id,
         endDate: employee.status === "ACTIVE" ? new Date().toISOString().slice(0, 10) : null,
       });
-      loadSummary();
+      onRefresh();
     } finally {
       setTogglingStatusId(null);
     }
@@ -268,8 +247,8 @@ export function ResumenView({
     });
   }
 
-  const active = (rows ?? []).filter((r) => r.employee.status === "ACTIVE");
-  const inactive = (rows ?? []).filter((r) => r.employee.status === "INACTIVE");
+  const active = rows.filter((r) => r.employee.status === "ACTIVE");
+  const inactive = rows.filter((r) => r.employee.status === "INACTIVE");
 
   function renderCard(row: PayrollEmployeeAnnualSummary) {
     const isOpen = expanded.has(row.employee.id);
@@ -443,9 +422,7 @@ export function ResumenView({
         </div>
       )}
 
-      {loadError && <LoadError message={loadError} onRetry={loadSummary} />}
-      {pending && !loadError && <p className="text-xs text-muted-foreground">Cargando…</p>}
-      {!pending && active.length === 0 && inactive.length === 0 && (
+      {active.length === 0 && inactive.length === 0 && (
         <p className="text-sm text-muted-foreground">Sin empleados todavía.</p>
       )}
 
@@ -465,7 +442,7 @@ export function ResumenView({
           employee={liquidationEmployee}
           open={liquidationEmployee !== null}
           onOpenChange={(open) => !open && setLiquidationEmployee(null)}
-          onSaved={loadSummary}
+          onSaved={onRefresh}
         />
       )}
     </div>

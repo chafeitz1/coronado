@@ -18,8 +18,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/payroll-ui
 import { MultiSelectFilter, type MultiSelectOption } from "@/components/planilla/multi-select-filter";
 import { MONTHS_ES, formatCents } from "@/lib/planilla/payroll-period";
 import { PAYROLL_CATEGORY, PAYROLL_CATEGORY_LABEL, type PayrollCategoryKey } from "@/lib/planilla/payroll-colors";
-import { LoadError } from "@/components/planilla/load-error";
-import { getAuditoriaDataAction } from "@/app/actions/planilla";
 import { EmployeeAvatar } from "@/components/planilla/employee-avatar";
 import { MenuSection, SwitchRow, CheckRow, SaveDefaultLink } from "@/components/planilla/view-menu";
 
@@ -215,10 +213,12 @@ function downloadCsv(data: AuditoriaData, year: number) {
 }
 
 export function AuditoriaView({
+  data,
   year,
   onYearChange,
   onExportReady,
 }: {
+  data: AuditoriaData;
   year: number;
   onYearChange: (year: number) => void;
   /** Lets the page-level header's "Exportar" button (next to "Agregar
@@ -228,7 +228,6 @@ export function AuditoriaView({
    *  `null` while it isn't (e.g. between property switches). */
   onExportReady?: (exportFn: (() => void) | null) => void;
 }) {
-  const [data, setData] = React.useState<AuditoriaData | null>(null);
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = React.useState<Set<string>>(new Set());
   const [vista, setVista] = React.useState<Densidad>("comprimida");
@@ -346,25 +345,13 @@ export function AuditoriaView({
     applyLevelRef.current = applyLevel;
   }, [applyLevel]);
 
-  const [loadError, setLoadError] = React.useState<string | null>(null);
-  const loadAuditoria = React.useCallback(() => {
-    getAuditoriaDataAction(year)
-      .then((res) => {
-        if (res.ok) {
-          setData(res.data);
-          setLoadError(null);
-          applyLevel(nivelRef.current, res.data);
-        } else {
-          setLoadError(res.error);
-        }
-      })
-      .catch((e) => setLoadError(e instanceof Error ? e.message : "Error de conexión"));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year]);
-
+  // Al llegar datos nuevos (primera carga o cambio de año) se reaplica el
+  // nivel de detalle elegido.
+  /* eslint-disable react-hooks/set-state-in-effect -- sincroniza filas expandidas con los datos que llegan por props */
   React.useEffect(() => {
-    loadAuditoria();
-  }, [loadAuditoria]);
+    applyLevel(nivelRef.current, data);
+  }, [data, applyLevel]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   React.useEffect(() => {
     if (!onExportReady) return;
@@ -772,7 +759,7 @@ export function AuditoriaView({
       )}
 
       {!data ? (
-        loadError ? <LoadError message={loadError} onRetry={loadAuditoria} /> : <p className="text-xs text-muted-foreground">Cargando…</p>
+        <p className="text-xs text-muted-foreground">Cargando…</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className={`w-full ${isMonthly ? "min-w-[1200px]" : "min-w-[2400px]"} ${d.table}`} style={{ borderCollapse: "separate", borderSpacing: 0 }}>

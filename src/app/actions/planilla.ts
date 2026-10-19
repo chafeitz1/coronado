@@ -51,7 +51,6 @@ export async function upsertPayrollEntryAction(input: {
   const entry = await payroll.upsertEntry(input);
   // Devuelve la quincena ya recalculada: un solo viaje en vez de guardar + recargar.
   const registro = await payroll.getRegistroForPeriod(input.periodYear, input.periodMonth, input.periodHalf);
-  revalidatePath(PATH);
   return { entry, registro };
 }
 
@@ -98,14 +97,12 @@ export async function upsertPayrollQuantityFieldAction(input: {
     [centsField]: cents,
   });
   const registro = await payroll.getRegistroForPeriod(input.periodYear, input.periodMonth, input.periodHalf);
-  revalidatePath(PATH);
   return { entry, registro };
 }
 
 export async function duplicatePreviousPeriodAction(year: number, month: number, half: 1 | 2) {
   await requireOwner();
   const copied = await payroll.duplicatePreviousPeriod(year, month, half);
-  revalidatePath(PATH);
   return { copied };
 }
 
@@ -120,21 +117,6 @@ export async function getEmployeeAnnualDetailAction(employeeId: string, year: nu
 }
 
 // ── Reportes ────────────────────────────────────────────────────────────
-
-export async function getAnnualSummaryAction(year: number) {
-  await requireOwner();
-  return safe(() => payroll.getAnnualSummary(year));
-}
-
-export async function getAuditoriaDataAction(year: number) {
-  await requireOwner();
-  return safe(() => payroll.getAuditoriaData(year));
-}
-
-export async function getPlanillaOverviewAction(year: number) {
-  await requireOwner();
-  return await payroll.getPlanillaOverview(year);
-}
 
 // ── Ledger y préstamos ──────────────────────────────────────────────────
 
@@ -218,57 +200,7 @@ export async function setEmployeeLiquidationAction(input: {
   revalidatePath(PATH);
 }
 
-export async function getUpcomingObligationsAction() {
-  await requireOwner();
-  return await payroll.getUpcomingObligations();
-}
-
 // ── Solicitudes de dinero (cola previa a un préstamo/adelanto real) ─────
-
-export interface LoanRequestRow {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  category: LoanCategory;
-  amountCents: number;
-  requestDate: string;
-  status: "pending" | "approved" | "rejected";
-  notes: string | null;
-}
-
-export async function getLoanRequestsAction(): Promise<LoanRequestRow[]> {
-  await requireOwner();
-  const supabase = await createClient();
-  const [{ data, error }, { data: staff }] = await Promise.all([
-    supabase
-      .from("payroll_loan_requests")
-      .select("id, person_id, category, amount, request_date, status, notes")
-      .order("request_date", { ascending: false }),
-    supabase.from("profiles").select("id, full_name").eq("role", "staff"),
-  ]);
-  if (error) throw new Error(error.message);
-  const names = new Map((staff ?? []).map((p: { id: string; full_name: string }) => [p.id, p.full_name]));
-  return (data ?? []).map(
-    (r: {
-      id: string;
-      person_id: string;
-      category: string;
-      amount: number | string;
-      request_date: string;
-      status: string;
-      notes: string | null;
-    }) => ({
-      id: r.id,
-      employeeId: r.person_id,
-      employeeName: names.get(r.person_id) ?? "—",
-      category: (r.category === "adelanto" ? "adelanto" : "prestamo") as LoanCategory,
-      amountCents: Math.round(Number(r.amount) * 100),
-      requestDate: r.request_date,
-      status: (r.status === "approved" || r.status === "rejected" ? r.status : "pending") as LoanRequestRow["status"],
-      notes: r.notes,
-    })
-  );
-}
 
 export async function createLoanRequestAction(input: {
   employeeId: string;
@@ -345,11 +277,3 @@ export async function getEmployeeLedgerBundleAction(employeeId: string) {
   return await payroll.getEmployeeLedgerBundle(employeeId);
 }
 
-/** Dashboard: resumen anual + obligaciones con UNA sola carga del historial. */
-export async function getDashboardDataAction(year: number) {
-  await requireOwner();
-  return safe(async () => {
-    const overview = await payroll.getPlanillaOverview(year);
-    return { rows: overview.rows, obligations: overview.obligations, composition: overview.composition };
-  });
-}

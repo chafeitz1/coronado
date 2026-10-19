@@ -13,10 +13,9 @@ import {
   approveLoanRequestAction,
   createLoanRequestAction,
   deleteLoanRequestAction,
-  getLoanRequestsAction,
   rejectLoanRequestAction,
-  type LoanRequestRow,
 } from "@/app/actions/planilla";
+import type { LoanRequestRow } from "@/lib/payroll-service/loan-requests";
 
 const CATEGORY_LABEL: Record<LoanCategory, string> = { prestamo: "Préstamo", adelanto: "Adelanto" };
 const STATUS_LABEL = { pending: "Pendiente", approved: "Aprobada", rejected: "Rechazada" } as const;
@@ -31,8 +30,7 @@ function todayIso(): string {
 /** Cola de "Solicitudes de dinero": el dueño anota lo que pide un empleado
  *  y luego lo aprueba (se crea el préstamo/adelanto real con su calendario
  *  de cuotas) o lo rechaza. */
-export function SolicitudesView({ employees }: { employees: PayrollEmployee[] }) {
-  const [requests, setRequests] = React.useState<LoanRequestRow[] | null>(null);
+export function SolicitudesView({ employees, requests }: { employees: PayrollEmployee[]; requests: LoanRequestRow[] }) {
   const [error, setError] = React.useState<string | null>(null);
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [installments, setInstallments] = React.useState<Record<string, string>>({});
@@ -44,24 +42,11 @@ export function SolicitudesView({ employees }: { employees: PayrollEmployee[] })
   const [notes, setNotes] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
-  const load = React.useCallback(() => {
-    getLoanRequestsAction()
-      .then(setRequests)
-      .catch(() => setError("No se pudieron cargar las solicitudes."));
-  }, []);
-
-  /* eslint-disable react-hooks/set-state-in-effect -- initial fetch on mount */
-  React.useEffect(() => {
-    load();
-  }, [load]);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
   async function run(id: string | null, fn: () => Promise<unknown>) {
     setError(null);
     setBusyId(id);
     try {
-      await fn();
-      load();
+      await fn(); // las acciones revalidan la página: llegan las solicitudes nuevas
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo completar la acción.");
     } finally {
@@ -85,8 +70,8 @@ export function SolicitudesView({ employees }: { employees: PayrollEmployee[] })
     setNotes("");
   }
 
-  const pending = (requests ?? []).filter((r) => r.status === "pending");
-  const resolved = (requests ?? []).filter((r) => r.status !== "pending");
+  const pending = requests.filter((r) => r.status === "pending");
+  const resolved = requests.filter((r) => r.status !== "pending");
 
   return (
     <div className="flex flex-col gap-5">
@@ -136,11 +121,10 @@ export function SolicitudesView({ employees }: { employees: PayrollEmployee[] })
       </form>
 
       {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-      {requests === null && !error && <p className="text-xs text-muted-foreground">Cargando…</p>}
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pendientes ({pending.length})</h2>
-        {pending.length === 0 && requests && <p className="text-sm text-muted-foreground">No hay solicitudes pendientes.</p>}
+        {pending.length === 0 && <p className="text-sm text-muted-foreground">No hay solicitudes pendientes.</p>}
         {pending.map((r) => (
           <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-border px-4 py-3">
             <div className="min-w-40 flex-1">

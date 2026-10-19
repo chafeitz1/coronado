@@ -1,38 +1,68 @@
 import { requireOwner } from "@/lib/auth";
 import { getPayrollEmployees } from "@/lib/payroll-service/employees";
-import { getRegistroForPeriod } from "@/lib/payroll-service/payroll";
+import { getLoanRequests } from "@/lib/payroll-service/loan-requests";
+import { getAnnualSummary, getAuditoriaData, getPlanillaOverview, getRegistroForPeriod } from "@/lib/payroll-service/payroll";
+import { PayrollClient, type PayrollTab, type PayrollTabData } from "@/components/planilla/payroll-client";
 import { currentPeriod } from "@/lib/planilla/payroll-period";
-import { PayrollClient } from "@/components/planilla/payroll-client";
 import { mutedText, pageHeading } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";
 
-export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+const TABS: PayrollTab[] = ["dashboard", "registro", "resumen", "auditoria", "solicitudes"];
+
+/**
+ * Cada pestaña trae sus datos con la página (Server Component), igual que
+ * Registro: cambiar de pestaña o de año es una navegación (`?tab=…&year=…`).
+ * Antes cada pestaña pedía sus datos con server actions, que Next despacha
+ * de una en una y que se quedaban en cola.
+ */
+export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ tab?: string; year?: string }> }) {
   await requireOwner();
-  const { tab } = await searchParams;
-  // Registro es la pestaña por defecto: se carga ya en el servidor, en
-  // paralelo con los empleados, para que la página abra con datos.
+  const params = await searchParams;
   const period = currentPeriod();
-  const showsRegistro = !tab || tab === "registro";
-  let employees: Awaited<ReturnType<typeof getPayrollEmployees>>;
-  let registroRows: Awaited<ReturnType<typeof getRegistroForPeriod>> | null = null;
+  const tab: PayrollTab = TABS.includes(params.tab as PayrollTab) ? (params.tab as PayrollTab) : "registro";
+  const parsedYear = Number(params.year);
+  const year = Number.isInteger(parsedYear) && parsedYear > 2000 && parsedYear < 2100 ? parsedYear : period.year;
+
+  let employees: Awaited<ReturnType<typeof getPayrollEmployees>> = [];
+  let data: PayrollTabData;
   try {
-    [employees, registroRows] = await Promise.all([
-      getPayrollEmployees(),
-      showsRegistro ? getRegistroForPeriod(period.year, period.month, period.half) : Promise.resolve(null),
-    ]);
+    const employeesPromise = getPayrollEmployees();
+    switch (tab) {
+      case "registro": {
+        const [emps, rows] = await Promise.all([employeesPromise, getRegistroForPeriod(period.year, period.month, period.half)]);
+        employees = emps;
+        data = { kind: "registro", period, rows };
+        break;
+      }
+      case "resumen": {
+        const [emps, rows] = await Promise.all([employeesPromise, getAnnualSummary(year)]);
+        employees = emps;
+        data = { kind: "resumen", rows };
+        break;
+      }
+      case "auditoria": {
+        const [emps, auditoria] = await Promise.all([employeesPromise, getAuditoriaData(year)]);
+        employees = emps;
+        data = { kind: "auditoria", data: auditoria };
+        break;
+      }
+      case "dashboard": {
+        const [emps, overview] = await Promise.all([employeesPromise, getPlanillaOverview(year)]);
+        employees = emps;
+        data = { kind: "dashboard", rows: overview.rows, obligations: overview.obligations };
+        break;
+      }
+      default: {
+        const [emps, requests] = await Promise.all([employeesPromise, getLoanRequests()]);
+        employees = emps;
+        data = { kind: "solicitudes", requests };
+      }
+    }
   } catch (e) {
     // Mostrar el error real en vez de una página en blanco o un spinner eterno.
     console.error("planilla page failed", e);
-    return (
-      <div className="space-y-3">
-        <h1 className={pageHeading}>Planilla</h1>
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
-          <p className="font-medium text-destructive">No se pudo cargar la planilla.</p>
-          <p className="mt-1 break-words text-xs text-muted-foreground">{e instanceof Error ? e.message : String(e)}</p>
-        </div>
-      </div>
-    );
+    data = { kind: "error", message: e instanceof Error ? e.message : String(e) };
   }
 
   return (
@@ -41,11 +71,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
         <h1 className={pageHeading}>Planilla</h1>
         <p className={mutedText}>Registro de quincenas, resumen anual y auditoría — con décimo, vacación, prima y préstamos.</p>
       </div>
-      <PayrollClient
-        employees={employees}
-        initialTab={tab}
-        initialRegistro={registroRows ? { period, rows: registroRows } : null}
-      />
+      <PayrollClient employees={employees} tab={tab} year={year} data={data} />
     </div>
   );
 }

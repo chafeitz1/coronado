@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { FAMILIAS, MESES, TrackingRecord, HebrewBucket, fmtFecha } from "@/lib/tracking/constants";
+import { FAMILIAS, MESES, TrackingEvent, TrackingRecord, HebrewBucket, fmtFecha } from "@/lib/tracking/constants";
 import { card, sectionHeading } from "@/lib/ui";
 
 const CORE_KEYS = ["Papi y Mami", "Flia Harari", "Flia Hayo", "Flia Hafeitz Assis", "Flia Hafeitz Abadi", "Flia Hafeitz Hanono"];
@@ -34,11 +34,13 @@ function buildEventos(records: TrackingRecord[]) {
 interface Props {
   data: TrackingRecord[];
   allData: TrackingRecord[];
+  /** eventos del período (con invitados por nombre) */
+  events: TrackingEvent[];
   hebrewMode?: boolean;
   hebrewYears?: HebrewBucket[];
 }
 
-export default function DatosCuriosos({ data, allData, hebrewMode = false }: Props) {
+export default function DatosCuriosos({ data, allData, events, hebrewMode = false }: Props) {
   const [expandedYear, setExpandedYear] = useState<number | null>(null);
   const [expandedEvt, setExpandedEvt] = useState<number | null>(null);
 
@@ -85,7 +87,24 @@ export default function DatosCuriosos({ data, allData, hebrewMode = false }: Pro
   const mesData = monthOrder.map((mi, i) => ({ name: monthLabels[i], visitas: mesCounts[mi] }));
 
   // Invitados (filtered)
-  const invEvts = eventosFiltrado.filter((e) => e.familias.has("Invitados")).sort((a, b) => b.fecha_ini.localeCompare(a.fecha_ini));
+  const invEvts = events
+    .filter((e) => (e.asistencia["Invitados"] || 0) > 0 || !!e.invitados)
+    .sort((a, b) => b.fecha_ini.localeCompare(a.fecha_ini));
+  // Invitados más frecuentes (por nombre) y familias presentes en esos fines de semana
+  const ALIAS: Record<string, string> = { "alan shajtel": "Allan Shajtel" };
+  const guestCount = new Map<string, number>();
+  for (const e of invEvts) {
+    for (const raw of (e.invitados || "").split(",")) {
+      const name = raw.trim();
+      if (!name) continue;
+      const canon = ALIAS[name.toLowerCase()] ?? name;
+      guestCount.set(canon, (guestCount.get(canon) || 0) + 1);
+    }
+  }
+  const guestRank = [...guestCount.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const famWithGuests = CORE_KEYS.map((k) => ({ key: k, n: invEvts.filter((e) => (e.asistencia[k] || 0) > 0).length }))
+    .filter((x) => x.n > 0)
+    .sort((a, b) => b.n - a.n);
 
   return (
     <div className="space-y-4">
@@ -168,7 +187,7 @@ export default function DatosCuriosos({ data, allData, hebrewMode = false }: Pro
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Mes popular */}
         <div className={`p-4 ${card}`}>
           <div className={`mb-3 ${sectionHeading}`}>📅 Mes Más Popular</div>
@@ -189,14 +208,14 @@ export default function DatosCuriosos({ data, allData, hebrewMode = false }: Pro
         <div className={`p-4 ${card}`}>
           <div className="mb-3 flex items-center justify-between">
             <span className={sectionHeading}>🎉 Eventos con Invitados</span>
-            <span className="text-xs font-bold text-ink">{invEvts.length}</span>
+            <span className="text-xs font-bold text-ink">{invEvts.length} fines de semana</span>
           </div>
-          <div className="space-y-1 overflow-y-auto" style={{ maxHeight: 160 }}>
+          <div className="space-y-1 overflow-y-auto" style={{ maxHeight: 300 }}>
             {invEvts.length === 0 && <p className="text-xs text-ink-faint">Sin eventos con invitados.</p>}
             {invEvts.map((e, i) => {
-              const others = CORE_KEYS.filter((k) => e.familias.has(k));
+              const others = CORE_KEYS.filter((k) => (e.asistencia[k] || 0) > 0);
               const isOpen = expandedEvt === i;
-              const notes = allData.filter((r) => r.eventoKey === e.key).map((r) => r.notas).filter(Boolean);
+              const notes = [e.notas, ...e.otros.map((o) => `${famShort(o.familia)}: ${o.nota}`)].filter(Boolean);
               return (
                 <div key={i} className="overflow-hidden rounded-md border border-hairline">
                   <button
@@ -206,6 +225,7 @@ export default function DatosCuriosos({ data, allData, hebrewMode = false }: Pro
                   >
                     <div className="min-w-0">
                       <div className="truncate text-xs text-ink">{e.evento}</div>
+                      <div className="text-xs font-medium text-ink">{e.invitados || <span className="font-normal text-ink-faint">(sin nombres anotados)</span>}</div>
                       <div className="mt-0.5 flex flex-wrap gap-0.5">
                         {others.map((k) => (
                           <span key={k} className="rounded px-1 text-xs" style={{ background: famColor(k) + "20", color: famColor(k) }}>
@@ -228,6 +248,34 @@ export default function DatosCuriosos({ data, allData, hebrewMode = false }: Pro
               );
             })}
           </div>
+        </div>
+
+        {/* Quién trae más invitados */}
+        <div className={`p-4 ${card}`}>
+          <span className={sectionHeading}>Invitados más frecuentes</span>
+          <div className="mt-3 space-y-1">
+            {guestRank.length === 0 && <p className="text-xs text-ink-faint">Aún no hay nombres de invitados anotados.</p>}
+            {guestRank.slice(0, 8).map(([name, n]) => (
+              <div key={name} className="flex items-center justify-between text-xs">
+                <span className="text-ink">{name}</span>
+                <span className="font-bold tabular-nums text-ink">{n}×</span>
+              </div>
+            ))}
+          </div>
+          {famWithGuests.length > 0 && (
+            <>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-ink-muted">Familias presentes en esos fines de semana</p>
+              <div className="mt-2 space-y-1">
+                {famWithGuests.map((f) => (
+                  <div key={f.key} className="flex items-center justify-between text-xs">
+                    <span className="font-semibold" style={{ color: famColor(f.key) }}>{famShort(f.key)}</span>
+                    <span className="tabular-nums text-ink">{f.n}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-ink-faint">Es quién estaba en la casa, no necesariamente quién invitó.</p>
+            </>
+          )}
         </div>
       </div>
     </div>

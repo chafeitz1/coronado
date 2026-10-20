@@ -273,8 +273,10 @@ export default function TrackingPage() {
         {activeView === "historial" && <Historial events={filteredEvents} onEdit={setEditing} onGenerate={() => setShowFill(true)} />}
         {activeView === "curiosidades" && (
           <>
-            <DatosCuriosos data={filtered} allData={data} hebrewMode={hebrewMode} hebrewYears={hebrewYears} />
-            <OtrosDestinos events={events} />
+            <DatosCuriosos data={filtered} allData={data} events={filteredEvents} hebrewMode={hebrewMode} hebrewYears={hebrewYears} />
+            <div className="mt-4">
+              <OtrosDestinos events={events} />
+            </div>
           </>
         )}
       </div>

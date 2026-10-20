@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { FAMILIAS, LUGARES, TIPOS_EVENTO, TrackingEvent, diaSemana, fmtFecha, hoyISO, nochesEntre } from "@/lib/tracking/constants";
 import { FilterChip } from "@/components/ui/filter-chip";
+import { addDays } from "@/lib/tracking/weekend-plan";
 import { buttonUtility, input, mutedText } from "@/lib/ui";
 
 interface Props {
@@ -41,7 +42,9 @@ export default function Historial({ events, onEdit, onGenerate }: Props) {
     setter(next);
   };
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  // "Notas y destinos" empieza escondida (se activa en Filtros y columnas).
+  const [hidden, setHidden] = useState<Set<string>>(new Set(["notas"]));
+  const [showFuture, setShowFuture] = useState(false);
 
   const toggleHidden = (k: string) =>
     setHidden((prev) => {
@@ -51,8 +54,13 @@ export default function Historial({ events, onEdit, onGenerate }: Props) {
       return next;
     });
 
+  // Los fines de semana que aún no llegan (más allá de 2 semanas) quedan escondidos y se van
+  // mostrando solos a medida que se acercan; el botón los muestra todos.
+  const horizonte = addDays(hoyISO(), 14);
+  const lejanos = events.filter((e) => e.fecha_ini > horizonte).length;
+
   const filtered = useMemo(() => {
-    let evs = events;
+    let evs = showFuture ? events : events.filter((e) => e.fecha_ini <= horizonte);
     if (famFilter.size > 0) evs = evs.filter((e) => [...famFilter].some((f) => (e.asistencia[f] || 0) > 0));
     if (tipoFilter.size > 0) evs = evs.filter((e) => tipoFilter.has(e.tipo));
     if (soloInvitados) evs = evs.filter(tieneInvitados);
@@ -66,12 +74,12 @@ export default function Historial({ events, onEdit, onGenerate }: Props) {
       );
     }
     return [...evs].sort((a, b) => (sortDir === "desc" ? b.fecha_ini.localeCompare(a.fecha_ini) : a.fecha_ini.localeCompare(b.fecha_ini)));
-  }, [events, famFilter, tipoFilter, estado, soloInvitados, destFilter, search, sortDir]);
+  }, [events, showFuture, horizonte, famFilter, tipoFilter, estado, soloInvitados, destFilter, search, sortDir]);
 
   const famVisibles = FAMILIAS.filter((f) => !hidden.has(f.key));
   const hoy = hoyISO();
   const sinVisitaPasados = events.filter((e) => !huboVisita(e) && e.fecha_ini <= hoy).length;
-  const filtrosActivos = (famFilter.size > 0 ? 1 : 0) + (tipoFilter.size > 0 ? 1 : 0) + (estado !== "todos" ? 1 : 0) + (soloInvitados ? 1 : 0) + (destFilter.size > 0 ? 1 : 0) + hidden.size;
+  const filtrosActivos = (famFilter.size > 0 ? 1 : 0) + (tipoFilter.size > 0 ? 1 : 0) + (estado !== "todos" ? 1 : 0) + (soloInvitados ? 1 : 0) + (destFilter.size > 0 ? 1 : 0) + [...hidden].filter((k) => k !== "notas").length + (hidden.has("notas") ? 0 : 1);
 
   const totales = FAMILIAS.map((f) => ({
     key: f.key,
@@ -99,7 +107,7 @@ export default function Historial({ events, onEdit, onGenerate }: Props) {
             setEstado("todos");
             setSoloInvitados(false);
             setDest(new Set());
-            setHidden(new Set());
+            setHidden(new Set(["notas"]));
           } : undefined}
         >
           <div className="max-h-[70vh] w-72 max-w-[85vw] space-y-4 overflow-y-auto p-2">
@@ -168,6 +176,11 @@ export default function Historial({ events, onEdit, onGenerate }: Props) {
         >
           Con invitados
         </button>
+        {lejanos > 0 && (
+          <button type="button" onClick={() => setShowFuture((v) => !v)} className={buttonUtility}>
+            {showFuture ? "Ocultar próximos" : `Mostrar próximos (${lejanos})`}
+          </button>
+        )}
         <button type="button" onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))} className={buttonUtility}>
           Fecha {sortDir === "desc" ? "↓" : "↑"}
         </button>
@@ -243,6 +256,14 @@ export default function Historial({ events, onEdit, onGenerate }: Props) {
                   <td className="px-2 py-2 font-medium text-ink">
                     {ev.evento || "—"}
                     {vacio && <span className="ml-1.5 text-[10px] font-normal text-ink-faint">sin visita</span>}
+                    {hidden.has("notas") && (ev.otros.length > 0 || ev.notas) && (
+                      <span
+                        className="ml-1.5 cursor-help text-[11px] font-normal text-ink-faint"
+                        title={[ev.notas, ...ev.otros.map((o) => `${famShort(o.familia)}: ${o.nota}`)].filter(Boolean).join("\n")}
+                      >
+                        ⓘ
+                      </span>
+                    )}
                   </td>
                   {!hidden.has("tipo") && (
                     <td className="px-2 py-2">
@@ -269,7 +290,7 @@ export default function Historial({ events, onEdit, onGenerate }: Props) {
                         {ev.otros.map((o, i) => (
                           <span
                             key={i}
-                            className={`rounded border px-1.5 py-0.5 text-[11px] ${o.lugar ? "border-primary/40 bg-primary-soft text-primary" : "border-hairline text-ink-muted"}`}
+                            className={`rounded border px-1.5 py-0.5 text-[11px] ${o.lugar ? "border-hairline bg-canvas-soft text-ink" : "border-hairline text-ink-muted"}`}
                             title={o.nota}
                           >
                             {famShort(o.familia)}: {o.nota}

@@ -11,12 +11,15 @@ export function FilterChip({
   label,
   activeLabel,
   onClear,
+  keepOpen = false,
   children,
 }: {
   icon?: LucideIcon;
   label: string;
   activeLabel?: string | null;
   onClear?: () => void;
+  /** No cerrar el panel al hacer clic dentro (para marcar varias opciones). Se cierra al hacer clic fuera. */
+  keepOpen?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -61,7 +64,7 @@ export function FilterChip({
       </button>
       {open && (
         <div
-          onClick={() => setOpen(false)}
+          onClick={keepOpen ? undefined : () => setOpen(false)}
           className="absolute left-0 top-full z-20 mt-1 min-w-44 overflow-hidden rounded-lg border border-hairline bg-surface p-1 shadow-[var(--shadow-soft)]"
         >
           {children}

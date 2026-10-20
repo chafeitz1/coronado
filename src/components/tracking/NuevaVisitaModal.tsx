@@ -1,148 +1,208 @@
-'use client'
-import { useMemo, useState } from 'react'
-import { FAMILIAS, TIPOS_EVENTO, TrackingEvent, clasificarEvento, diaSemana, fmtFecha, nochesEntre } from '@/lib/tracking/constants'
-import { deleteEvent, insertEvent, updateEventFull } from '@/lib/tracking/queries'
+"use client";
+import { useMemo, useState } from "react";
+import { FAMILIAS, TIPOS_EVENTO, TrackingEvent, clasificarEvento, diaSemana, fmtFecha, nochesEntre } from "@/lib/tracking/constants";
+import { deleteEvent, insertEvent, updateEventFull } from "@/lib/tracking/queries";
+import { SidePanel } from "@/components/ui/side-panel";
+import { Field } from "@/components/ui/field";
+import { buttonGhost, buttonPrimary, input } from "@/lib/ui";
 
 interface Props {
   /** Si viene, el modal edita ese evento; si no, crea uno nuevo. */
-  evento?: TrackingEvent | null
-  onClose: () => void
-  onSaved: () => void
+  evento?: TrackingEvent | null;
+  onClose: () => void;
+  onSaved: () => void;
 }
 
 export default function NuevaVisitaModal({ evento: editing, onClose, onSaved }: Props) {
-  const [evento,    setEvento]    = useState(editing?.evento === 'Fin de semana' ? '' : editing?.evento ?? '')
-  const [fechaIni,  setFechaIni]  = useState(editing?.fecha_ini ?? '')
-  const [fechaSal,  setFechaSal]  = useState(editing?.fecha_salida ?? '')
-  const [tipo,      setTipo]      = useState(editing && editing.tipo !== clasificarEvento(editing.evento) ? editing.tipo : '')
-  const [notas,     setNotas]     = useState(editing?.notas ?? '')
-  const [noches,    setNoches]    = useState<Record<string, number>>(editing?.asistencia ?? {})
-  const [nochesEv,  setNochesEv]  = useState<string>(editing?.noches != null ? String(editing.noches) : '')
-  const [saving,    setSaving]    = useState(false)
-  const [error,     setError]     = useState('')
+  const [evento, setEvento] = useState(editing?.evento === "Fin de semana" ? "" : (editing?.evento ?? ""));
+  const [fechaIni, setFechaIni] = useState(editing?.fecha_ini ?? "");
+  const [fechaSal, setFechaSal] = useState(editing?.fecha_salida ?? "");
+  const [tipo, setTipo] = useState(editing && editing.tipo !== clasificarEvento(editing.evento) ? editing.tipo : "");
+  const [notas, setNotas] = useState(editing?.notas ?? "");
+  const [noches, setNoches] = useState<Record<string, number>>(editing?.asistencia ?? {});
+  const [nochesEv, setNochesEv] = useState<string>(editing?.noches != null ? String(editing.noches) : "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const nochesEvento = useMemo(() => nochesEntre(fechaIni, fechaSal), [fechaIni, fechaSal])
+  const nochesEvento = useMemo(() => nochesEntre(fechaIni, fechaSal), [fechaIni, fechaSal]);
 
-  const setFam = (familia: string, n: number) => setNoches(prev => ({ ...prev, [familia]: Math.max(0, n) }))
-  const toggleFam = (familia: string) => setFam(familia, (noches[familia] || 0) > 0 ? 0 : (nochesEvento || 2))
+  const setFam = (familia: string, n: number) => setNoches((prev) => ({ ...prev, [familia]: Math.max(0, n) }));
+  const toggleFam = (familia: string) => setFam(familia, (noches[familia] || 0) > 0 ? 0 : nochesEvento || 2);
 
   const handleSave = async () => {
-    if (!fechaIni) { setError('La fecha de llegada es obligatoria.'); return }
-    if (fechaSal && fechaSal < fechaIni) { setError('La salida no puede ser antes de la llegada.'); return }
-    const asistencia = Object.entries(noches).filter(([, n]) => n > 0).map(([familia, n]) => ({ familia, noches: n }))
-    const nombre = evento.trim() || 'Fin de semana'
-    const nochesEvento2 = nochesEv.trim() === '' ? undefined : Math.max(0, parseInt(nochesEv, 10) || 0)
-    const input = { evento: nombre, fecha_ini: fechaIni, noches: nochesEvento2, fecha_salida: fechaSal || undefined, tipo: tipo || clasificarEvento(evento), notas: notas.trim() || undefined, asistencia }
-    setSaving(true); setError('')
+    if (!fechaIni) {
+      setError("La fecha de llegada es obligatoria.");
+      return;
+    }
+    if (fechaSal && fechaSal < fechaIni) {
+      setError("La salida no puede ser antes de la llegada.");
+      return;
+    }
+    const asistencia = Object.entries(noches)
+      .filter(([, n]) => n > 0)
+      .map(([familia, n]) => ({ familia, noches: n }));
+    const nombre = evento.trim() || "Fin de semana";
+    const nochesEvento2 = nochesEv.trim() === "" ? undefined : Math.max(0, parseInt(nochesEv, 10) || 0);
+    const inputPayload = {
+      evento: nombre,
+      noches: nochesEvento2,
+      fecha_ini: fechaIni,
+      fecha_salida: fechaSal || undefined,
+      tipo: tipo || clasificarEvento(evento),
+      notas: notas.trim() || undefined,
+      asistencia,
+    };
+    setSaving(true);
+    setError("");
     try {
-      if (editing) await updateEventFull(editing.key, input)
-      else await insertEvent(input)
-      onSaved()
-    } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo guardar.'); setSaving(false) }
-  }
+      if (editing) await updateEventFull(editing.key, inputPayload);
+      else await insertEvent(inputPayload);
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar.");
+      setSaving(false);
+    }
+  };
 
   const handleDelete = async () => {
-    if (!editing || !window.confirm('¿Borrar este evento y su asistencia? No se puede deshacer.')) return
-    setSaving(true); setError('')
-    try { await deleteEvent(editing.key); onSaved() }
-    catch (e) { setError(e instanceof Error ? e.message : 'No se pudo borrar.'); setSaving(false) }
-  }
+    if (!editing || !window.confirm("¿Borrar este evento y su asistencia? No se puede deshacer.")) return;
+    setSaving(true);
+    setError("");
+    try {
+      await deleteEvent(editing.key);
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo borrar.");
+      setSaving(false);
+    }
+  };
 
-  const inputStyle = { background: 'var(--canvas-soft)', border: '1px solid var(--hairline)', borderRadius: 8, color: 'var(--ink)', padding: '6px 10px', fontSize: 13, width: '100%' }
-  const lbl = 'text-xs font-semibold uppercase tracking-wide'
-  const hayFamilias = Object.values(noches).some(n => n > 0)
+  const hayFamilias = Object.values(noches).some((n) => n > 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
-      <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-elevated)' }}>
-        <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--hairline)' }}>
-          <h2 className="font-bold text-base" style={{ color: 'var(--ink)' }}>{editing ? 'Editar evento' : 'Nueva Visita'}</h2>
-          <button onClick={onClose} className="text-lg" style={{ color: 'var(--ink-muted)' }}>✕</button>
+    <SidePanel open onClose={onClose} title={editing ? "Editar evento" : "Nueva Visita"}>
+      <div className="space-y-4">
+        <Field label="Nombre del evento (opcional)">
+          <input
+            value={evento}
+            onChange={(e) => setEvento(e.target.value)}
+            placeholder="Ej: Sukkot — vacío = Fin de semana"
+            className={input}
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Llegada">
+            <input type="date" value={fechaIni} onChange={(e) => setFechaIni(e.target.value)} className={input} />
+            <p className="mt-1 text-xs text-ink-muted">{fechaIni ? `${fmtFecha(fechaIni)} · ${diaSemana(fechaIni)}` : ""}</p>
+          </Field>
+          <Field label="Salida">
+            <input type="date" value={fechaSal} onChange={(e) => setFechaSal(e.target.value)} className={input} />
+            <p className="mt-1 text-xs text-ink-muted">{fechaSal ? `${fmtFecha(fechaSal)} · ${diaSemana(fechaSal)}` : ""}</p>
+          </Field>
         </div>
-        <div className="px-6 py-4 space-y-3 overflow-y-auto" style={{ maxHeight: '70vh' }}>
-          <div>
-            <label className={lbl} style={{ color: 'var(--ink-muted)' }}>Nombre del evento (opcional)</label>
-            <input value={evento} onChange={e => setEvento(e.target.value)} placeholder="Ej: Sukkot — vacío = Fin de semana" style={{ ...inputStyle, marginTop: 4 }} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={lbl} style={{ color: 'var(--ink-muted)' }}>Llegada</label>
-              <input type="date" value={fechaIni} onChange={e => setFechaIni(e.target.value)} style={{ ...inputStyle, marginTop: 4 }} />
-              <div className="text-xs mt-1" style={{ color: 'var(--ink-muted)' }}>{fechaIni ? `${fmtFecha(fechaIni)} · ${diaSemana(fechaIni)}` : ''}</div>
-            </div>
-            <div>
-              <label className={lbl} style={{ color: 'var(--ink-muted)' }}>Salida</label>
-              <input type="date" value={fechaSal} onChange={e => setFechaSal(e.target.value)} style={{ ...inputStyle, marginTop: 4 }} />
-              <div className="text-xs mt-1" style={{ color: 'var(--ink-muted)' }}>{fechaSal ? `${fmtFecha(fechaSal)} · ${diaSemana(fechaSal)}` : ''}</div>
-            </div>
-          </div>
+
+        <Field label="Noches del evento">
           <div className="flex items-center gap-2">
-            <label className={lbl} style={{ color: 'var(--ink-muted)' }}>Noches del evento</label>
-            <input type="number" min={0} max={60} value={nochesEv} placeholder={nochesEvento ? String(nochesEvento) : '—'}
-                   onChange={e => setNochesEv(e.target.value)}
-                   style={{ width: 64, textAlign: 'center', background: 'var(--canvas-soft)', border: '1px solid var(--hairline)', borderRadius: 6, color: 'var(--ink)', padding: '4px 6px', fontSize: 13 }} />
-            <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>vacío = salida − llegada</span>
+            <input
+              type="number"
+              min={0}
+              max={60}
+              value={nochesEv}
+              placeholder={nochesEvento ? String(nochesEvento) : "—"}
+              onChange={(e) => setNochesEv(e.target.value)}
+              className={`${input} w-20 text-center`}
+            />
+            <span className="text-xs text-ink-faint">vacío = salida − llegada</span>
           </div>
-          {nochesEvento > 0 && (
-            <div className="text-xs rounded-lg px-3 py-2" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}>
-              {nochesEvento} noche{nochesEvento === 1 ? '' : 's'} en total ({diaSemana(fechaIni)} → {diaSemana(fechaSal)}). Al marcar una familia se le pone ese número; puedes ajustarlo.
-            </div>
-          )}
-          <div>
-            <label className={lbl} style={{ color: 'var(--ink-muted)' }}>Tipo de evento</label>
-            <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ ...inputStyle, marginTop: 4 }}>
-              <option value="">Auto (detectar del nombre)</option>
-              {Object.entries(TIPOS_EVENTO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={`${lbl} mb-2 block`} style={{ color: 'var(--ink-muted)' }}>Noches por familia</label>
-            <div className="grid grid-cols-2 gap-2">
-              {FAMILIAS.map(f => (
-                <div key={f.key} className="flex items-center gap-2 rounded-lg px-3 py-2"
-                     style={{ background: 'var(--canvas-soft)', border: `1px solid ${(noches[f.key] || 0) > 0 ? f.color : 'var(--hairline)'}` }}>
-                  <button type="button" onClick={() => toggleFam(f.key)} className="flex items-center gap-2 flex-1 text-left" title="Marcar / desmarcar">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: f.color }} />
-                    <span className="text-xs" style={{ color: 'var(--ink)' }}>{f.short}</span>
+        </Field>
+
+        {nochesEvento > 0 && (
+          <p className="rounded-md bg-primary-soft px-3 py-2 text-xs text-primary">
+            {nochesEvento} noche{nochesEvento === 1 ? "" : "s"} en total ({diaSemana(fechaIni)} → {diaSemana(fechaSal)}).
+            Al marcar una familia se le pone ese número; puedes ajustarlo.
+          </p>
+        )}
+
+        <Field label="Tipo de evento">
+          <select value={tipo} onChange={(e) => setTipo(e.target.value)} className={input}>
+            <option value="">Auto (detectar del nombre)</option>
+            {Object.entries(TIPOS_EVENTO).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <div>
+          <p className="mb-2 text-sm font-medium text-ink-secondary">Noches por familia</p>
+          <div className="grid grid-cols-2 gap-2">
+            {FAMILIAS.map((f) => {
+              const active = (noches[f.key] || 0) > 0;
+              return (
+                <div
+                  key={f.key}
+                  className={`flex items-center gap-2 rounded-md border px-3 py-2 ${active ? "" : "border-hairline"}`}
+                  style={active ? { borderColor: f.color } : undefined}
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleFam(f.key)}
+                    className="flex flex-1 items-center gap-2 text-left"
+                    title="Marcar / desmarcar"
+                  >
+                    <span className="size-2 shrink-0 rounded-full" style={{ background: f.color }} />
+                    <span className="text-xs text-ink">{f.short}</span>
                   </button>
-                  <input type="number" min={0} max={60} value={noches[f.key] || ''} placeholder="0"
-                         onChange={e => setFam(f.key, parseInt(e.target.value, 10) || 0)}
-                         style={{ width: 44, textAlign: 'center', background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 6, color: 'var(--ink)', padding: '2px 4px', fontSize: 12 }} />
+                  <input
+                    type="number"
+                    min={0}
+                    max={60}
+                    value={noches[f.key] || ""}
+                    placeholder="0"
+                    onChange={(e) => setFam(f.key, parseInt(e.target.value, 10) || 0)}
+                    className="w-11 rounded-md border border-hairline bg-surface px-1 py-0.5 text-center text-xs text-ink outline-none focus:border-primary"
+                  />
                 </div>
-              ))}
-            </div>
-            {!hayFamilias && (
-              <p className="text-xs mt-2" style={{ color: 'var(--ink-faint)' }}>
-                Sin familias marcadas se guarda como fin de semana sin visita (cuenta para saber cuántos fines de semana nadie fue).
-              </p>
-            )}
+              );
+            })}
           </div>
-          <div>
-            <label className={lbl} style={{ color: 'var(--ink-muted)' }}>Notas</label>
-            <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={2}
-                      style={{ ...inputStyle, marginTop: 4, resize: 'none' }} placeholder="Opcional..." />
-          </div>
-          {error && <p className="text-xs" style={{ color: 'var(--status-overdue-fg)' }}>{error}</p>}
+          {!hayFamilias && (
+            <p className="mt-2 text-xs text-ink-faint">
+              Sin familias marcadas se guarda como fin de semana sin visita (cuenta para saber cuántos fines de semana
+              nadie fue).
+            </p>
+          )}
         </div>
-        <div className="px-6 py-4 flex items-center gap-3" style={{ borderTop: '1px solid var(--hairline)' }}>
+
+        <Field label="Notas">
+          <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} placeholder="Opcional..." className={`${input} resize-none`} />
+        </Field>
+
+        {error && <p className="text-xs text-status-overdue-fg">{error}</p>}
+
+        <div className="flex items-center gap-3 border-t border-hairline pt-4">
           {editing && (
-            <button onClick={handleDelete} disabled={saving} className="text-xs underline mr-auto disabled:opacity-50" style={{ color: 'var(--status-overdue-fg)' }}>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={saving}
+              className="mr-auto text-xs text-status-overdue-fg underline disabled:opacity-50"
+            >
               Borrar evento
             </button>
           )}
-          <div className="flex items-center gap-3 ml-auto">
-            <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm border transition-colors"
-                    style={{ borderColor: 'var(--hairline)', color: 'var(--ink-muted)' }}>
+          <div className="ml-auto flex items-center gap-2">
+            <button type="button" onClick={onClose} className={buttonGhost}>
               Cancelar
             </button>
-            <button onClick={handleSave} disabled={saving}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-                    style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}>
-              {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Guardar visita'}
+            <button type="button" onClick={handleSave} disabled={saving} className={buttonPrimary}>
+              {saving ? "Guardando…" : editing ? "Guardar cambios" : "Guardar visita"}
             </button>
           </div>
         </div>
       </div>
-    </div>
-  )
+    </SidePanel>
+  );
 }

@@ -15,6 +15,10 @@ function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive
   );
 }
 
+// Underline tab bar — same pattern as the app's other view switchers
+// (e.g. Visitas' TrackingPage), not a segmented pill group: a row of
+// labels with a bottom border that moves to whichever is active,
+// instead of a filled background chip.
 function TabsList({
   className,
   ...props
@@ -22,10 +26,7 @@ function TabsList({
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn(
-        "inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-1",
-        className,
-      )}
+      className={cn("flex items-center gap-0 overflow-x-auto border-b border-border", className)}
       {...props}
     />
   );
@@ -39,7 +40,7 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "inline-flex h-[calc(100%-2px)] flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+        "shrink-0 whitespace-nowrap border-b-2 border-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground active:text-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-primary data-[state=active]:text-primary",
         className,
       )}
       {...props}

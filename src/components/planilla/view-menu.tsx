@@ -77,7 +77,7 @@ export function SaveDefaultLink({ isDefault, saving, onSave }: { isDefault: bool
       disabled={saving || isDefault}
       className="flex items-center gap-1.5 self-start text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-default disabled:hover:text-muted-foreground"
     >
-      <Star className={"size-3.5 " + (isDefault ? "fill-current text-amber-500" : "")} />
+      <Star className={"size-3.5 " + (isDefault ? "fill-current text-warning" : "")} />
       {isDefault ? "Es tu vista predeterminada" : saving ? "Guardando…" : "Guardar como predeterminada"}
     </button>
   );

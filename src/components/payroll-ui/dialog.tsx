@@ -27,17 +27,15 @@ function DialogOverlay({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
-    <DialogPrimitive.Overlay
-      data-slot="dialog-overlay"
-      className={cn(
-        "fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] data-[state=open]:animate-fade-in",
-        className,
-      )}
-      {...props}
-    />
+    <DialogPrimitive.Overlay data-slot="dialog-overlay" className={cn("fixed inset-0 z-50 bg-black/30", className)} {...props} />
   );
 }
 
+// Right-edge slide-over, not a centered modal — same chrome as the app's
+// own SidePanel (components/ui/side-panel.tsx), which every other create/
+// edit/detail flow uses. Kept as a separate primitive (not SidePanel
+// itself) only because these call sites are driven by Radix's open state
+// via DialogTrigger/DialogClose rather than a parent-owned boolean.
 function DialogContent({
   className,
   children,
@@ -52,15 +50,15 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border border-border bg-card p-6 shadow-lg duration-200 data-[state=open]:animate-slide-in",
+          "fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-md flex-col gap-4 overflow-y-auto border-l border-border bg-canvas p-5 pt-[calc(1.25rem+env(safe-area-inset-top))] shadow-[var(--shadow-elevated)]",
           className,
         )}
         {...props}
       >
         {children}
         {showCloseButton && (
-          <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-60 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none">
-            <XIcon className="size-4" />
+          <DialogPrimitive.Close className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent active:bg-accent hover:text-foreground disabled:pointer-events-none">
+            <XIcon className="size-5" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

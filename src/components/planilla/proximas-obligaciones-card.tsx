@@ -58,7 +58,7 @@ export function ProximasObligacionesCard({
   onViewCalendar?: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
+    <div className="flex flex-col gap-2 rounded-md border border-border bg-card p-4">
       <p className="text-sm font-medium text-foreground">Próximas obligaciones</p>
       <ObligationRow
         icon={Award}

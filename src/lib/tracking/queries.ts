@@ -3,7 +3,7 @@
  * Reemplaza sheets.js de Casa Bonsai.
  */
 import { createClient } from '@/lib/supabase/client'
-import { clasificarEvento, TrackingEvent, TrackingRecord } from './constants'
+import { clasificarEvento, OtroDestino, TrackingEvent, TrackingRecord } from './constants'
 import { addDays, planWeekends } from './weekend-plan'
 
 interface EventRow {
@@ -14,6 +14,8 @@ interface EventRow {
   tipo: string | null
   notas: string | null
   noches?: number | null
+  invitados?: string | null
+  otros?: unknown
   tracking_asistencia: { familia: string; noches: number | null; llegada: string | null; salida: string | null }[] | null
 }
 
@@ -27,11 +29,10 @@ export async function fetchTrackingData(): Promise<{ records: TrackingRecord[]; 
       .select(`${cols}, tracking_asistencia ( familia, noches, llegada, salida )`)
       .order('fecha_ini', { ascending: true })
       .range(0, 4999)
-  let { data, error } = await run('id, evento, fecha_ini, fecha_salida, tipo, notas, noches')
-  // Si la migración de "noches" aún no se aplicó, la columna no existe: se lee sin ella.
-  if (error && (error.code === '42703' || /noches/.test(error.message))) {
-    ;({ data, error } = await run('id, evento, fecha_ini, fecha_salida, tipo, notas'))
-  }
+  // Si alguna migración (noches / invitados y destinos) aún no se aplicó, se lee sin esas columnas.
+  let { data, error } = await run('id, evento, fecha_ini, fecha_salida, tipo, notas, noches, invitados, otros')
+  if (error && error.code === '42703') ({ data, error } = await run('id, evento, fecha_ini, fecha_salida, tipo, notas, noches'))
+  if (error && error.code === '42703') ({ data, error } = await run('id, evento, fecha_ini, fecha_salida, tipo, notas'))
   if (error) throw new Error(error.message)
 
   const records: TrackingRecord[] = []
@@ -70,6 +71,8 @@ export async function fetchTrackingData(): Promise<{ records: TrackingRecord[]; 
       notas: ev.notas ?? '',
       year,
       noches: ev.noches ?? null,
+      invitados: ev.invitados ?? '',
+      otros: Array.isArray(ev.otros) ? (ev.otros as OtroDestino[]) : [],
       asistencia,
     })
   }
@@ -85,6 +88,8 @@ export interface NewEventInput {
   tipo?:       string
   notas?:      string
   noches?:     number
+  invitados?:  string
+  otros?:      OtroDestino[]
   asistencia:  Array<{ familia: string; noches: number; llegada?: string; salida?: string }>
 }
 
@@ -101,20 +106,22 @@ function asistenciaRows(eventoId: string, input: NewEventInput) {
 export async function insertEvent(input: NewEventInput): Promise<void> {
   const supabase = createClient()
 
-  const { data: ev, error: evErr } = await supabase
-    .from('tracking_events')
-    .insert({
-      evento:       input.evento,
-      fecha_ini:    input.fecha_ini,
-      fecha_salida: input.fecha_salida ?? null,
-      tipo:         input.tipo ?? clasificarEvento(input.evento),
-      notas:        input.notas ?? null,
-      ...(input.noches != null ? { noches: input.noches } : {}),
-    })
-    .select('id')
-    .single()
-
-  if (evErr) throw new Error(evErr.message)
+  const base = {
+    evento:       input.evento,
+    fecha_ini:    input.fecha_ini,
+    fecha_salida: input.fecha_salida ?? null,
+    tipo:         input.tipo ?? clasificarEvento(input.evento),
+    notas:        input.notas ?? null,
+  }
+  const extra = {
+    ...(input.noches != null ? { noches: input.noches } : {}),
+    ...(input.invitados !== undefined ? { invitados: input.invitados || null } : {}),
+    ...(input.otros !== undefined ? { otros: input.otros } : {}),
+  }
+  let { data: ev, error: evErr } = await supabase.from('tracking_events').insert({ ...base, ...extra }).select('id').single()
+  // migración pendiente: guardar sin las columnas nuevas en vez de fallar
+  if (evErr && evErr.code === '42703') ({ data: ev, error: evErr } = await supabase.from('tracking_events').insert(base).select('id').single())
+  if (evErr || !ev) throw new Error(evErr?.message ?? 'No se pudo guardar')
 
   const rows = asistenciaRows(ev.id, input)
   if (rows.length > 0) {
@@ -149,17 +156,20 @@ async function removeOverlappingPlaceholders(keepId: string, ini: string, fin?: 
 /** Reemplaza un evento completo: datos del evento + su asistencia. */
 export async function updateEventFull(eventId: string, input: NewEventInput): Promise<void> {
   const supabase = createClient()
-  const { error: evErr } = await supabase
-    .from('tracking_events')
-    .update({
-      evento:       input.evento,
-      fecha_ini:    input.fecha_ini,
-      fecha_salida: input.fecha_salida ?? null,
-      tipo:         input.tipo ?? clasificarEvento(input.evento),
-      notas:        input.notas ?? null,
-      ...(input.noches != null ? { noches: input.noches } : {}),
-    })
-    .eq('id', eventId)
+  const base = {
+    evento:       input.evento,
+    fecha_ini:    input.fecha_ini,
+    fecha_salida: input.fecha_salida ?? null,
+    tipo:         input.tipo ?? clasificarEvento(input.evento),
+    notas:        input.notas ?? null,
+  }
+  const extra = {
+    ...(input.noches != null ? { noches: input.noches } : {}),
+    ...(input.invitados !== undefined ? { invitados: input.invitados || null } : {}),
+    ...(input.otros !== undefined ? { otros: input.otros } : {}),
+  }
+  let { error: evErr } = await supabase.from('tracking_events').update({ ...base, ...extra }).eq('id', eventId)
+  if (evErr && evErr.code === '42703') ({ error: evErr } = await supabase.from('tracking_events').update(base).eq('id', eventId))
   if (evErr) throw new Error(evErr.message)
 
   const { error: delErr } = await supabase.from('tracking_asistencia').delete().eq('evento_id', eventId)

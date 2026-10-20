@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { FAMILIAS, TIPOS_EVENTO, TrackingEvent, clasificarEvento, diaSemana, fmtFecha, nochesEntre } from "@/lib/tracking/constants";
+import { FAMILIAS, LUGARES, OtroDestino, TIPOS_EVENTO, TrackingEvent, clasificarEvento, diaSemana, fmtFecha, nochesEntre } from "@/lib/tracking/constants";
 import { deleteEvent, insertEvent, updateEventFull } from "@/lib/tracking/queries";
 import { SidePanel } from "@/components/ui/side-panel";
 import { Field } from "@/components/ui/field";
@@ -19,6 +19,8 @@ export default function NuevaVisitaModal({ evento: editing, onClose, onSaved }: 
   const [fechaSal, setFechaSal] = useState(editing?.fecha_salida ?? "");
   const [tipo, setTipo] = useState(editing && editing.tipo !== clasificarEvento(editing.evento) ? editing.tipo : "");
   const [notas, setNotas] = useState(editing?.notas ?? "");
+  const [invitados, setInvitados] = useState(editing?.invitados ?? "");
+  const [otros, setOtros] = useState<OtroDestino[]>(editing?.otros ?? []);
   const [noches, setNoches] = useState<Record<string, number>>(editing?.asistencia ?? {});
   const [nochesEv, setNochesEv] = useState<string>(editing?.noches != null ? String(editing.noches) : "");
   const [saving, setSaving] = useState(false);
@@ -50,6 +52,8 @@ export default function NuevaVisitaModal({ evento: editing, onClose, onSaved }: 
       fecha_salida: fechaSal || undefined,
       tipo: tipo || clasificarEvento(evento),
       notas: notas.trim() || undefined,
+      invitados: invitados.trim(),
+      otros: otros.filter((o) => o.nota.trim() || o.lugar).map((o) => ({ ...o, nota: o.nota.trim() || (o.lugar ?? "") })),
       asistencia,
     };
     setSaving(true);
@@ -174,6 +178,67 @@ export default function NuevaVisitaModal({ evento: editing, onClose, onSaved }: 
               nadie fue).
             </p>
           )}
+        </div>
+
+        <Field label="Invitados (quiénes fueron)">
+          <input
+            value={invitados}
+            onChange={(e) => setInvitados(e.target.value)}
+            placeholder="Ej: Alberto Cohen, Allan Shajtel"
+            className={input}
+          />
+        </Field>
+
+        <div>
+          <p className="mb-1 text-sm font-medium text-ink-secondary">Otros destinos y notas por familia</p>
+          <p className="mb-2 text-xs text-ink-faint">
+            Para anotar que una familia fue a Santa Clara, Punta Chame, etc. (cuenta en las estadísticas de otros destinos).
+          </p>
+          <datalist id="lugares-tracking">
+            {LUGARES.map((l) => (
+              <option key={l} value={l} />
+            ))}
+          </datalist>
+          <div className="flex flex-col gap-2">
+            {otros.map((o, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-2">
+                <select
+                  value={o.familia}
+                  onChange={(e) => setOtros((prev) => prev.map((x, j) => (j === i ? { ...x, familia: e.target.value } : x)))}
+                  className={`${input} w-32`}
+                >
+                  {FAMILIAS.map((f) => (
+                    <option key={f.key} value={f.key}>
+                      {f.short}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  list="lugares-tracking"
+                  value={o.lugar ?? ""}
+                  placeholder="Lugar"
+                  onChange={(e) => setOtros((prev) => prev.map((x, j) => (j === i ? { ...x, lugar: e.target.value.trim() || null } : x)))}
+                  className={`${input} w-36`}
+                />
+                <input
+                  value={o.nota}
+                  placeholder="Nota (opcional)"
+                  onChange={(e) => setOtros((prev) => prev.map((x, j) => (j === i ? { ...x, nota: e.target.value } : x)))}
+                  className={`${input} min-w-32 flex-1`}
+                />
+                <button type="button" onClick={() => setOtros((prev) => prev.filter((_, j) => j !== i))} className="text-xs text-status-overdue-fg underline">
+                  quitar
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setOtros((prev) => [...prev, { familia: FAMILIAS[0].key, lugar: null, nota: "" }])}
+              className="w-fit text-xs text-primary underline"
+            >
+              + Agregar destino o nota
+            </button>
+          </div>
         </div>
 
         <Field label="Notas">

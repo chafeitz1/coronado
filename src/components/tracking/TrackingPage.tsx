@@ -10,6 +10,7 @@ import Comparativo from "./Comparativo";
 import DatosCuriosos from "./DatosCuriosos";
 import NuevaVisitaModal from "./NuevaVisitaModal";
 import RellenarModal from "./RellenarModal";
+import OtrosDestinos from "./OtrosDestinos";
 import type { ResumenMetric, ResumenView } from "./TablaResumen";
 import { Pill } from "@/components/ui/pill";
 import { buttonPrimary, buttonUtility, mutedText, pageHeading } from "@/lib/ui";
@@ -270,7 +271,12 @@ export default function TrackingPage() {
         )}
         {activeView === "estadisticas" && <Estadisticas data={filtered} allData={data} />}
         {activeView === "historial" && <Historial events={filteredEvents} onEdit={setEditing} onGenerate={() => setShowFill(true)} />}
-        {activeView === "curiosidades" && <DatosCuriosos data={filtered} allData={data} hebrewMode={hebrewMode} hebrewYears={hebrewYears} />}
+        {activeView === "curiosidades" && (
+          <>
+            <DatosCuriosos data={filtered} allData={data} hebrewMode={hebrewMode} hebrewYears={hebrewYears} />
+            <OtrosDestinos events={events} />
+          </>
+        )}
       </div>
 
       {(showModal || editing) && (

@@ -91,6 +91,14 @@ export interface TrackingRecord {
   notas:      string
 }
 
+export interface OtroDestino {
+  familia: string
+  /** lugar reconocido (Santa Clara, Punta Chame…) o null si es solo una nota */
+  lugar: string | null
+  nota: string
+}
+export const LUGARES = ['Santa Clara', 'Punta Chame', 'Playa Escondida'] as const
+
 // ── Evento (una fila por evento, incluso si nadie fue) ─────────────────────────
 export interface TrackingEvent {
   key:          string
@@ -102,6 +110,10 @@ export interface TrackingEvent {
   year:         number
   /** noches del evento según el Sheet; null = usar salida − llegada */
   noches:       number | null
+  /** nombres de los invitados (de las notas del Sheet) */
+  invitados:    string
+  /** a dónde fue una familia cuando no vino (o notas por familia) */
+  otros:        OtroDestino[]
   /** noches por familia; vacío = nadie fue */
   asistencia:   Record<string, number>
 }

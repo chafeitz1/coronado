@@ -135,7 +135,7 @@ export default function TrackingPage() {
       <div className="px-6 py-4 flex items-center justify-between"
            style={{ borderBottom: '1px solid var(--hairline)', background: 'var(--canvas)' }}>
         <div>
-          <h1 className="text-lg font-bold" style={{ color: 'var(--ink)' }}>Tracking de Visitas</h1>
+          <h1 className="text-lg font-bold" style={{ color: 'var(--ink)' }}>Tracking Assist.</h1>
           <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
             {totalEventos} eventos (fines de semana y fiestas) · {data.length} registros de asistencia
           </p>

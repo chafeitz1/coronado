@@ -100,6 +100,8 @@ export interface TrackingEvent {
   tipo:         string
   notas:        string
   year:         number
+  /** noches del evento según el Sheet; null = usar salida − llegada */
+  noches:       number | null
   /** noches por familia; vacío = nadie fue */
   asistencia:   Record<string, number>
 }

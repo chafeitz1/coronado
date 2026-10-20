@@ -17,6 +17,7 @@ export default function NuevaVisitaModal({ evento: editing, onClose, onSaved }: 
   const [tipo,      setTipo]      = useState(editing && editing.tipo !== clasificarEvento(editing.evento) ? editing.tipo : '')
   const [notas,     setNotas]     = useState(editing?.notas ?? '')
   const [noches,    setNoches]    = useState<Record<string, number>>(editing?.asistencia ?? {})
+  const [nochesEv,  setNochesEv]  = useState<string>(editing?.noches != null ? String(editing.noches) : '')
   const [saving,    setSaving]    = useState(false)
   const [error,     setError]     = useState('')
 
@@ -30,7 +31,8 @@ export default function NuevaVisitaModal({ evento: editing, onClose, onSaved }: 
     if (fechaSal && fechaSal < fechaIni) { setError('La salida no puede ser antes de la llegada.'); return }
     const asistencia = Object.entries(noches).filter(([, n]) => n > 0).map(([familia, n]) => ({ familia, noches: n }))
     const nombre = evento.trim() || 'Fin de semana'
-    const input = { evento: nombre, fecha_ini: fechaIni, fecha_salida: fechaSal || undefined, tipo: tipo || clasificarEvento(evento), notas: notas.trim() || undefined, asistencia }
+    const nochesEvento2 = nochesEv.trim() === '' ? undefined : Math.max(0, parseInt(nochesEv, 10) || 0)
+    const input = { evento: nombre, fecha_ini: fechaIni, noches: nochesEvento2, fecha_salida: fechaSal || undefined, tipo: tipo || clasificarEvento(evento), notas: notas.trim() || undefined, asistencia }
     setSaving(true); setError('')
     try {
       if (editing) await updateEventFull(editing.key, input)
@@ -73,6 +75,13 @@ export default function NuevaVisitaModal({ evento: editing, onClose, onSaved }: 
               <input type="date" value={fechaSal} onChange={e => setFechaSal(e.target.value)} style={{ ...inputStyle, marginTop: 4 }} />
               <div className="text-xs mt-1" style={{ color: 'var(--ink-muted)' }}>{fechaSal ? `${fmtFecha(fechaSal)} · ${diaSemana(fechaSal)}` : ''}</div>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className={lbl} style={{ color: 'var(--ink-muted)' }}>Noches del evento</label>
+            <input type="number" min={0} max={60} value={nochesEv} placeholder={nochesEvento ? String(nochesEvento) : '—'}
+                   onChange={e => setNochesEv(e.target.value)}
+                   style={{ width: 64, textAlign: 'center', background: 'var(--canvas-soft)', border: '1px solid var(--hairline)', borderRadius: 6, color: 'var(--ink)', padding: '4px 6px', fontSize: 13 }} />
+            <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>vacío = salida − llegada</span>
           </div>
           {nochesEvento > 0 && (
             <div className="text-xs rounded-lg px-3 py-2" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}>

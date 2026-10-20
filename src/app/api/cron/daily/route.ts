@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyUser, sendPushToUser } from "@/lib/notifications/send";
 import { isoDateOffset, daysUntil } from "@/lib/dates";
+import { ensureUpcomingWeekends } from "@/lib/tracking/auto-weekends";
 
 export const dynamic = "force-dynamic";
 
@@ -37,14 +38,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, skipped: "no owner" });
   }
 
-  const [digest, maintenance, announcements] = await Promise.all([
+  const [digest, maintenance, announcements, weekends] = await Promise.all([
     sendDailyDigest(supabase, ownerIds),
     sendMaintenanceReminders(supabase, ownerIds),
     sendAnnouncementReminders(supabase),
+    // Tracking Assist.: deja registrados los próximos fines de semana sin tener que hacerlo a mano.
+    ensureUpcomingWeekends(supabase, isoDateOffset(0)).catch((e) => `error: ${e instanceof Error ? e.message : String(e)}`),
   ]);
 
-  await supabase.from("cron_runs").insert({ result: { ok: true, digest, maintenance, announcements } });
-  return NextResponse.json({ ok: true, digest, maintenance, announcements });
+  await supabase.from("cron_runs").insert({ result: { ok: true, digest, maintenance, announcements, weekends } });
+  return NextResponse.json({ ok: true, digest, maintenance, announcements, weekends });
 }
 
 type Supabase = ReturnType<typeof createAdminClient>;

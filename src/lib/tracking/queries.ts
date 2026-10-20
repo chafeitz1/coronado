@@ -4,6 +4,7 @@
  */
 import { createClient } from '@/lib/supabase/client'
 import { clasificarEvento, TrackingEvent, TrackingRecord } from './constants'
+import { addDays, planWeekends } from './weekend-plan'
 
 interface EventRow {
   id: string
@@ -12,6 +13,7 @@ interface EventRow {
   fecha_salida: string | null
   tipo: string | null
   notas: string | null
+  noches?: number | null
   tracking_asistencia: { familia: string; noches: number | null; llegada: string | null; salida: string | null }[] | null
 }
 
@@ -19,22 +21,24 @@ interface EventRow {
 export async function fetchTrackingData(): Promise<{ records: TrackingRecord[]; events: TrackingEvent[] }> {
   const supabase = createClient()
 
-  const { data, error } = await supabase
-    .from('tracking_events')
-    .select(`
-      id, evento, fecha_ini, fecha_salida, tipo, notas,
-      tracking_asistencia ( familia, noches, llegada, salida )
-    `)
-    .order('fecha_ini', { ascending: true })
-    .range(0, 4999)
-
+  const run = (cols: string) =>
+    supabase
+      .from('tracking_events')
+      .select(`${cols}, tracking_asistencia ( familia, noches, llegada, salida )`)
+      .order('fecha_ini', { ascending: true })
+      .range(0, 4999)
+  let { data, error } = await run('id, evento, fecha_ini, fecha_salida, tipo, notas, noches')
+  // Si la migración de "noches" aún no se aplicó, la columna no existe: se lee sin ella.
+  if (error && (error.code === '42703' || /noches/.test(error.message))) {
+    ;({ data, error } = await run('id, evento, fecha_ini, fecha_salida, tipo, notas'))
+  }
   if (error) throw new Error(error.message)
 
   const records: TrackingRecord[] = []
   const events: TrackingEvent[] = []
   let rowIndex = 0
 
-  for (const ev of (data ?? []) as EventRow[]) {
+  for (const ev of (data ?? []) as unknown as EventRow[]) {
     const fecha_ini = ev.fecha_ini ?? ''
     const year = fecha_ini ? Number(fecha_ini.slice(0, 4)) : 0
     const month = fecha_ini ? Number(fecha_ini.slice(5, 7)) - 1 : -1
@@ -65,6 +69,7 @@ export async function fetchTrackingData(): Promise<{ records: TrackingRecord[]; 
       tipo,
       notas: ev.notas ?? '',
       year,
+      noches: ev.noches ?? null,
       asistencia,
     })
   }
@@ -79,6 +84,7 @@ export interface NewEventInput {
   fecha_salida?: string
   tipo?:       string
   notas?:      string
+  noches?:     number
   asistencia:  Array<{ familia: string; noches: number; llegada?: string; salida?: string }>
 }
 
@@ -103,6 +109,7 @@ export async function insertEvent(input: NewEventInput): Promise<void> {
       fecha_salida: input.fecha_salida ?? null,
       tipo:         input.tipo ?? clasificarEvento(input.evento),
       notas:        input.notas ?? null,
+      ...(input.noches != null ? { noches: input.noches } : {}),
     })
     .select('id')
     .single()
@@ -110,9 +117,33 @@ export async function insertEvent(input: NewEventInput): Promise<void> {
   if (evErr) throw new Error(evErr.message)
 
   const rows = asistenciaRows(ev.id, input)
-  if (rows.length === 0) return // fin de semana sin visita
-  const { error: aErr } = await supabase.from('tracking_asistencia').insert(rows)
-  if (aErr) throw new Error(aErr.message)
+  if (rows.length > 0) {
+    const { error: aErr } = await supabase.from('tracking_asistencia').insert(rows)
+    if (aErr) throw new Error(aErr.message)
+  }
+  await removeOverlappingPlaceholders(ev.id, input.fecha_ini, input.fecha_salida)
+}
+
+/** Un evento nuevo (fiesta, feriado, semana larga) reemplaza a los "Fin de semana" vacíos
+ *  automáticos que cubre, para no tener dos filas para las mismas fechas. */
+async function removeOverlappingPlaceholders(keepId: string, ini: string, fin?: string | null): Promise<void> {
+  const supabase = createClient()
+  const end = fin ?? addDays(ini, 1)
+  const { data } = await supabase
+    .from('tracking_events')
+    .select('id, evento, fecha_ini, fecha_salida, notas, tracking_asistencia ( familia )')
+    .gte('fecha_ini', addDays(ini, -7))
+    .lte('fecha_ini', end)
+  const ids = (data ?? [])
+    .filter((e: { id: string; evento: string; fecha_ini: string; fecha_salida: string | null; notas: string | null; tracking_asistencia: unknown[] | null }) =>
+      e.id !== keepId &&
+      e.evento === 'Fin de semana' &&
+      !e.notas &&
+      (e.tracking_asistencia ?? []).length === 0 &&
+      e.fecha_ini < end &&
+      (e.fecha_salida ?? addDays(e.fecha_ini, 1)) > ini)
+    .map((e: { id: string }) => e.id)
+  if (ids.length > 0) await supabase.from('tracking_events').delete().in('id', ids)
 }
 
 /** Reemplaza un evento completo: datos del evento + su asistencia. */
@@ -126,6 +157,7 @@ export async function updateEventFull(eventId: string, input: NewEventInput): Pr
       fecha_salida: input.fecha_salida ?? null,
       tipo:         input.tipo ?? clasificarEvento(input.evento),
       notas:        input.notas ?? null,
+      ...(input.noches != null ? { noches: input.noches } : {}),
     })
     .eq('id', eventId)
   if (evErr) throw new Error(evErr.message)
@@ -134,9 +166,11 @@ export async function updateEventFull(eventId: string, input: NewEventInput): Pr
   if (delErr) throw new Error(delErr.message)
 
   const rows = asistenciaRows(eventId, input)
-  if (rows.length === 0) return
-  const { error: aErr } = await supabase.from('tracking_asistencia').insert(rows)
-  if (aErr) throw new Error(aErr.message)
+  if (rows.length > 0) {
+    const { error: aErr } = await supabase.from('tracking_asistencia').insert(rows)
+    if (aErr) throw new Error(aErr.message)
+  }
+  await removeOverlappingPlaceholders(eventId, input.fecha_ini, input.fecha_salida)
 }
 
 export async function deleteEvent(eventId: string): Promise<void> {
@@ -146,16 +180,10 @@ export async function deleteEvent(eventId: string): Promise<void> {
 }
 
 // ── Rellenar fines de semana vacíos ───────────────────────────────────────────
-function addDays(iso: string, n: number): string {
-  const d = new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000)
-  return d.toISOString().slice(0, 10)
-}
-
 /**
- * Crea un fin de semana normal (viernes → domingo, 2 noches, sin familias)
- * por cada viernes entre `from` y `to` que no se cruce con un evento ya
- * registrado — así un feriado de jueves a domingo no se duplica. Devuelve
- * cuántos creó.
+ * Crea un fin de semana normal (viernes → domingo, 2 noches, sin familias) por cada viernes
+ * entre `from` y `to` que no se cruce con un evento ya registrado — así un feriado de jueves a
+ * domingo no se duplica. Devuelve cuántos creó. (Hacia adelante lo hace solo el cron diario.)
  */
 export async function generateWeekends(from: string, to: string): Promise<number> {
   const supabase = createClient()
@@ -171,19 +199,12 @@ export async function generateWeekends(from: string, to: string): Promise<number
     ini: e.fecha_ini,
     fin: e.fecha_salida ?? addDays(e.fecha_ini, 1),
   }))
-
-  // primer viernes >= from
-  let d = from
-  while (new Date(Date.parse(d + 'T00:00:00Z')).getUTCDay() !== 5) d = addDays(d, 1)
-
-  const rows: { evento: string; fecha_ini: string; fecha_salida: string; tipo: string }[] = []
-  for (; d <= to; d = addDays(d, 7)) {
-    const end = addDays(d, 2)
-    const overlaps = spans.some(s => s.ini <= end && s.fin > d)
-    if (!overlaps) rows.push({ evento: 'Fin de semana', fecha_ini: d, fecha_salida: end, tipo: 'Weekend' })
+  const planned = planWeekends(from, to, spans)
+  if (planned.length === 0) return 0
+  let { error: insErr } = await supabase.from('tracking_events').insert(planned)
+  if (insErr && (insErr.code === '42703' || /noches/.test(insErr.message))) {
+    ;({ error: insErr } = await supabase.from('tracking_events').insert(planned.map((w) => ({ evento: w.evento, fecha_ini: w.fecha_ini, fecha_salida: w.fecha_salida, tipo: w.tipo }))))
   }
-  if (rows.length === 0) return 0
-  const { error: insErr } = await supabase.from('tracking_events').insert(rows)
   if (insErr) throw new Error(insErr.message)
-  return rows.length
+  return planned.length
 }
